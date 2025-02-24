@@ -6,7 +6,7 @@ app = FastAPI()
 
 @app.get('/')
 def get_root():
-    return {'Message': 'Api is working!'}
+    return "БАРАБУЛЬКА"
 
 
 if __name__ == '__main__':
