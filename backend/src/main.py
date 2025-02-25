@@ -1,13 +1,10 @@
-import uvicorn
 from fastapi import FastAPI
+from api import get_routers
+import uvicorn
 
 app = FastAPI()
 
-
-@app.get('/')
-def get_root():
-    return "БАРАБУЛЬКА"
-
+app.include_router(get_routers())
 
 if __name__ == '__main__':
-    uvicorn.run(app)
+    uvicorn.run("src.main:app", reload=True)
