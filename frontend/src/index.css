@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --color-muctr: #0f70b7;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -13,9 +17,4 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  font-family: "Rampart One", serif;
-  font-weight: 400;
-  font-size: 10px;
-  font-style: normal;
 }
