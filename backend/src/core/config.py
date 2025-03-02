@@ -1,5 +1,7 @@
+from datetime import timedelta
+
 from dotenv import load_dotenv
-from pydantic import PostgresDsn, BaseModel, Field
+from pydantic import PostgresDsn, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
@@ -15,11 +17,22 @@ class DBConfig(BaseModel):
     echo: int
 
 
+class JWTAccessToken(BaseModel):
+    expires: timedelta = timedelta(minutes=15)
+
+
+class JWTRefreshToken(BaseModel):
+    expires: timedelta = timedelta(days=7)
+
+
 class JWTConfig(BaseModel):
     secret_key: str
     algorithm: str = 'HS256'
     access_cookie_name: str = 'access_token_cookie'
     token_location: list[str] = ['cookies']
+
+    access_token: JWTAccessToken = JWTAccessToken()
+    refresh_token: JWTRefreshToken = JWTRefreshToken()
 
 
 class Settings(BaseSettings):
