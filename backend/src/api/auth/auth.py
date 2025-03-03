@@ -30,6 +30,18 @@ def login_user(creds: UserLoginSchema, response: Response):
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Bad credentials')
 
 
+@router.get('/refresh')
+def refresh_access_token():
+    new_access_token = security.create_access_token()
+    return {'new_access_token': new_access_token}
+
+
 @router.get('/protected')
 def get_protected(payload: TokenPayload = Depends(security.access_token_required)):
     return {'message': f'Hola Hola, {payload.sub}'}
+
+
+@router.post('/logout')
+def logout_user(payload: TokenPayload = Depends(security.access_token_required)):
+    security.unset_refresh_cookies()
+    return {'message': f'Bye, bye, {payload.sub}..'}

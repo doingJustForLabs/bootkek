@@ -23,7 +23,7 @@ async def lifespan(my_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(get_routers(), prefix='/api')
+app.include_router(get_routers())
 
 
 @app.get('/')
