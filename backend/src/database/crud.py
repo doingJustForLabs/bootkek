@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
-from core.models.database import db_helper
-from core.models.models import User
+from database.db import db_helper
+from database.models import User
 
 
 async def set_user(username, email, password):

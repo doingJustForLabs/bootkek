@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from core.models.requests import set_user, get_users
-from core.schemas.users import UserCreate
+from database.crud import set_user, get_users
+from database.schemas.users import UserCreate
 
 router = APIRouter(
     prefix='/users',

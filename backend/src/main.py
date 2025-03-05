@@ -5,8 +5,8 @@ from api import get_routers
 import uvicorn
 
 from core.config import settings
-from core.models.database import db_helper
-from core.models.models import Base
+from database.db import db_helper
+from database.models import Base
 
 
 @asynccontextmanager

@@ -1,9 +1,9 @@
 from authx import TokenPayload
 from fastapi import APIRouter, HTTPException, status, Depends, Response
 
-from api.auth.security import security
+from core.security import security
 from core.config import settings
-from core.schemas.auth import UserLoginSchema, UserRegisterSchema
+from database.schemas.auth import UserLoginSchema, UserRegisterSchema
 
 router = APIRouter(
     tags=['Auth'],
