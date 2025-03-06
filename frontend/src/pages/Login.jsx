@@ -29,7 +29,7 @@ const Login = () => {
                 </Form.Item>
                 <Form.Item>
                     <Flex justify="end">
-                        <a href="">Забыл пароль :C</a>
+                        <a href="/reset">Забыл пароль :C</a>
                     </Flex>
                 </Form.Item>
 
@@ -38,7 +38,7 @@ const Login = () => {
                         Войти
                     </Button>
                     <div className="justify-self-end">
-                        или <a href="">Создать профиль!</a>
+                        или <a href="/signup">Создать профиль!</a>
                     </div>
                 </Form.Item>
             </Form>

@@ -56,6 +56,9 @@ const SignUp = () => {
                     <Button onClick={signUpButton} block type="primary" htmlType="submit">
                         Создать профиль
                     </Button>
+                    <div className="justify-self-end">
+                        или <a href="/">Я уже смешарик</a>
+                    </div>
                 </Form.Item>
             </Form>
         </AuthLayout>
