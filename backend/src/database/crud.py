@@ -1,7 +1,8 @@
 from sqlalchemy import select
+from datetime import datetime, timedelta
 
 from database.db import db_helper
-from database.models import User
+from database.models import User, UserSession
 
 
 async def set_user(username, email, password):
@@ -18,3 +19,15 @@ async def get_users():
         users = await session.scalars(select(User))
         result = users.all()
         return result
+
+
+async def start_user_session(user_id, refresh_token):
+    async with db_helper.session_factory() as session:
+        current_datetime = datetime.now()
+        current_datetime_str = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        time_offset = timedelta(days=15)
+        future_datetime = current_datetime + time_offset
+        future_datetime_str = future_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        session.add(UserSession(user_id=user_id, reftesh_token=refresh_token, start_date=current_datetime_str,
+                                end_date=future_datetime_str))
+        await session.commit()
