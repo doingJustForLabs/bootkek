@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     db: DBConfig
 
-    model_config = SettingsConfigDict(env_nested_delimiter='_', case_sensitive=False)
+    model_config = SettingsConfigDict(env_nested_delimiter='__', case_sensitive=False)
 
 
 settings = Settings()
