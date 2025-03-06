@@ -6,3 +6,11 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+class User(BaseModel):
+    id: int
+    user_name: str
+    email: EmailStr
+
+    class Config:
+        orm_mode = True
+
