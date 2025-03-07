@@ -11,7 +11,7 @@ router = APIRouter(
 
 @router.post('')
 async def post_user(user: UserCreate):
-    await set_user(user.name, user.email, user.password)
+    await set_user(user.email, user.password)
 
     return {'message': 'ok'}
 

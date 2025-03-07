@@ -5,6 +5,7 @@ from api import get_routers
 import uvicorn
 
 from core.config import settings
+from core.security import security
 from database.db import db_helper
 from database.models import Base
 
@@ -24,6 +25,8 @@ async def lifespan(my_app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(get_routers())
+
+security.handle_errors(app)
 
 
 @app.get('/')
