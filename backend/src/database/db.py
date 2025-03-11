@@ -1,4 +1,8 @@
+from typing import Annotated
+
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.orm import Session
 
 from core.config import settings
 
@@ -20,3 +24,5 @@ db_helper = DatabaseHelper(
     url=str(settings.db.url),
     echo=settings.db.echo
 )
+
+DbSession = Annotated[Session, Depends(db_helper.session_getter)]

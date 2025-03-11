@@ -1,4 +1,10 @@
 from bcrypt import gensalt, hashpw, checkpw
+import secrets
+
+
+# Вызовите эту функцию для генерации секретного ключа
+def generate_secret_key():
+    return secrets.token_hex(32)
 
 
 def hash_password(password: str) -> str:
@@ -8,6 +14,3 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed_password: str) -> bool:
     return checkpw(password.encode(), hashed_password.encode())
-
-
-# print(verify_password('123', '$2b$12$zhUJZVQI/c3g/RoLgaRFNunZ4tCrWkpFI3rkD0iM6poSLMszxLGoC'))

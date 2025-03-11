@@ -14,9 +14,9 @@ class UserAuthRepository:
 
         if not user:
             session.add(User(email=email, password=password,
-                            create_date=datetime.utcnow(),
-                            update_date=datetime.utcnow(),
-                            active=True)),
+                             create_date=datetime.utcnow(),
+                             update_date=datetime.utcnow(),
+                             active=True)),
             await session.commit()
 
     @staticmethod
