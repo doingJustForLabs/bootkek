@@ -29,10 +29,12 @@ app.include_router(get_routers())
 security.handle_errors(app)
 
 
-@app.get('/')
+@app.get("/")
 def get_root():
-    return {'message': 'Api is working!~!!'}
+    return {"message": "Api is working!~!!"}
 
 
-if __name__ == '__main__':
-    uvicorn.run(app="src.main:app", reload=True, port=settings.run.port, host=settings.run.host)
+if __name__ == "__main__":
+    uvicorn.run(
+        app="src.main:app", reload=True, port=settings.run.port, host=settings.run.host
+    )

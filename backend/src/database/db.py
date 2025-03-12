@@ -20,9 +20,6 @@ class DatabaseHelper:
             yield session
 
 
-db_helper = DatabaseHelper(
-    url=str(settings.db.url),
-    echo=settings.db.echo
-)
+db_helper = DatabaseHelper(url=str(settings.db.url), echo=settings.db.echo)
 
 DbSession = Annotated[Session, Depends(db_helper.session_getter)]
