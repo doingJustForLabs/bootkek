@@ -8,13 +8,11 @@ import { Button, Checkbox, Form, Input, Flex } from 'antd';
 
 const SignUp = () => {
 
-    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPwd] = useState("");
 
     const signUpButton = () => {
         axios.post('http://127.0.0.1:8000/api/users', {
-            name: name,
             email: email,
             password: password
         }).then(response => console.log(response));
@@ -31,13 +29,6 @@ const SignUp = () => {
                 initialValues={{ remember: true }}
                 style={{ maxWidth: 360 }}
             >
-                <Form.Item
-                    name="username"
-                    rules={[{ required: true, message: 'Please input your Username!' }]}
-                >
-                    <Input onChange={(e) => setName(e.target.value)} prefix={<UserOutlined />} placeholder="Логин" />
-                </Form.Item>
-
                 <Form.Item
                     name="email"
                     rules={[{ required: true, message: 'Please input ypur email!' }]}

@@ -1,7 +1,7 @@
 import AuthLayout from "../layouts/AuthLayout";
 import React from 'react';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Form, Input, Flex } from 'antd';
+import { Button, Form, Input, Flex } from 'antd';
 
 const Login = () => {
     return (
