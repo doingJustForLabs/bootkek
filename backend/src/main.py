@@ -40,36 +40,28 @@ app.include_router(get_routers(), prefix='/api')
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.websocket("/items/{item_id}/ws")
+@app.websocket("/ws/{client_id}")
 async def websocket_endpoint(
-        *,
         websocket: WebSocket,
-        item_id: str,
-        q: int | None = None,
-        cookie_or_token: Annotated[str, Depends(get_cookie_or_token)],
-):
-    user_id = cookie_or_token
-    await manager.connect(user_id, websocket)
+        client_id: int,
+        token: Annotated[str, Depends(get_cookie_or_token)]
+        ):
+    # Подключаем пользователя
+    await manager.connect(client_id, websocket)
+    await manager.broadcast(f"Client #{client_id} joined the chat with token: {token}", exclude=client_id)
+
     try:
         while True:
+            # Получаем сообщение от клиента
             data = await websocket.receive_text()
-
-            await manager.send_personal_message(
-                f"Session cookie or query token value is: {cookie_or_token}",
-                user_id,
-            )
-            if q is not None:
-                await manager.send_personal_message(
-                    f"Query parameter q is: {q}",
-                user_id,
-            )
-            await manager.send_personal_message(
-                f"Message text was: {data}, for item ID: {item_id}",
-                user_id,
-            )
+            # Сообщение отправляется автору в виде "You wrote"
+            await manager.send_personal_message(f"You wrote: {data}", websocket)
+            # Рассылка другим пользователям
+            await manager.broadcast(f"#{client_id} says: {data}", exclude=client_id)
     except WebSocketDisconnect:
-        manager.disconnect(user_id)
-
+        # Отключаем клиента при разрыве соединения
+        manager.disconnect(client_id)
+        await manager.broadcast(f"#{client_id} left the chat")
 
 @app.get('/')
 def get_root():
