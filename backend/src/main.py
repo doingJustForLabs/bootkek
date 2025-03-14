@@ -18,7 +18,6 @@ async def lifespan(my_app: FastAPI):
 
     yield
     # shutdown
-    print("Соединение с базой удалено")
     await db_helper.dispose()
 
 
