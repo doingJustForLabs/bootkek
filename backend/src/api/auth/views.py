@@ -1,6 +1,6 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
-from authx import TokenPayload, RequestToken
+from authx import TokenPayload
 from fastapi import (
     APIRouter,
     Depends,
@@ -8,11 +8,8 @@ from fastapi import (
     HTTPException,
     status,
     Header,
-    Cookie,
-    Request,
 )
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel
 
 from core.security import security
 from database.db import DbSession
@@ -20,7 +17,7 @@ from database.repositories.auth import UserAuthRepository
 from database.schemas.auth import UserRegisterSchema, UserLoginSchema, TokenInfo
 from utils import hash_password, verify_password
 
-router = APIRouter(tags=["Authorization👤"], prefix="/auth")
+router = APIRouter(tags=["Авторизация👤"], prefix="/auth")
 
 http_bearer = HTTPBearer()
 
@@ -78,25 +75,6 @@ async def login_user(creds: UserLoginSchema, response: Response, session: DbSess
     return TokenInfo(access_token=access_token)
 
 
-@router.get("/me", dependencies=[Depends(http_bearer)])
-async def get_protected(
-    session: DbSession,
-    user: Annotated[TokenPayload, Depends(security.access_token_required)],
-    authorization: str = Header(
-        ...,
-        example="Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    ),
-):
-    """
-    Проверка авторизации
-
-    Для каждого последующего "защищенного" запроса (с замочком)
-    необходимо указывать header {"Authorization": "Bearer <AccessToken>"}.
-    """
-    user = await UserAuthRepository.get_user_by_user_id(session, int(user.sub))
-    return {"detail": user}
-
-
 @router.post("/refresh", response_model=TokenInfo)
 async def refresh_new_access_token(
     refresh_token: TokenPayload = Depends(security.refresh_token_required),
@@ -114,11 +92,34 @@ async def refresh_new_access_token(
     return TokenInfo(access_token=new_access_token)
 
 
-@router.delete("/logout", dependencies=[Depends(http_bearer)])
+@router.get("/me", dependencies=[Depends(http_bearer)])
+async def get_protected(
+    session: DbSession,
+    user: Annotated[TokenPayload, Depends(security.access_token_required)],
+    authorization: str = Header(
+        ...,
+        example="Bearer ACCESS_TOKEN",
+    ),
+):
+    """
+    Проверка авторизации
+
+    Для каждого последующего "защищенного" запроса (с замочком)
+    необходимо указывать header {"Authorization": "Bearer <AccessToken>"}.
+    """
+    user = await UserAuthRepository.get_user_by_user_id(session, int(user.sub))
+    return {"detail": user}
+
+
+@router.get("/logout", dependencies=[Depends(http_bearer)])
 async def logout_user(
     user: Annotated[TokenPayload, Depends(security.access_token_required)],
     session: DbSession,
     response: Response,
+    authorization: str = Header(
+        ...,
+        example="Bearer ACCESS_TOKEN",
+    ),
 ):
     await UserAuthRepository.delete_user_session(session, user_id=int(user.sub))
     security.unset_refresh_cookies(response=response)

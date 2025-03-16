@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from api import get_routers
+from api import main_router
 import uvicorn
 
 from core.config import settings
@@ -23,7 +23,7 @@ async def lifespan(my_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(get_routers())
+app.include_router(main_router)
 
 security.handle_errors(app)
 
