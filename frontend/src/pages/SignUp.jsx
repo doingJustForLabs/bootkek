@@ -1,3 +1,4 @@
+import {API} from "../services/api.js";
 import axios from "axios";
 
 import AuthLayout from "../layouts/AuthLayout";
@@ -10,11 +11,13 @@ const SignUp = () => {
 
     const [email, setEmail] = useState("");
     const [password, setPwd] = useState("");
+    const [passwordRepeat, setPwdRep] = useState("");
 
     const signUpButton = () => {
-        axios.post('http://127.0.0.1:8000/api/users', {
+        API.post('/auth/register', {
             email: email,
-            password: password
+            password: password,
+            password_repeat: passwordRepeat
         }).then(response => console.log(response));
     }
 
@@ -31,16 +34,23 @@ const SignUp = () => {
             >
                 <Form.Item
                     name="email"
-                    rules={[{ required: true, message: 'Please input ypur email!' }]}
+                    rules={[{ required: true, message: 'Введите адрес электронной почты!' }]}
                 >
                     <Input onChange={(e) => setEmail(e.target.value)} prefix={<UserOutlined />} placeholder="Почта" />
                 </Form.Item>
 
                 <Form.Item
                     name="password"
-                    rules={[{ required: true, message: 'Please input your Password!' }]}
+                    rules={[{ required: true, message: 'Введите пароль!' }]}
                 >
                     <Input onChange={(e) => setPwd(e.target.value)} prefix={<LockOutlined />} type="password" placeholder="Пароль" />
+                </Form.Item>
+
+                <Form.Item
+                    name="passwordRepeat"
+                    rules={[{ required: true, message: 'Пароли должны совпадать!' }]}
+                >
+                    <Input onChange={(e) => setPwdRep(e.target.value)} prefix={<LockOutlined />} type="password" placeholder="Повторите пароль" />
                 </Form.Item>
 
                 <Form.Item>
