@@ -98,7 +98,7 @@ async def get_protected(
     user: Annotated[TokenPayload, Depends(security.access_token_required)],
     authorization: str = Header(
         ...,
-        example="Bearer ACCESS_TOKEN",
+        examples=["Bearer ACCESS_TOKEN"],
     ),
 ):
     """
@@ -118,7 +118,7 @@ async def logout_user(
     response: Response,
     authorization: str = Header(
         ...,
-        example="Bearer ACCESS_TOKEN",
+        examples=["Bearer ACCESS_TOKEN"],
     ),
 ):
     await UserAuthRepository.delete_user_session(session, user_id=int(user.sub))
