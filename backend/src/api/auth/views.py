@@ -96,10 +96,10 @@ async def refresh_new_access_token(
 async def get_protected(
     session: DbSession,
     user: Annotated[TokenPayload, Depends(security.access_token_required)],
-    authorization: str = Header(
-        ...,
-        examples=["Bearer ACCESS_TOKEN"],
-    ),
+    # authorization: str = Header(
+    #     ...,
+    #     examples=["Bearer ACCESS_TOKEN"],
+    # ),
 ):
     """
     Проверка авторизации
