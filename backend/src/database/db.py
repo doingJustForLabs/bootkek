@@ -20,6 +20,21 @@ class DatabaseHelper:
             yield session
 
 
-db_helper = DatabaseHelper(url=str(settings.db.url), echo=settings.db.echo)
+class TestDatabaseHelper(DatabaseHelper):
+    def __init__(self, url: str, echo: bool):
+        super().__init__(url, echo)
 
+    async def session_getter(self):
+        async with self.session_factory() as session:
+            yield session
+
+
+# App DB
+db_helper = DatabaseHelper(url=str(settings.db.url), echo=settings.db.echo)
 DbSession = Annotated[Session, Depends(db_helper.session_getter)]
+
+# App Test DB
+test_db_helper = TestDatabaseHelper(
+    url=str(settings.test_db.url), echo=settings.test_db.echo
+)
+TestDbSession = Annotated[Session, Depends(test_db_helper.session_getter)]

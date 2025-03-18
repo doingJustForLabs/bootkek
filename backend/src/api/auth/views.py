@@ -1,16 +1,12 @@
 from typing import Annotated
 
-from authx import TokenPayload
-from fastapi import (
-    APIRouter,
-    Depends,
-    Response,
-    HTTPException,
-    status,
-    Header,
-)
-from fastapi.security import HTTPBearer
+from authx import TokenPayload, RequestToken
+from authx.exceptions import AuthXException, MissingTokenError
+from fastapi import APIRouter, Depends, Response, HTTPException, status, Header, Request, Cookie
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
 
+from core.config import settings
 from core.security import security
 from database.db import DbSession
 from database.repositories.auth import UserAuthRepository
@@ -64,10 +60,10 @@ async def login_user(creds: UserLoginSchema, response: Response, session: DbSess
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Неправильный пароль"
         )
 
-    access_token = security.create_access_token(uid=str(user.id), fresh=True)
+    access_token = security.create_access_token(uid=str(user.id))
     refresh_token = security.create_refresh_token(uid=str(user.id))
 
-    security.set_refresh_cookies(response=response, token=refresh_token)
+    security.set_refresh_cookies(response, refresh_token)
 
     await UserAuthRepository.start_user_session(
         session=session, refresh_token=refresh_token, user_id=int(user.id)
@@ -75,51 +71,52 @@ async def login_user(creds: UserLoginSchema, response: Response, session: DbSess
     return TokenInfo(access_token=access_token)
 
 
-@router.post("/refresh", response_model=TokenInfo)
+@router.get("/refresh")
 async def refresh_new_access_token(
-    refresh_token: TokenPayload = Depends(security.refresh_token_required),
-    x_csrf_token: str = Header(
-        ...,
-        alias="X-CSRF-TOKEN",
-        description="Берется из Cookie по ключу: 'csrf_refresh_token'",
-    ),
+        request: Request,
 ):
     """
     Обновление Access токена с помощью Refresh токена
     """
-    new_access_token = security.create_access_token(uid=refresh_token.sub, fresh=False)
+    """Protected route that expects the token in cookies."""
+    try:
+        token = await security.get_refresh_token_from_request(request)
+        payload = security.verify_token(token, verify_csrf=False)
 
-    return TokenInfo(access_token=new_access_token)
+        new_access_token = security.create_access_token(uid=payload.sub)
+
+        return TokenInfo(access_token=new_access_token)
+
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e)) from e
 
 
 @router.get("/me", dependencies=[Depends(http_bearer)])
-async def get_protected(
-    session: DbSession,
-    user: Annotated[TokenPayload, Depends(security.access_token_required)],
-    # authorization: str = Header(
-    #     ...,
-    #     examples=["Bearer ACCESS_TOKEN"],
-    # ),
-):
+async def get_protected(session: DbSession, request: Request):
     """
     Проверка авторизации
 
     Для каждого последующего "защищенного" запроса (с замочком)
     необходимо указывать header {"Authorization": "Bearer <AccessToken>"}.
     """
-    user = await UserAuthRepository.get_user_by_user_id(session, int(user.sub))
-    return {"detail": user}
+    try:
+        token = await security.get_access_token_from_request(request)
+        payload = security.verify_token(token)
+
+        user = await UserAuthRepository.get_user_by_user_id(session, int(payload.sub))
+        return {"detail": user}
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+        )
 
 
 @router.get("/logout", dependencies=[Depends(http_bearer)])
 async def logout_user(
-    user: Annotated[TokenPayload, Depends(security.access_token_required)],
-    session: DbSession,
-    response: Response,
-    authorization: str = Header(
-        ...,
-        examples=["Bearer ACCESS_TOKEN"],
-    ),
+        user: Annotated[TokenPayload, Depends(security.access_token_required)],
+        session: DbSession,
+        response: Response,
 ):
     await UserAuthRepository.delete_user_session(session, user_id=int(user.sub))
     security.unset_refresh_cookies(response=response)
