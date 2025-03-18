@@ -28,8 +28,7 @@ class JWTRefreshToken(BaseModel):
 class JWTConfig(BaseModel):
     secret_key: str
     algorithm: str = "HS256"
-    access_cookie_name: str = "access_token_cookie"
-    token_location: list[str] = ["cookies"]
+    token_location: list[str] = ["headers", "cookies"]
 
     access_token: JWTAccessToken = JWTAccessToken()
     refresh_token: JWTRefreshToken = JWTRefreshToken()

@@ -10,4 +10,8 @@ class UserRegisterSchema(BaseModel):
 class UserLoginSchema(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
-    remember_me: bool
+
+
+class TokenInfo(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"

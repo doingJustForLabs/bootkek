@@ -28,6 +28,13 @@ async def get_users():
         return result
 
 
+async def get_user_by_user_id(user_id: int):
+    async with db_helper.session_factory() as session:
+        users = await session.scalars(select(User).filter(User.id == user_id))
+        result = users.first()
+        return result
+
+
 async def start_user_session(user_id, refresh_token):
     async with db_helper.session_factory() as session:
         current_datetime = datetime.now()

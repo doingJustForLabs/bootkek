@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+
+from api import main_router
 from fastapi.params import Depends
 from pyexpat.errors import messages
 from starlette.websockets import WebSocketDisconnect
 
-from api import get_routers
+# from api import get_routers
 import uvicorn
 
 from core.config import settings
@@ -35,7 +38,21 @@ async def lifespan(my_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(get_routers(), prefix='/api')
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(main_router)
 
 security.handle_errors(app)
 
