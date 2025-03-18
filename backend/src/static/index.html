@@ -6,6 +6,7 @@
     <body>
         <h1>WebSocket Chat</h1>
         <h2>Your ID: <span id="ws-id"></span></h2>
+        <h2>Your Token: <span id="ws-token"></span></h2>
         <form action="" onsubmit="sendMessage(event)">
             <input type="text" id="messageText" autocomplete="off"/>
             <button>Send</button>
@@ -19,6 +20,7 @@
             var token = Math.random().toString(36).substring(7);
 
             var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}?token=${token}`);
+            document.querySelector("#ws-token").textContent = token;
 
             ws.onopen = function () {
                 console.log("WebSocket connected successfully!");
