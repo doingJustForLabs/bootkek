@@ -30,7 +30,7 @@ class JWTRefreshToken(BaseModel):
     secure: bool = False
 
     csrf: bool = False
-    csrf_cookie_name: str = 'csrf_refresh_token'
+    csrf_cookie_name: str = "csrf_refresh_token"
 
 
 class JWTConfig(BaseModel):
