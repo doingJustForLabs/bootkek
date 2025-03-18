@@ -1,64 +1,85 @@
-# bootkek
+# Bootkek (Granite?)
 
 ## Запуск серверов
 
-### Backend:
+### Backend
 
-Установка зависимостей:
+#### Установка зависимостей
 
 ```shell
+git clone https://github.com/doingJustForLabs/bootkek.git
+cd backend/
+
+# Создание виртуального окружения и установка зависимостей
 python -m venv venv
 venv/Scripts/activate
 pip install -r requirements.txt
 ```
 
-После **запускайте** `main.py` (если через Pycharm - все будет норм)
+> **Важно!** Установите папку `src` как [Root-папку](https://www.google.com/search?q=%D0%BA%D0%B0%D0%BA+%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%82%D1%8C+%D0%BF%D0%B0%D0%BF%D0%BA%D1%83+%D0%BA%D0%B0%D0%BA+root+%D0%B2+pycharm&sca_esv=e1158a711e1314a4&sxsrf=AHTn8zqYP_yIgsYfz-8yX9JlVqeSTfZgSQ%3A1741775319828&ei=12HRZ_ykMoT1i-gPzJCMiAQ&ved=0ahUKEwi87N3ZqoSMAxWE-gIHHUwIA0EQ4dUDCBA&uact=5&oq=%D0%BA%D0%B0%D0%BA+%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%82%D1%8C+%D0%BF%D0%B0%D0%BF%D0%BA%D1%83+%D0%BA%D0%B0%D0%BA+root+%D0%B2+pycharm&gs_lp=Egxnd3Mtd2l6LXNlcnAiPdC60LDQuiDRg9GB0YLQsNC90L7QstC40YLRjCDQv9Cw0L_QutGDINC60LDQuiByb290INCyIHB5Y2hhcm0yBRAhGJ8FMgUQIRifBTIFECEYnwUyBRAhGJ8FMgUQIRifBTIFECEYnwUyBRAhGJ8FMgUQIRifBTIFECEYnwUyBRAhGJ8FSLMoUDBYlCRwBXgAkAEAmAGeAaAB4g6qAQQxLjE0uAEDyAEA-AEBmAIToALADsICChAAGLADGNYEGEfCAgUQIRigAcICCRAhGKABGAoYKsICBxAhGKABGArCAggQABiiBBiJBcICBRAAGO8FwgIIEAAYgAQYogSYAwCIBgGQBgiSBwQ1LjE0oAeGZA&sclient=gws-wiz-serp), чтобы корректно работали импорты.
 
-Открыть Swagger - http://127.0.0.1:8000/docs
+#### Запуск сервера
+
+```shell
+python main.py
+```
+
+Если запуск происходит через **PyCharm**, импорты будут работать корректно
+
+#### Доступ к документации API
+
+После запуска сервера можно открыть Swagger-документацию: [Swagger UI](http://127.0.0.1:8000/docs)
 
 ### Frontend
 
+#### Установка зависимостей
+
 ```shell
-# Скачивание зависимостей
+cd frontend/
+
+# Установка зависимостей
 npm install
-# Запуск сервера
+```
+
+#### Запуск сервера
+```shell
 npm run dev
 ```
 
 ## Конфигурация
 
-Создаем файл переменных окружения `.env` (ориентируясь на `.env.example`)
+### Файл переменных окружения
 
-По мере развития проекта, будут добавляться другие параметры, как например JWT Токены, возможно Redis и так далее. Так
-что не забывайте проверять этот файл.
+Создайте файл `.env`, ориентируясь на `.env.example`.
+
+> **Важно!** В текущей версии используется двойное подчеркивание `__` в качестве разделителя. Это связано с тем, что переменные могут содержать несколько слов, например `SECRET_KEY`, и использование одного `_` могло приводить к некорректному распознаванию.
+
+С развитием проекта могут добавляться новые переменные, поэтому рекомендуется регулярно проверять этот файл.
 
 ### БД (PostgreSQL)
 
+Для подключения к базе данных необходимо создать сервер в **pgAdmin** и использовать соответствующие параметры в `.env`.
+
+> В будущем планируется добавить поддержку `docker-compose.yml`.
+
+#### Пример конфигурации `.env`
+
 ```text
 # DSN для подключения к PostgreSQL
-DB_URL = postgresql+asyncpg://{user}:{pass}@{host}:{port}/{name}
-# Ручка для включения / выключения логов к бд (bool)
-DB_ECHO = 0
+DB__URL=postgresql+asyncpg://{user}:{pass}@{host}:{port}/{name}
+
+# Включение/выключение логирования SQL-запросов (0 - выключено, 1 - включено)
+DB__ECHO=0
 ```
 
-**GUI для Postgres**: [pgAdmin](https://www.pgadmin.org/download/)
-
-Все параметры в DSN определяются непосредственно при создании базы
-
-*Username - `user`
-
-*Maintenance database - `name`
-
-___
-
-Для подключения к базе необходимо создать сервер в pgAdmin, и использовать введенные значения для `.env`
-(история с `docker-compose.yml` будет развиваться чуть позже)
+Для управления базой данных можно использовать **pgAdmin**: [Скачать pgAdmin](https://www.pgadmin.org/download/).
 
 ### JWT
 
-В разработке пупупу
+Для корректной работы JWT-токенов в `.env` необходимо указать секретный ключ:
 
+```text
+JWT__SECRET_KEY=SECRET_KEY
+```
 
-
-
-
+Сгенерировать секретный ключ можно с помощью функции `generate_secret_key()` в файле `utils.py`.

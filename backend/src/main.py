@@ -9,8 +9,9 @@ from api import get_routers
 import uvicorn
 
 from core.config import settings
-from core.models.database import db_helper
-from core.models.models import Base
+from core.security import security
+from database.db import db_helper
+from database.models import Base
 
 from fastapi import WebSocket, Depends
 # from fastapi.responses import HTMLResponse
@@ -34,9 +35,9 @@ async def lifespan(my_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
 app.include_router(get_routers(), prefix='/api')
 
+security.handle_errors(app)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -65,9 +66,10 @@ async def websocket_endpoint(
 
 @app.get('/')
 def get_root():
-    return {'message': 'Api is working!~!!'}
+    return {"message": "Api is working!~!!"}
 
 
-
-if __name__ == '__main__':
-    uvicorn.run(app="src.main:app", reload=True, port=settings.run.port, host=settings.run.host)
+if __name__ == "__main__":
+    uvicorn.run(
+        app="src.main:app", reload=True, port=settings.run.port, host=settings.run.host
+    )
