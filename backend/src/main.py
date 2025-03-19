@@ -16,12 +16,14 @@ from core.security import security
 from database.db import db_helper
 from database.models import Base
 
-from fastapi import WebSocket, Depends
-# from fastapi.responses import HTMLResponse
+from fastapi import WebSocket, Depends, status
+from fastapi.responses import HTMLResponse
+import os
 from fastapi.staticfiles import StaticFiles
 from typing import Annotated
 from chat.connections import manager
-from chat.dependencies import get_cookie_or_token
+from chat.dependencies import get_user_id_from_token
+import jwt
 
 
 @asynccontextmanager
@@ -58,15 +60,32 @@ security.handle_errors(app)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# @app.get("/", response_class=HTMLResponse)
+# async def get_login_page():
+#     with open(os.path.join("static", "login.html")) as f:
+#         return f.read()
+
+@app.get("/chat", response_class=HTMLResponse)
+async def get_chat_page():
+    with open(os.path.join("static", "chat.html")) as f:
+        return f.read()
+
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(
         websocket: WebSocket,
         client_id: int,
-        token: Annotated[str, Depends(get_cookie_or_token)]
+        user_id: Annotated[str, Depends(get_user_id_from_token)]
+        # token: Annotated[str, Depends(get_cookie_or_token)]
         ):
+    # Убедимся, что user_id совпадает с client_id для безопасности
+    if client_id != int(user_id):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     # Подключаем пользователя
     await manager.connect(client_id, websocket)
-    await manager.broadcast(f"Client #{client_id} joined the chat with token: {token}", exclude=client_id)
+    # await manager.broadcast(f"Client #{client_id} joined the chat", exclude=client_id)
+    await manager.send_personal_message("Welcome to your private chat!", websocket)
 
     try:
         while True:
@@ -75,11 +94,11 @@ async def websocket_endpoint(
             # Сообщение отправляется автору в виде "You wrote"
             await manager.send_personal_message(f"You wrote: {data}", websocket)
             # Рассылка другим пользователям
-            await manager.broadcast(f"#{client_id} says: {data}", exclude=client_id)
+            # await manager.broadcast(f"#{client_id} says: {data}", exclude=client_id)
     except WebSocketDisconnect:
         # Отключаем клиента при разрыве соединения
         manager.disconnect(client_id)
-        await manager.broadcast(f"#{client_id} left the chat")
+        # await manager.broadcast(f"#{client_id} left the chat")
 
 @app.get('/')
 def get_root():

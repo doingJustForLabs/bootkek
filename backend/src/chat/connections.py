@@ -1,19 +1,42 @@
 # connections.py
 from typing import List, Dict
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketException, status
+
+from src.core.security import security
+
 
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
         self.client_map: Dict[int, WebSocket] = {}  # Сопоставление client_id -> WebSocket
 
-    async def connect(self, client_id: int,websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-        self.client_map[client_id] = websocket  # Привязываем ID к WebSocket
+    async def connect(self, websocket: WebSocket, token: str = None):
+        if not token:
+            raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
 
-    def disconnect(self, client_id: int):
-        websocket = self.client_map.pop(client_id, None)
+        payload = security.decode_access_token(token)
+        if not payload:
+            raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+
+        user_id = payload.sub
+
+        await websocket.accept()
+        if user_id not in self.client_map:
+            self.client_map[user_id] = websocket
+
+        # Можно дополнительно добавить в активные подключения
+        self.active_connections.append(websocket)
+
+        # if websocket:
+        #     await websocket.accept()
+        #
+        # if client_id not in self.client_map:
+        #     self.client_map[client_id] = websocket if websocket else None
+        # self.active_connections.append(websocket)
+        # self.client_map[client_id] = websocket  # Привязываем ID к WebSocket
+
+    def disconnect(self, user_id: int):
+        websocket = self.client_map.pop(user_id, None)
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
 

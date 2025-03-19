@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Авторизация</title>
+    </head>
+    <body>
+        <h1>Авторизация</h1>
+
+        <form id="loginForm" onsubmit="login(event)">
+            <label for="email">Email: <input type="email" id="email" required/></label><br>
+            <label for="password">Пароль: <input type="password" id="password" required/></label><br>
+            <button type="submit">Войти</button>
+        </form>
+
+        <script>
+            // Функция для авторизации
+            async function login(event) {
+                event.preventDefault();  // Останавливаем стандартное поведение формы
+
+                const email = document.getElementById("email").value;
+                const password = document.getElementById("password").value;
+
+                // Отправляем запрос на сервер для получения токена
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const token = data.access_token; // Получаем токен
+                    localStorage.setItem('access_token', token); // Сохраняем токен в localStorage
+                    alert('Вы успешно авторизовались');
+                    window.location.href = '/chat'; // Перенаправляем на страницу чата или другую
+                } else {
+                    alert('Ошибка авторизации');
+                }
+            }
+        </script>
+    </body>
+</html>
