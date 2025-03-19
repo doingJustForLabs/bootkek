@@ -16,6 +16,7 @@ class RunConfig(BaseModel):
 class DBConfig(BaseModel):
     url: PostgresDsn
     echo: int
+    mode: str = "DEV"
 
 
 class JWTAccessToken(BaseModel):
@@ -45,7 +46,6 @@ class JWTConfig(BaseModel):
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     db: DBConfig
-    test_db: DBConfig
     jwt: JWTConfig
 
     model_config = SettingsConfigDict(env_nested_delimiter="__", case_sensitive=False)

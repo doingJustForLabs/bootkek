@@ -81,7 +81,9 @@ async def refresh_new_access_token(
         token = await security.get_refresh_token_from_request(request)
 
         # CSRF отключен
-        payload = security.verify_token(token, verify_csrf=settings.jwt.refresh_token.csrf, verify_type=True)
+        payload = security.verify_token(
+            token, verify_csrf=settings.jwt.refresh_token.csrf, verify_type=True
+        )
 
         new_access_token = security.create_access_token(uid=payload.sub)
 

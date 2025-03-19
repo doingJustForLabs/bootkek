@@ -1,12 +1,29 @@
-# @pytest.mark.asyncio
-# async def test_register_user(client):
-# response = await client.post(
-#     url="/auth/register",
-#     json={
-#         "email": user.email,
-#         "password": user.password,
-#         "password_repeat": user.password_repeat
-#     },
-# )
-# assert response.status_code == 200
-# assert response.json() == {"detail": "user registered"}
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_register_user1(client):
+    response = await client.post(
+        url="/auth/register",
+        json={
+            "email": "supermail@example.com",
+            "password": "qwerty123",
+            "password_repeat": "qwerty123",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"detail": "user registered"}
+
+
+@pytest.mark.asyncio
+async def test_register_user2(client):
+    response = await client.post(
+        url="/auth/register",
+        json={
+            "email": "supermail@example.com",
+            "password": "qwerty123",
+            "password_repeat": "qwerty123",
+        },
+    )
+    assert response.status_code == 400
+    # assert response.json() == {"detail": "user registered"}
