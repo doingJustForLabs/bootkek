@@ -1,7 +1,6 @@
-import {API} from "../services/api.js";
-import axios from "axios";
+import {API} from "../http/api.js";
 
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../http/AuthContext";
 
 import AuthLayout from "../layouts/AuthLayout";
 import React from 'react';

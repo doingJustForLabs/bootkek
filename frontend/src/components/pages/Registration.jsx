@@ -1,7 +1,7 @@
 import {API} from "../services/api.js";
 import axios from "axios";
 
-import AuthLayout from "../layouts/AuthLayout";
+import AuthLayout from "../layouts/AuthLayout.jsx";
 import React, { useEffect, useState } from 'react';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Form, Input, Flex } from 'antd';
