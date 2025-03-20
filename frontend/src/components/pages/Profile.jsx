@@ -1,9 +1,8 @@
-import React from 'react';
+import {React} from 'react';
 
 import { useState, useEffect } from 'react';
 
-import { useAuth } from "./AuthContext.jsx";
-import { API } from "../services/api.js";
+import {useAuth} from "../../http/AuthContext.jsx";
 import axios from 'axios';
 
 const Profile = () => {

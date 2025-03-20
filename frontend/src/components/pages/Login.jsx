@@ -1,32 +1,28 @@
-import {API} from "../http/api.js";
+import {useAuth} from "../../http/AuthContext.jsx";
+import AuthService from "../../services/AuthService.js";
 
-import { useAuth } from "../http/AuthContext";
+import {React} from 'react';
+import {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 
-import AuthLayout from "../layouts/AuthLayout";
-import React from 'react';
-import { useEffect, useState } from 'react';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Form, Input, Flex } from 'antd';
-
-import { Navigate, useNavigate} from 'react-router-dom';
+import AuthLayout from "../layouts/AuthLayout.jsx";
 
 const Login = () => {
 
     const [email, setEmail] = useState("");
     const [password, setPwd] = useState("");
-    
-    const { setAccessToken } = useAuth();
 
-    let navigate = useNavigate();
+    const [_, setAccessToken] = useAuth();
 
-    const loginButton = () => {
-        API.post('/auth/login', {
-            email: email,
-            password: password
-        }).then(response => setAccessToken(response.data.access_token));
-        navigate("/profile");
+    const navigate = useNavigate("");
+
+    const LoginButton = () => {
+        AuthService.login(email, password)
+        .then(response => setAccessToken(response.data.access_token))
+        .then(navigate("/profile"));
     }
-
 
     return (
         <AuthLayout>
@@ -40,14 +36,14 @@ const Login = () => {
                 style={{ maxWidth: 360 }}
             >
                 <Form.Item
-                    name="username"
-                    rules={[{ required: true, message: 'Please input your Username!' }]}
+                    name="email"
+                    rules={[{ required: true, message: 'Введите адрес электронной почты!' }]}
                 >
                     <Input onChange={(e) => setEmail(e.target.value)} prefix={<UserOutlined />} placeholder="Логин" />
                 </Form.Item>
                 <Form.Item
                     name="password"
-                    rules={[{ required: true, message: 'Please input your Password!' }]}
+                    rules={[{ required: true, message: 'Введите пароль!' }]}
                 >
                     <Input onChange={(e) => setPwd(e.target.value)} prefix={<LockOutlined />} type="password" placeholder="Пароль" />
                 </Form.Item>
@@ -58,11 +54,11 @@ const Login = () => {
                 </Form.Item>
 
                 <Form.Item>
-                    <Button onClick={loginButton} block type="primary" htmlType="submit">
+                    <Button onClick={LoginButton} block type="primary" htmlType="submit">
                         Войти
                     </Button>
                     <div className="justify-self-end">
-                        или <a href="/signup">Создать профиль!</a>
+                        или <a href="/registration">Создать профиль!</a>
                     </div>
                 </Form.Item>
             </Form>

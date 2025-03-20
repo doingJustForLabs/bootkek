@@ -1,24 +1,26 @@
-import {API} from "../services/api.js";
-import axios from "axios";
+import AuthService from "../../services/AuthService.js";
+
+import {React, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 import AuthLayout from "../layouts/AuthLayout.jsx";
-import React, { useEffect, useState } from 'react';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Form, Input, Flex } from 'antd';
+import { Button, Form, Input} from 'antd';
 
 
-const SignUp = () => {
+
+const Registration = () => {
 
     const [email, setEmail] = useState("");
     const [password, setPwd] = useState("");
     const [passwordRepeat, setPwdRep] = useState("");
 
-    const signUpButton = () => {
-        API.post('/auth/register', {
-            email: email,
-            password: password,
-            password_repeat: passwordRepeat
-        }).then(response => console.log(response));
+    const navigate = useNavigate("");
+
+    const RegisterButton = () => {
+        AuthService.register(email, password, passwordRepeat)
+        .then(response => console.log(response))
+        .then(navigate("/profile"));
     }
 
 
@@ -54,7 +56,7 @@ const SignUp = () => {
                 </Form.Item>
 
                 <Form.Item>
-                    <Button onClick={signUpButton} block type="primary" htmlType="submit">
+                    <Button onClick={RegisterButton} block type="primary" htmlType="submit">
                         Создать профиль
                     </Button>
                     <div className="justify-self-end">
@@ -66,4 +68,4 @@ const SignUp = () => {
     );
 };
 
-export default SignUp;
+export default Registration;

@@ -1,7 +1,7 @@
 import axios from "axios";
-import { useAuth } from "./AuthContext";
+import {useAuth} from "./AuthContext";
 
-export const API_URL = "http://127.0.0.1:8000/api";
+const API_URL = "http://127.0.0.1:8000/api";
 
 const API = axios.create(
     {
@@ -14,3 +14,5 @@ const { accessToken } = useAuth();
 API.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${accessToken}`;
 })
+
+export default API;
