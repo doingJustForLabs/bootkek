@@ -1,15 +1,16 @@
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from api import main_router
+
 from fastapi.params import Depends
 from pyexpat.errors import messages
 from starlette.websockets import WebSocketDisconnect
 
 # from api import get_routers
-import uvicorn
 
 from core.config import settings
 from core.security import security
@@ -27,24 +28,23 @@ import jwt
 
 
 @asynccontextmanager
-async def lifespan(my_app: FastAPI):
+async def lifespan(_: FastAPI):
     # startup
     async with db_helper.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     yield
     # shutdown
-    print("Соединение с базой удалено")
     await db_helper.dispose()
 
 
 app = FastAPI(lifespan=lifespan)
 
-origins = [
-    "http://localhost",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173"
-]
+app.include_router(main_router)
+
+security.handle_errors(app)
+
+origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
