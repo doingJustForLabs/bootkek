@@ -15,33 +15,27 @@
         </form>
 
         <script>
-            // Функция для авторизации
             async function login(event) {
-                event.preventDefault();  // Останавливаем стандартное поведение формы
+                event.preventDefault();
 
-                const email = document.getElementById("email").value;
-                const password = document.getElementById("password").value;
-
-                // Отправляем запрос на сервер для получения токена
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch('http://127.0.0.1:8000/api/auth/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        email: email,
-                        password: password
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value
                     })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const token = data.access_token; // Получаем токен
-                    localStorage.setItem('access_token', token); // Сохраняем токен в localStorage
-                    alert('Вы успешно авторизовались');
-                    window.location.href = '/chat'; // Перенаправляем на страницу чата или другую
+                const data = await response.json();
+                if (data.access_token) {
+                    <!-- Сохраняем токен в sessionStorage --!>
+                    sessionStorage.setItem('accessToken', data.access_token);
+
+                    <!-- Перенаправляем на страницу чата --!>
+                    window.location.href = '/chat';
                 } else {
-                    alert('Ошибка авторизации');
+                    alert("Ошибка авторизации");
                 }
             }
         </script>

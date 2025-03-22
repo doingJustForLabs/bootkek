@@ -27,14 +27,6 @@ class ConnectionManager:
         # Можно дополнительно добавить в активные подключения
         self.active_connections.append(websocket)
 
-        # if websocket:
-        #     await websocket.accept()
-        #
-        # if client_id not in self.client_map:
-        #     self.client_map[client_id] = websocket if websocket else None
-        # self.active_connections.append(websocket)
-        # self.client_map[client_id] = websocket  # Привязываем ID к WebSocket
-
     def disconnect(self, user_id: int):
         websocket = self.client_map.pop(user_id, None)
         if websocket in self.active_connections:
