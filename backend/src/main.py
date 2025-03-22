@@ -74,7 +74,7 @@ active_connections: dict = {}
 async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
     await websocket.accept()
 
-    user_id = verify_token(token)
+    user_id = await verify_token(token)
     if not user_id:
         await websocket.close(code=1008)
         return
@@ -84,7 +84,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
         active_connections[user_id_str] = []
     active_connections[user_id_str].append(websocket)
 
-    await websocket.send_text(f"Добро пожаловать в чат, {user_id_str}!")
+    await websocket.send_text(f"Добро пожаловать в чат, {user_id}!")
 
     try:
         while True:
