@@ -51,6 +51,9 @@ async def handle_websocket(websocket: WebSocket, token: str, chat_id: int):
         if chat_id in active_connections:
             active_connections[chat_id].remove(websocket)
             print(f"User {user_id} disconnected from chat {chat_id}.")
+        # Обработка случая, когда chat_id не найден
+        if not active_connections[chat_id]:
+            del active_connections[chat_id]  # Удаляем чат, если в нем больше нет пользователей
     except Exception as e:
         print(f"Error: {e}")
         await websocket.close(code=1011, reason="Internal server error")

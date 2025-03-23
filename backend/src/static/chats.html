@@ -80,6 +80,7 @@
 
     async function getUserId() {
         const token = sessionStorage.getItem('accessToken');  // Получаем токен из sessionStorage
+        console.log("Token: ", token);
         const response = await fetch('/api/auth/me', {
             method: 'GET',
             headers: {
@@ -88,16 +89,17 @@
             }
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            userId = data.id;  // Сохраняем ID пользователя
-            console.log('User ID:', userId);  // Логируем ID пользователя
-            loadChats();  // Загружаем чаты после получения ID
+        const data = await response.json();
+        console.log("Response data:", data);
+
+        if (response.ok && data && data.detail && data.detail.id) {
+            return data.detail.id;
         } else {
             console.log('Ошибка авторизации');
+            return null;
         }
+<!--        return userId;-->
     }
-
 
     // Загружаем список пользователей при загрузке страницы
     async function loadUsers() {
@@ -114,8 +116,7 @@
 
     // Загружаем чаты для текущего пользователя
     async function loadChats() {
-        if (!userId) return;
-
+        const userId = await getUserId();
         const response = await fetch(`/api/chats/${userId}`);
         const chats = await response.json();
 
@@ -232,9 +233,9 @@
     });
 
     // Инициализация
-    getUserId();
+<!--    getUserId();-->
     loadUsers();
-    loadChats();
+    loadChats(getUserId());
 </script>
 
 </body>
