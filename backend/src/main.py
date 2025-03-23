@@ -11,14 +11,9 @@ from core.security import security
 from database.db import db_helper
 from database.models import Base
 
-from fastapi import WebSocket, WebSocketDisconnect, Query, Depends
-from websockets.frames import CloseCode
-from database.repositories.auth import UserAuthRepository
-from database.db import DbSession
-from typing import List
+from fastapi import WebSocket, WebSocketDisconnect, Depends
 import json
-from jose import JWTError
-from chat.dependencies import verify_token
+from api.chat.websocket_handler import handle_websocket
 # from chat.models import Chat, Message
 # from chat.connections import manager
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,66 +64,50 @@ async def get_chats_page():
         return f.read()
 
 active_chat_connections = {}
-
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 @app.websocket("/ws/chat")
-async def websocket_chat(websocket: WebSocket, session: AsyncSession = Depends(DbSession)):
+async def websocket_chat(websocket: WebSocket, db: AsyncSession = Depends(db_helper.session_getter)):
     await websocket.accept()
-
+    print("WebSocket connected")
+    logging.debug("WebSocket connected")
+    print("WebSocket connected")
     try:
-        # Получаем первое сообщение с токеном
-        while True:
-            message_data = json.loads(await websocket.receive_text())
-            token = message_data.get("token")
+        # Получаем первое сообщение с токеном и chat_id
+        data = await websocket.receive_text()
+        print(f"Received data: {data}")
+        message_data = json.loads(data)
 
-            # Проверяем токен
-            if not token:
-                await websocket.close(code=1008, reason="Token not provided")
-                return
+        token = message_data.get("token")
+        chat_id = message_data.get("chatId")
 
-            user_id = await verify_token(token)
+        # Проверка данных
+        if not token or not chat_id:
+            error_message = "Token or chatId missing"
+            print(error_message)
+            await websocket.send_text(json.dumps({"error": error_message}))
+            await websocket.close(code=1008, reason=error_message)
+            return
 
-            if user_id is None:
-                await websocket.close(code=1008, reason="Authentication failed")
-                return
-
-            # Получаем пользователя из базы
-            user = await UserAuthRepository.get_user_by_user_id(session, user_id)
-            if not user:
-                await websocket.close(code=1008, reason="User not found")
-                return
-
-            # Сохраняем соединение в активных подключениях
-            active_chat_connections[websocket] = {"user_id": user.id, "chatId": None}
-            print(f"Пользователь {user.email} подключен.")
-
-            # Дальше обрабатываем сообщения чатов
-            data = await websocket.receive_text()
-            message_data = json.loads(data)
-            chat_id = message_data.get("chatId")
-
-            # Обработка сообщения для конкретного чата
-            if chat_id:
-                active_chat_connections[websocket]["chatId"] = chat_id  # Устанавливаем chatId для этого подключения
-
-                message = {
-                    "username": user.email,
-                    "content": message_data.get("content"),
-                    "chatId": chat_id
-                }
-
-                # Отправляем в другие соединения этого чата
-                for conn, chat_info in active_chat_connections.items():
-                    if chat_info.get("chatId") == chat_id:
-                        await conn.send_json(message)
+        # Переадресуем обработку в отдельную функцию
+        await handle_websocket(websocket, token, chat_id)
+        print("WebSocket message handled")
 
     except WebSocketDisconnect:
-        del active_chat_connections[websocket]
-        print("Пользователь отключился")
-    except JWTError:
-        await websocket.close(code=1008, reason="Invalid token")
+        print("User disconnected")
+        print("WebSocket disconnected")
+    except json.JSONDecodeError:
+        error_message = "Failed to decode JSON"
+        print(error_message)
+        await websocket.send_text(json.dumps({"error": error_message}))
+        await websocket.close(code=1008, reason=error_message)
     except Exception as e:
-        print(f"Ошибка: {e}")
+        print(f"Unexpected error: {e}")
+        await websocket.send_text(json.dumps({"error": f"Internal server error: {str(e)}"}))
         await websocket.close(code=1011, reason="Internal server error")
+    # finally:
+    #     await websocket.close()  # Закрытие соединения
 
 
 @app.get('/')

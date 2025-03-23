@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
-from chat.models import Chat, Message, ChatUser
+from database.models import Chat, Message, ChatUser
 
 class ChatRepository:
 
@@ -17,7 +17,8 @@ class ChatRepository:
             chat_user = ChatUser(chat_id=new_chat.id, user_id=user_id)
             session.add(chat_user)
 
-        await session.flush()
+        await session.commit()
+        print(f"Chat with ID {new_chat.id} created successfully!")
         return new_chat
 
     @staticmethod

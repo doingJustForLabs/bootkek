@@ -1,9 +1,6 @@
-from typing import List
 from fastapi import WebSocket
-from chat.models import Chat, Message, ChatUser
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import Session
+from api.chat.models import Message
+
 
 class ConnectionManager:
     def __init__(self):

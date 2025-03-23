@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from core.config import settings
 
+from contextlib import asynccontextmanager
 
 class DatabaseHelper:
     def __init__(self, url: str, echo: bool):
@@ -18,6 +19,16 @@ class DatabaseHelper:
     async def session_getter(self):
         async with self.session_factory() as session:
             yield session
+
+    @asynccontextmanager
+    async def get_db_session(self):
+        session_gen = db_helper.session_getter()
+        session = await session_gen.__anext__()
+        try:
+            yield session
+        finally:
+            await session.close()
+            await session_gen.aclose()  # Закрываем генератор
 
 
 # App DB
