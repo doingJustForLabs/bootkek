@@ -52,4 +52,8 @@ class UserAuthRepository:
     @staticmethod
     async def get_user_session_by_user_id(
         session: AsyncSession, user_id: int
-    ) -> Optional[UserSession]: ...
+    ) -> Optional[UserSession]:
+        user_session = await session.scalar(select(UserSession).where(UserSession.user_id == user_id))
+        return user_session
+
+

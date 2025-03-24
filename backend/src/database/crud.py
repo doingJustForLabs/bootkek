@@ -44,3 +44,5 @@ async def start_user_session(user_id, refresh_token):
             )
         )
         await session.commit()
+
+

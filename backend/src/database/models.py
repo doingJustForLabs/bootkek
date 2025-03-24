@@ -28,3 +28,23 @@ class UserSession(Base):
     refresh_token: Mapped[str] = mapped_column(String(300), nullable=False)
     start_date: Mapped[str] = mapped_column(DateTime)
     end_date: Mapped[str] = mapped_column(DateTime)
+
+class Roles(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    role_name: Mapped[str] = mapped_column(String(20))
+
+class Subjects(Base):
+    __tablename__ = "subjects"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subject_name: Mapped[str] = mapped_column(String(20))
+
+class Tags(Base):
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(INT, ForeignKey("users.id"))
+    role_id: Mapped[int] = mapped_column(INT, ForeignKey("roles.id"))
+    subject_id: Mapped[int] = mapped_column(INT, ForeignKey("subjects.id"))
