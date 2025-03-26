@@ -1,7 +1,9 @@
 from typing import Iterable
 
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette import status
 from typing_extensions import Optional
 
 from api.profile.models import Profile
@@ -13,16 +15,26 @@ class ProfileRepository:
     async def create_profile(
         session: AsyncSession, user_id: int, profile_data: ProfileSchema
     ) -> None:
+        session.add(Profile(user_id=user_id, **profile_data.model_dump()))
+        await session.commit()
 
-        profile = await session.scalar(
-            select(Profile).where(Profile.user_id == user_id)
-        )
+    @staticmethod
+    async def update_profile(
+        session: AsyncSession, profile: Profile, update_data: dict
+    ) -> None:
 
-        if not profile:
-            session.add(Profile(user_id=user_id, **profile_data.model_dump())),
-        else:
-            for key, value in profile_data.model_dump().items():
-                setattr(profile, key, value)
+        if "username" in update_data and update_data["username"] != profile.username:
+            existing_profile = await ProfileRepository.get_profile_by_username(
+                session, update_data["username"]
+            )
+            if existing_profile and existing_profile.user_id != profile.user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username is already used",
+                )
+
+        for key, value in update_data.items():
+            setattr(profile, key, value)
 
         await session.commit()
 

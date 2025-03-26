@@ -114,15 +114,19 @@ async def get_protected(
     return {"detail": user}
 
 
-@router.get("/logout", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(http_bearer)])
-async def logout_user(
-    session: DbSession,
-    response: Response,
-    token: Annotated[TokenPayload, Depends(verify_access_token)],
-):
-    await UserAuthRepository.delete_user_session(session, user_id=int(token.sub))
-    security.unset_refresh_cookies(response=response)
-
-    # Добавить блоклист для access токена
-
-    return {"detail": "User logout"}
+# @router.get(
+#     "/logout",
+#     status_code=status.HTTP_204_NO_CONTENT,
+#     dependencies=[Depends(http_bearer)],
+# )
+# async def logout_user(
+#     session: DbSession,
+#     response: Response,
+#     token: Annotated[TokenPayload, Depends(verify_access_token)],
+# ):
+#     await UserAuthRepository.delete_user_session(session, user_id=int(token.sub))
+#     security.unset_refresh_cookies(response=response)
+#
+#     # Добавить блоклист для access токена
+#
+#     return {"detail": "User logout"}
