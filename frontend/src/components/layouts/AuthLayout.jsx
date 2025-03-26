@@ -1,8 +1,10 @@
+import "../Sandbox.css";
+
 const AuthLayout = ({ children }) => {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[url(/assets/muctr-bg.png)]">
-        <div className="flex-col justify-items-center w-full max-w-sm p-8 rounded-4xl bg-white shadow-md">
-            <img className="w-3/5 m-6" src="/assets/muctr-logo.png" alt="РХТУ-лого" />
+      <div className="gradient-container">
+        <div className="noise-overlay"/>
+        <div className="flex-col justify-items-center content-center w-2/5 p-8 bg-amber-50 rounded-r-4xl">
           {children}
         </div>
       </div>

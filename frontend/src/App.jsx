@@ -11,14 +11,12 @@ function App() {
   return (
     <>
       <BrowserRouter>
-        <AuthProvider>
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/registration" element={<Registration />} />
             <Route path="/reset" element={<ResetPwd />} />
             <Route path="/profile" element={<Profile />} />
           </Routes>
-        </AuthProvider>
       </BrowserRouter>
     </>
   )

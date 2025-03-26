@@ -10,7 +10,6 @@ const API = axios.create(
     }
 )
 
-const { accessToken } = useAuth();
 API.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${accessToken}`;
 })

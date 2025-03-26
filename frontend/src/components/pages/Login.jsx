@@ -14,8 +14,6 @@ const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPwd] = useState("");
 
-    const [_, setAccessToken] = useAuth();
-
     const navigate = useNavigate("");
 
     const LoginButton = () => {
