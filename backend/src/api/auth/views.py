@@ -4,7 +4,7 @@ from authx import TokenPayload
 from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
-from api.auth.schemas import UserRegisterSchema, TokenInfo, UserLoginSchema
+from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
 from api.auth.services import UserAuthRepository
 from core.config import settings
 from core.security import security
@@ -23,21 +23,21 @@ async def register_user(creds: UserRegisterSchema, session: DbSession):
     """
     if await UserAuthRepository.get_user_by_email(session, creds.email):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email уже используется"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already used"
         )
 
     user_pwd = hash_password(creds.password)
 
     if not verify_password(creds.password_repeat, user_pwd):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Пароли не совпадают"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords doesn't match"
         )
 
     await UserAuthRepository.start_user(session, email=creds.email, password=user_pwd)
-    return {"detail": "user registered"}
+    return {"detail": "User successfully registered"}
 
 
-@router.post("/login", response_model=TokenInfo)
+@router.post("/login", response_model=TokenResponse)
 async def login_user(creds: UserLoginSchema, response: Response, session: DbSession):
     """
     Аутентификация пользователя.
@@ -49,18 +49,19 @@ async def login_user(creds: UserLoginSchema, response: Response, session: DbSess
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Такая почта не зарегистрирована",
+            detail="Email doesn't registered",
         )
 
     # Проверка пароля
     if not verify_password(creds.password, user.password):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Неправильный пароль"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password"
         )
 
     access_token = security.create_access_token(
-        uid=str(user.id), expiry=settings.jwt.access_token.expires
+        uid=str(user.id), expiry=settings.jwt.access_token.expires, fresh=True
     )
+
     refresh_token = security.create_refresh_token(
         uid=str(user.id), expiry=settings.jwt.refresh_token.expires
     )
@@ -74,7 +75,7 @@ async def login_user(creds: UserLoginSchema, response: Response, session: DbSess
     await UserAuthRepository.start_user_session(
         session=session, refresh_token=refresh_token, user_id=int(user.id)
     )
-    return TokenInfo(access_token=access_token)
+    return TokenResponse(access_token=access_token)
 
 
 @router.get("/refresh")
@@ -91,9 +92,9 @@ async def refresh_new_access_token(request: Request):
             token, verify_csrf=settings.jwt.refresh_token.csrf, verify_type=True
         )
 
-        new_access_token = security.create_access_token(uid=payload.sub)
+        new_access_token = security.create_access_token(uid=payload.sub, fresh=False)
 
-        return TokenInfo(access_token=new_access_token)
+        return TokenResponse(access_token=new_access_token)
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
@@ -113,7 +114,7 @@ async def get_protected(
     return {"detail": user}
 
 
-@router.get("/logout", dependencies=[Depends(http_bearer)])
+@router.get("/logout", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(http_bearer)])
 async def logout_user(
     session: DbSession,
     response: Response,
@@ -124,4 +125,4 @@ async def logout_user(
 
     # Добавить блоклист для access токена
 
-    return {"detail": "Пользователь разлогинился"}
+    return {"detail": "User logout"}

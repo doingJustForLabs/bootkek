@@ -1,101 +1,85 @@
 from typing import Annotated, Optional
 
 from authx import TokenPayload
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
+from starlette import status
 
 from api.auth.views import http_bearer
-from api.profile.schemas import ProfileSchema, ProfileSetupSchema
+from api.profile.schemas import ProfileSchema
 from api.profile.services import ProfileRepository
 from database.db import DbSession
-from utils import verify_access_token
+from utils import verify_access_token, verify_fresh_token
 
-router = APIRouter(
-    tags=["Пользователи👨‍💻"], prefix="/profiles", dependencies=[Depends(http_bearer)]
-)
+router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/users")
 
 
-@router.patch("/setup", response_model=ProfileSchema, response_model_exclude_none=True)
+@router.patch("/me", dependencies=[Depends(http_bearer)])
 async def setup_user_profile(
-    token: Annotated[TokenPayload, Depends(verify_access_token)],
+    token: Annotated[TokenPayload, Depends(verify_fresh_token)],
     session: DbSession,
     profile_data: ProfileSchema,
 ):
-    """Создание профиля пользователя (и его обновление)"""
+    """Создание профиля пользователя"""
 
-    if not (profile_data.username and profile_data.name):
+    profile = await ProfileRepository.get_profile_by_username(
+        session, username=profile_data.username
+    )
+
+    if profile:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Обязательные поля отсутствуют (username, name)",
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username is already used"
         )
 
-    # user_orm = await ProfileRepository.get_profile_by_username(session, profile_data.username)
-    # user = ProfileSchema.model_validate(user_orm)
-    #
-    # if user and user.is_required_complete:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST, detail="Данный никнейм занят"
-    #     )
-    #
+    await ProfileRepository.create_profile(session, int(token.sub), profile_data)
 
-    # if username:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST, detail="Данный никнейм занят"
-    #     )
-
-    # await ProfileRepository.create_and_update_profile(
-    #     session, user_id=int(token.sub), profile_data=profile_data.model_dump()
-    # )
-
-    return profile_data
+    return {"detail": "Success setup"}
 
 
-# @router.get("/search")
-# async def search_profile(
-#         token: Annotated[TokenPayload, Depends(verify_access_token)],
-#         session: DbSession,
-#         q: Optional[str] = None,
-#         limit: int = 1000,
-# ):
-#     ...
-#     return
-#
-#
-# @router.get("/{user_id}", response_model=ProfileSchema)
-# async def get_user_profile(
-#         token: Annotated[TokenPayload, Depends(verify_access_token)],
-#         user_id: int,
-#         session: DbSession,
-# ):
-#     """Получаем информацию о пользователе"""
-#     user_profile = await UserProfileRepository.get_profile_by_user_id(
-#         session, int(user_id)
-#     )
-#     if not user_profile:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
-#         )
-#
-#     return user_profile
-#
-#
-# @router.put("/{user_id}", response_model=ProfileSchema)
-# async def update_user_profile(
-#         token: Annotated[TokenPayload, Depends(verify_access_token)],
-#         user_id: int,
-#         session: DbSession,
-# ):
-#     """Обновляем информацию о пользователе"""
-#     profile = await UserProfileRepository.get_profile_by_user_id(session, int(user_id))
-#
-#     return profile
-#
-#
-# @router.post("/{user_id}/avatar", response_model=ProfileSchema)
-# async def set_profile_avatar(
-#         token: Annotated[TokenPayload, Depends(verify_access_token)],
-#         user_id: int,
-#         session: DbSession,
-# ):
-#     profile = await UserProfileRepository.get_profile_by_user_id(session, int(user_id))
-#
-#     return profile
+@router.get("/me", dependencies=[Depends(http_bearer)])
+async def get_user_profile(
+    token: Annotated[TokenPayload, Depends(verify_access_token)],
+    session: DbSession,
+):
+    """Получение данных о пользователе"""
+    user = await ProfileRepository.get_profile_by_user_id(session, int(token.sub))
+    return user
+
+
+@router.get("/search", dependencies=[Depends(http_bearer)])
+async def search_profile(
+    token: Annotated[TokenPayload, Depends(verify_access_token)],
+    session: DbSession,
+    q: Optional[str] = None,
+    limit: int = 100,
+):
+    """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
+    return await ProfileRepository.get_profiles(session)
+
+
+@router.get("")
+async def get_all_profiles(session: DbSession):
+    """Получаем информацию о всех пользователях"""
+    user_profile = await ProfileRepository.get_profiles(session)
+
+    if not user_profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    return user_profile
+
+
+@router.get("/{user_id}")
+async def get_user_profile(
+    user_id: int,
+    session: DbSession,
+):
+    """Получаем информацию о пользователе"""
+    user_profile = await ProfileRepository.get_profile_by_user_id(session, int(user_id))
+
+    if not user_profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
+        )
+
+    return user_profile
