@@ -28,7 +28,7 @@ async def test_login_user_success(client, register_user):
                 "password": "qwerty122",
             },
             400,
-            {"detail": "Неправильный пароль"},
+            {"detail": "Incorrect password"},
         ),
         # Проверка на случай незарегистрированной почты
         (
@@ -37,7 +37,7 @@ async def test_login_user_success(client, register_user):
                 "password": "qwerty123",
             },
             400,
-            {"detail": "Такая почта не зарегистрирована"},
+            {"detail": "Email doesn't registered"},
         ),
     ],
 )

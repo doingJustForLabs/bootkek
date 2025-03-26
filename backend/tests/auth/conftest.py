@@ -13,7 +13,7 @@ async def register_user(client):
         },
     )
     assert response.status_code == 200
-    assert response.json() == {"detail": "user registered"}
+    assert response.json() == {"detail": "User successfully registered"}
 
 
 @pytest_asyncio.fixture(scope="function")
