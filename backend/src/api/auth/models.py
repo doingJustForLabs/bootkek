@@ -13,6 +13,7 @@ class User(Base):
     create_date: Mapped[str] = mapped_column(DateTime)
     update_date: Mapped[str] = mapped_column(DateTime)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class UserSession(Base):

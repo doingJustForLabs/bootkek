@@ -1,15 +1,13 @@
-from typing import Annotated
-
-from authx import TokenPayload
 from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
+from api.auth.dependency import CurrentUser
 from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
-from api.auth.services import UserAuthRepository
+from api.auth.services import UserRepository, TokenRepository
 from core.config import settings
 from core.security import security
 from database.db import DbSession
-from utils import hash_password, verify_password, verify_access_token
+from utils import hash_password, verify_password
 
 router = APIRouter(tags=["Авторизация👤"], prefix="/auth")
 
@@ -21,7 +19,7 @@ async def register_user(creds: UserRegisterSchema, session: DbSession):
     """
     Регистрация пользователя
     """
-    if await UserAuthRepository.get_user_by_email(session, creds.email):
+    if await UserRepository.get_user_by_email(session, creds.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already used"
         )
@@ -33,7 +31,7 @@ async def register_user(creds: UserRegisterSchema, session: DbSession):
             status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords doesn't match"
         )
 
-    await UserAuthRepository.start_user(session, email=creds.email, password=user_pwd)
+    await UserRepository.create_user(session, email=creds.email, password=user_pwd)
     return {"detail": "User successfully registered"}
 
 
@@ -43,7 +41,7 @@ async def login_user(creds: UserLoginSchema, response: Response, session: DbSess
     Аутентификация пользователя.
     """
 
-    user = await UserAuthRepository.get_user_by_email(session, creds.email)
+    user = await UserRepository.get_user_by_email(session, creds.email)
 
     # Проверка почты
     if not user:
@@ -72,7 +70,7 @@ async def login_user(creds: UserLoginSchema, response: Response, session: DbSess
         max_age=settings.jwt.refresh_token.expires_int,
     )
 
-    await UserAuthRepository.start_user_session(
+    await TokenRepository.create_token_session(
         session=session, refresh_token=refresh_token, user_id=int(user.id)
     )
     return TokenResponse(access_token=access_token)
@@ -101,18 +99,14 @@ async def refresh_new_access_token(request: Request):
 
 
 @router.get("/me", dependencies=[Depends(http_bearer)])
-async def get_protected(
-    session: DbSession, token: Annotated[TokenPayload, Depends(verify_access_token)]
-):
+async def get_protected(user: CurrentUser):
     """
     Проверка авторизации
 
     Для каждого последующего "защищенного" запроса (с замочком)
     необходимо указывать header {"Authorization": "Bearer <AccessToken>"}.
     """
-    user = await UserAuthRepository.get_user_by_user_id(session, int(token.sub))
     return {"detail": user}
-
 
 # @router.get(
 #     "/logout",

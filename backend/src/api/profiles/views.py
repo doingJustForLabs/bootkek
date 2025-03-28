@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 from authx import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from api.auth.dependency import TokenDependency
 from api.auth.views import http_bearer
 from api.profiles.schemas import ProfileSchema
 from api.profiles.services import ProfileRepository
@@ -14,7 +15,7 @@ router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/users"
 
 @router.patch("/me", dependencies=[Depends(http_bearer)])
 async def setup_user_profile(
-    token: Annotated[TokenPayload, Depends(verify_access_token)],
+    token: TokenDependency,
     session: DbSession,
     profile_data: ProfileSchema,
 ):
@@ -40,7 +41,7 @@ async def setup_user_profile(
 
 @router.get("/me", dependencies=[Depends(http_bearer)])
 async def get_user_profile(
-    token: Annotated[TokenPayload, Depends(verify_access_token)],
+    token: TokenDependency,
     session: DbSession,
 ):
     """Получение данных о пользователе"""
@@ -59,7 +60,7 @@ async def search_profile(
     token: Annotated[TokenPayload, Depends(verify_access_token)],
     session: DbSession,
     q: Optional[str] = None,
-    limit: int = 100,
+    limit: int = 100
 ):
     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
     return await ProfileRepository.get_profiles(session)
