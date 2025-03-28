@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from .auth.views import router as auth_router
-from .profile.views import router as profile_router
+from .profiles.views import router as profile_router
 
 main_router = APIRouter(prefix="/api")
 

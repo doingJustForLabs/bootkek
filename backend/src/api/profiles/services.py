@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from typing_extensions import Optional
 
-from api.profile.models import Profile
-from api.profile.schemas import ProfileSchema
+from api.profiles.models import Profile
+from api.profiles.schemas import ProfileSchema
 
 
 class ProfileRepository:

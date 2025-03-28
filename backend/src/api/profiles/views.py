@@ -1,12 +1,11 @@
 from typing import Annotated, Optional
 
 from authx import TokenPayload
-from fastapi import APIRouter, Depends, HTTPException
-from starlette import status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.auth.views import http_bearer
-from api.profile.schemas import ProfileSchema
-from api.profile.services import ProfileRepository
+from api.profiles.schemas import ProfileSchema
+from api.profiles.services import ProfileRepository
 from database.db import DbSession
 from utils import verify_access_token
 
@@ -31,7 +30,7 @@ async def setup_user_profile(
         if not (profile_data.username or profile_data.name):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Both 'name' and 'username' are required for profile creation.",
+                detail="Both 'name' and 'username' are required for profiles creation.",
             )
 
         await ProfileRepository.create_profile(session, int(token.sub), profile_data)
