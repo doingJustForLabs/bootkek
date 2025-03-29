@@ -1,16 +1,16 @@
 from typing import Annotated, Optional
 
 from authx import TokenPayload
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 
 from api.auth.dependency import TokenDependency
 from api.auth.views import http_bearer
 from api.profiles.schemas import ProfileSchema
 from api.profiles.services import ProfileRepository
-from database.db import DbSession
+from core.db import DbSession
 from utils import verify_access_token
 
-router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/users")
+router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
 
 @router.patch("/me", dependencies=[Depends(http_bearer)])
@@ -54,6 +54,25 @@ async def get_user_profile(
 
     return user
 
+@router.post("/avatar", dependencies=[Depends(http_bearer)])
+async def update_user_avatar(
+    token: TokenDependency,
+    avatar: UploadFile = File(...)
+):
+    """Подгружаем аватарку пользователя"""
+
+    return {"user": token.sub, "avatar": avatar.file}
+
+
+@router.get("/avatar/{avatar_id}", dependencies=[Depends(http_bearer)])
+async def get_user_avatar(
+    token: TokenDependency,
+    avatar_id: int
+):
+    """Получаем аватарку пользователя"""
+
+    return ...
+
 
 @router.get("/search", dependencies=[Depends(http_bearer)])
 async def search_profile(
@@ -69,14 +88,14 @@ async def search_profile(
 @router.get("")
 async def get_all_profiles(session: DbSession):
     """Получаем информацию о всех пользователях"""
-    user_profile = await ProfileRepository.get_profiles(session)
+    users = await ProfileRepository.get_profiles(session)
 
-    if not user_profile:
+    if not users:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Users not found"
         )
 
-    return user_profile
+    return users
 
 
 @router.get("/{user_id}")

@@ -9,8 +9,8 @@ from core.config import settings
 
 
 class UserRepository:
-    @staticmethod
-    async def create_user(session: AsyncSession, email: EmailStr, password: str):
+    @classmethod
+    async def create_user(cls, session: AsyncSession, email: EmailStr, password: str):
         user = await session.scalar(select(User).where(User.email == email))
 
         if not user:

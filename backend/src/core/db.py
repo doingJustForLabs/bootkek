@@ -1,10 +1,14 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
+from sqlalchemy.orm import Session, DeclarativeBase
 
 from core.config import settings
+
+
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
 
 
 class DatabaseHelper:

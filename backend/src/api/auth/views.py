@@ -6,7 +6,7 @@ from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
 from api.auth.services import UserRepository, TokenRepository
 from core.config import settings
 from core.security import security
-from database.db import DbSession
+from core.db import DbSession
 from utils import hash_password, verify_password
 
 router = APIRouter(tags=["Авторизация👤"], prefix="/auth")

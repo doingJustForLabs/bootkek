@@ -1,7 +1,7 @@
-from sqlalchemy import Integer, String, ForeignKey, Boolean
+from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from database.models import Base
+from core.db import Base
 
 
 class Profile(Base):

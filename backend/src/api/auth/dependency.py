@@ -6,7 +6,7 @@ from fastapi import Request, HTTPException, status, Depends
 from api.auth.models import User
 from api.auth.services import UserRepository
 from core.security import security
-from database.db import DbSession
+from core.db import DbSession
 
 
 async def verify_access_token(request: Request) -> str:
