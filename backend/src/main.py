@@ -22,7 +22,10 @@ async def lifespan(_: FastAPI):
     await db_helper.dispose()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Granite",
+    lifespan=lifespan
+)
 
 app.include_router(main_router)
 

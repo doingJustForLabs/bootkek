@@ -13,7 +13,7 @@ from utils import verify_access_token
 router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
 
-@router.patch("/me", dependencies=[Depends(http_bearer)])
+@router.patch("", dependencies=[Depends(http_bearer)])
 async def setup_user_profile(
     token: TokenDependency,
     session: DbSession,
@@ -39,7 +39,7 @@ async def setup_user_profile(
     return {"detail": "Success"}
 
 
-@router.get("/me", dependencies=[Depends(http_bearer)])
+@router.get("", dependencies=[Depends(http_bearer)])
 async def get_user_profile(
     token: TokenDependency,
     session: DbSession,
@@ -53,6 +53,7 @@ async def get_user_profile(
         )
 
     return user
+
 
 @router.post("/avatar", dependencies=[Depends(http_bearer)])
 async def update_user_avatar(
@@ -85,30 +86,30 @@ async def search_profile(
     return await ProfileRepository.get_profiles(session)
 
 
-@router.get("")
-async def get_all_profiles(session: DbSession):
-    """Получаем информацию о всех пользователях"""
-    users = await ProfileRepository.get_profiles(session)
-
-    if not users:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Users not found"
-        )
-
-    return users
-
-
-@router.get("/{user_id}")
-async def get_user_profile(
-    user_id: int,
-    session: DbSession,
-):
-    """Получаем информацию о пользователе"""
-    user_profile = await ProfileRepository.get_profile_by_user_id(session, int(user_id))
-
-    if not user_profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
-        )
-
-    return user_profile
+# @router.get("")
+# async def get_all_profiles(session: DbSession):
+#     """Получаем информацию о всех пользователях"""
+#     users = await ProfileRepository.get_profiles(session)
+#
+#     if not users:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="Users not found"
+#         )
+#
+#     return users
+#
+#
+# @router.get("/{user_id}")
+# async def get_user_profile(
+#     user_id: int,
+#     session: DbSession,
+# ):
+#     """Получаем информацию о пользователе"""
+#     user_profile = await ProfileRepository.get_profile_by_user_id(session, int(user_id))
+#
+#     if not user_profile:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
+#         )
+#
+#     return user_profile

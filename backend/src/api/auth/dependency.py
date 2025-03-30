@@ -3,10 +3,10 @@ from typing import Annotated
 from authx import TokenPayload
 from fastapi import Request, HTTPException, status, Depends
 
-from api.auth.models import User
-from api.auth.services import UserRepository
-from core.security import security
+from api.auth.models import User, UserRepository
+from api.auth.services import UserService
 from core.db import DbSession
+from core.security import security
 
 
 async def verify_access_token(request: Request) -> str:
@@ -51,3 +51,6 @@ async def get_current_superuser(cur_user: CurrentUser) -> User:
 
 
 CurrentSuperUser = Annotated[User, Depends(get_current_superuser)]
+
+def get_user_service():
+    return UserService(UserRepository)

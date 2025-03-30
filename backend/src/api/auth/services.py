@@ -5,7 +5,27 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.models import User, UserSession
+from api.auth.schemas import UserRegisterSchema
 from core.config import settings
+from repository import AbstractRepository
+
+
+class UserService:
+    def __init__(self, user_repository: type[AbstractRepository]):
+        self.user_repository = user_repository()
+
+    async def get_user_by_user_id(self, user_id: int) -> User:
+        res = await self.user_repository.find_one(id=user_id)
+        return res
+
+    async def get_user_by_email(self, email: EmailStr) -> User:
+        res = await self.user_repository.find_one(email=email)
+        return res
+
+    async def create_user(self, user: UserRegisterSchema):
+        user_data = user.model_dump(exclude={"password_repeat"})
+        await self.user_repository.add_one(user_data)
+        return user_data
 
 
 class UserRepository:
@@ -39,7 +59,7 @@ class UserRepository:
 class TokenRepository:
     @staticmethod
     async def create_token_session(
-        session: AsyncSession, user_id: int, refresh_token: str
+            session: AsyncSession, user_id: int, refresh_token: str
     ):
         await session.execute(delete(UserSession).where(UserSession.user_id == user_id))
 
@@ -58,7 +78,7 @@ class TokenRepository:
 
     @staticmethod
     async def get_token_session_by_user_id(
-        session: AsyncSession, user_id: int
+            session: AsyncSession, user_id: int
     ) -> UserSession:
         res = await session.execute(
             select(UserSession).filter(UserSession.user_id == user_id)
@@ -67,7 +87,7 @@ class TokenRepository:
 
     @staticmethod
     async def get_token_session_by_token(
-        session: AsyncSession, refresh_token: str
+            session: AsyncSession, refresh_token: str
     ) -> UserSession:
         res = await session.execute(
             select(UserSession).filter(UserSession.refresh_token == refresh_token)
@@ -76,7 +96,7 @@ class TokenRepository:
 
     @staticmethod
     async def delete_user_session(
-        session: AsyncSession, user_id: int
+            session: AsyncSession, user_id: int
     ) -> None:
         stmt = delete(UserSession).where(UserSession.user_id == user_id)
         await session.execute(stmt)

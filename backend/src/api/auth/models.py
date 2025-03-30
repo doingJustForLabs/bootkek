@@ -2,6 +2,7 @@ from sqlalchemy import String, DateTime, Boolean, INT, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.db import Base
+from repository import SQLAlchemyRepository
 
 
 class User(Base):
@@ -10,10 +11,10 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(30), unique=True)
     password: Mapped[str] = mapped_column(String(70))
-    create_date: Mapped[str] = mapped_column(DateTime)
-    update_date: Mapped[str] = mapped_column(DateTime)
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
-    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
+    # create_date: Mapped[str] = mapped_column(DateTime)
+    # update_date: Mapped[str] = mapped_column(DateTime)
+    # active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class UserSession(Base):
@@ -24,3 +25,7 @@ class UserSession(Base):
     refresh_token: Mapped[str] = mapped_column(String(300), nullable=False)
     start_date: Mapped[str] = mapped_column(DateTime)
     end_date: Mapped[str] = mapped_column(DateTime)
+
+
+class UserRepository(SQLAlchemyRepository):
+    model = User
