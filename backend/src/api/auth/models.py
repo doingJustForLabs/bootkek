@@ -15,7 +15,9 @@ class User(Base):
     password: Mapped[str] = mapped_column(String)
 
     create_date: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    update_data: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
+    update_data: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), onupdate=func.now()
+    )
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     # is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -26,10 +28,15 @@ class UserSession(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(INT, ForeignKey("users.id"))
-    refresh_token: Mapped[str] = mapped_column(String(300), nullable=False)
-    start_date: Mapped[str] = mapped_column(DateTime)
-    end_date: Mapped[str] = mapped_column(DateTime)
+    refresh_token: Mapped[str] = mapped_column(String, nullable=False)
+
+    start_date: Mapped[datetime] = mapped_column(DateTime)
+    end_date: Mapped[datetime] = mapped_column(DateTime)
 
 
 class UserRepository(SQLAlchemyRepository):
     model = User
+
+
+class TokenRepository(SQLAlchemyRepository):
+    model = UserSession

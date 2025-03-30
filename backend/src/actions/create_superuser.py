@@ -9,7 +9,9 @@ from core.db import DbSession, db_helper
 
 
 async def create_super_user(session: DbSession):
-    user = await session.scalar(select(User).where(User.email == settings.super_user.email))
+    user = await session.scalar(
+        select(User).where(User.email == settings.super_user.email)
+    )
 
     if not user:
         session.add(
@@ -19,9 +21,10 @@ async def create_super_user(session: DbSession):
                 create_date=datetime.now(),
                 update_date=datetime.now(),
                 active=True,
-                is_super_user=True
+                is_super_user=True,
             )
         ),
         await session.commit()
+
 
 asyncio.run(create_super_user(session=db_helper.session_getter()))

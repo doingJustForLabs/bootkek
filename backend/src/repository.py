@@ -28,22 +28,26 @@ class SQLAlchemyRepository(AbstractRepository):
             stmt = select(self.model)
 
             if filters:
-                conditions = [getattr(self.model, key) == value for key, value in filters.items()]
+                conditions = [
+                    getattr(self.model, key) == value for key, value in filters.items()
+                ]
                 stmt = stmt.where(*conditions)
 
             res = await session.execute(stmt)
-            return res.scalars().all()
+            return res.scalars()
 
     async def find_one(self, **filters):
         async with db_helper.session_factory() as session:
             stmt = select(self.model)
 
             if filters:
-                conditions = [getattr(self.model, key) == value for key, value in filters.items()]
+                conditions = [
+                    getattr(self.model, key) == value for key, value in filters.items()
+                ]
                 stmt = stmt.where(*conditions)
 
             res = await session.execute(stmt)
-            return res.scalars().first()
+            return res.scalar_one_or_none()
 
     async def add_one(self, data: dict) -> None:
         async with db_helper.session_factory() as session:

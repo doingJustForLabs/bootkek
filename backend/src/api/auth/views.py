@@ -3,12 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
-from api.auth.dependency import get_user_service, CurrentUser
-from api.auth.models import UserRepository
+from api.auth.dependency import get_user_service, CurrentUser, get_token_service
 from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
-from api.auth.services import UserService
+from api.auth.services import UserService, TokenService
 from core.config import settings
-from core.db import DbSession
 from core.security import security
 from utils import hash_password, verify_password
 
@@ -20,7 +18,7 @@ http_bearer = HTTPBearer(auto_error=False)
 @router.post("/register")
 async def register_user(
     creds: UserRegisterSchema,
-    user_service: Annotated[UserService, Depends(get_user_service)]
+    user_service: Annotated[UserService, Depends(get_user_service)],
 ):
     """
     Регистрация пользователя
@@ -47,7 +45,8 @@ async def register_user(
 async def login_user(
     creds: UserLoginSchema,
     response: Response,
-    user_service: Annotated[UserService, Depends(get_user_service)]
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    token_service: Annotated[TokenService, Depends(get_token_service)],
 ):
     """
     Аутентификация пользователя.
@@ -82,9 +81,9 @@ async def login_user(
         max_age=settings.jwt.refresh_token.expires_int,
     )
 
-    # await TokenRepository.create_token_session(
-    #     session=session, refresh_token=refresh_token, user_id=int(user.id)
-    # )
+    await token_service.create_token_session(
+        refresh_token=refresh_token, user_id=int(user.id)
+    )
     return TokenResponse(access_token=access_token)
 
 
@@ -120,6 +119,7 @@ async def get_protected(user: CurrentUser):
     """
     return {"detail": user}
 
+
 # @router.get(
 #     "/logout",
 #     status_code=status.HTTP_204_NO_CONTENT,
@@ -133,6 +133,6 @@ async def get_protected(user: CurrentUser):
 #     await UserAuthRepository.delete_user_session(session, user_id=int(token.sub))
 #     security.unset_refresh_cookies(response=response)
 #
-#     # Добавить блоклист для access токена
+#     # Добавить блок лист для access токена
 #
 #     return {"detail": "User logout"}

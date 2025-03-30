@@ -56,20 +56,14 @@ async def get_user_profile(
 
 
 @router.post("/avatar", dependencies=[Depends(http_bearer)])
-async def update_user_avatar(
-    token: TokenDependency,
-    avatar: UploadFile = File(...)
-):
+async def update_user_avatar(token: TokenDependency, avatar: UploadFile = File(...)):
     """Подгружаем аватарку пользователя"""
 
     return {"user": token.sub, "avatar": avatar.file}
 
 
 @router.get("/avatar/{avatar_id}", dependencies=[Depends(http_bearer)])
-async def get_user_avatar(
-    token: TokenDependency,
-    avatar_id: int
-):
+async def get_user_avatar(token: TokenDependency, avatar_id: int):
     """Получаем аватарку пользователя"""
 
     return ...
@@ -80,7 +74,7 @@ async def search_profile(
     token: Annotated[TokenPayload, Depends(verify_access_token)],
     session: DbSession,
     q: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
 ):
     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
     return await ProfileRepository.get_profiles(session)

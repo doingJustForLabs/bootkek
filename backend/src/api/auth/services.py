@@ -24,55 +24,32 @@ class UserService:
         return user if user else None
 
     async def create_user(self, email: EmailStr, hashed_password: str) -> None:
-        data = {
-            "email": email,
-            "password": hashed_password
-        }
+        data = {"email": email, "password": hashed_password}
         await self.user_repository.add_one(data)
 
 
-# class TokenRepository:
-#     @staticmethod
-#     async def create_token_session(
-#             session: AsyncSession, user_id: int, refresh_token: str
-#     ):
-#         await session.execute(delete(UserSession).where(UserSession.user_id == user_id))
-#
-#         time_offset: timedelta = settings.jwt.refresh_token.expires
-#         current_datetime = datetime.now()
-#         future_datetime = current_datetime + time_offset
-#         session.add(
-#             UserSession(
-#                 user_id=user_id,
-#                 refresh_token=refresh_token,
-#                 start_date=current_datetime,
-#                 end_date=future_datetime,
-#             )
-#         )
-#         await session.commit()
-#
-#     @staticmethod
-#     async def get_token_session_by_user_id(
-#             session: AsyncSession, user_id: int
-#     ) -> UserSession:
-#         res = await session.execute(
-#             select(UserSession).filter(UserSession.user_id == user_id)
-#         )
-#         return res.scalars().first()
-#
-#     @staticmethod
-#     async def get_token_session_by_token(
-#             session: AsyncSession, refresh_token: str
-#     ) -> UserSession:
-#         res = await session.execute(
-#             select(UserSession).filter(UserSession.refresh_token == refresh_token)
-#         )
-#         return res.scalars().first()
-#
-#     @staticmethod
-#     async def delete_user_session(
-#             session: AsyncSession, user_id: int
-#     ) -> None:
-#         stmt = delete(UserSession).where(UserSession.user_id == user_id)
-#         await session.execute(stmt)
-#         await session.commit()
+class TokenService:
+    def __init__(self, user_repository: type[AbstractRepository]):
+        self.user_repository = user_repository()
+
+    async def create_token_session(self, user_id: int, refresh_token: str) -> None:
+        data = {
+            "user_id": user_id,
+            "refresh_token": refresh_token,
+            "start_date": datetime.now(),
+            "end_date": datetime.now() + settings.jwt.refresh_token.expires,
+        }
+        await self.user_repository.add_one(data)
+
+    async def get_token_session_by_user_id(self, user_id: int) -> Optional[UserSession]:
+        user_session = await self.user_repository.find_one(id=user_id)
+        return user_session if user_session else None
+
+    async def get_token_session_by_token(
+        self, refresh_token: str
+    ) -> Optional[UserSession]:
+        user_session = await self.user_repository.find_one(refresh_token=refresh_token)
+        return user_session if user_session else None
+
+    async def delete_user_token_session(self, user_id: int):
+        pass

@@ -48,6 +48,7 @@ class SuperUserConfig(BaseModel):
     email: EmailStr
     password: str
 
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     db: DBConfig
