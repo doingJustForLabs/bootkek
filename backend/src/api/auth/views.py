@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
-from api.auth.dependency import get_user_service
+from api.auth.dependency import get_user_service, CurrentUser
 from api.auth.models import UserRepository
 from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
 from api.auth.services import UserService
@@ -37,7 +37,9 @@ async def register_user(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords doesn't match"
         )
 
-    await user_service.create_user(creds)
+    print(creds.email)
+
+    await user_service.create_user(creds.email, user_pwd)
     return {"detail": "User successfully registered"}
 
 
@@ -52,73 +54,71 @@ async def login_user(
     """
 
     user = await user_service.get_user_by_email(creds.email)
-    return user.id
-    # user = await UserRepository.get_user_by_email(session, creds.email)
 
     # Проверка почты
-    # if not user:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Email doesn't registered",
-    #     )
-    #
-    # # Проверка пароля
-    # if not verify_password(creds.password, user.password):
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password"
-    #     )
-    #
-    # access_token = security.create_access_token(
-    #     uid=str(user.id), expiry=settings.jwt.access_token.expires, fresh=True
-    # )
-    #
-    # refresh_token = security.create_refresh_token(
-    #     uid=str(user.id), expiry=settings.jwt.refresh_token.expires
-    # )
-    #
-    # security.set_refresh_cookies(
-    #     token=refresh_token,
-    #     response=response,
-    #     max_age=settings.jwt.refresh_token.expires_int,
-    # )
-    #
-    # # await TokenRepository.create_token_session(
-    # #     session=session, refresh_token=refresh_token, user_id=int(user.id)
-    # # )
-    # return TokenResponse(access_token=access_token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email doesn't registered",
+        )
 
-#
-# @router.get("/refresh")
-# async def refresh_new_access_token(request: Request):
-#     """
-#     Обновление Access токена с помощью Refresh токена
-#     """
-#
-#     try:
-#         token = await security.get_refresh_token_from_request(request)
-#
-#         # CSRF отключен
-#         payload = security.verify_token(
-#             token, verify_csrf=settings.jwt.refresh_token.csrf, verify_type=True
-#         )
-#
-#         new_access_token = security.create_access_token(uid=payload.sub, fresh=False)
-#
-#         return TokenResponse(access_token=new_access_token)
-#
-#     except Exception as e:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-#
-#
-# @router.get("/me", dependencies=[Depends(http_bearer)])
-# async def get_protected(user: CurrentUser):
-#     """
-#     Проверка авторизации
-#
-#     Для каждого последующего "защищенного" запроса (с замочком)
-#     необходимо указывать header {"Authorization": "Bearer <AccessToken>"}.
-#     """
-#     return {"detail": user}
+    # Проверка пароля
+    if not verify_password(creds.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password"
+        )
+
+    access_token = security.create_access_token(
+        uid=str(user.id), expiry=settings.jwt.access_token.expires, fresh=True
+    )
+
+    refresh_token = security.create_refresh_token(
+        uid=str(user.id), expiry=settings.jwt.refresh_token.expires
+    )
+
+    security.set_refresh_cookies(
+        token=refresh_token,
+        response=response,
+        max_age=settings.jwt.refresh_token.expires_int,
+    )
+
+    # await TokenRepository.create_token_session(
+    #     session=session, refresh_token=refresh_token, user_id=int(user.id)
+    # )
+    return TokenResponse(access_token=access_token)
+
+
+@router.get("/refresh")
+async def refresh_new_access_token(request: Request):
+    """
+    Обновление Access токена с помощью Refresh токена
+    """
+
+    try:
+        token = await security.get_refresh_token_from_request(request)
+
+        # CSRF отключен
+        payload = security.verify_token(
+            token, verify_csrf=settings.jwt.refresh_token.csrf, verify_type=True
+        )
+
+        new_access_token = security.create_access_token(uid=payload.sub, fresh=False)
+
+        return TokenResponse(access_token=new_access_token)
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+
+@router.get("/me", dependencies=[Depends(http_bearer)])
+async def get_protected(user: CurrentUser):
+    """
+    Проверка авторизации
+
+    Для каждого последующего "защищенного" запроса (с замочком)
+    необходимо указывать header {"Authorization": "Bearer <AccessToken>"}.
+    """
+    return {"detail": user}
 
 # @router.get(
 #     "/logout",

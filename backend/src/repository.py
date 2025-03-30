@@ -1,3 +1,4 @@
+from datetime import datetime
 from abc import ABC, abstractmethod
 
 from sqlalchemy import insert, select
@@ -42,9 +43,9 @@ class SQLAlchemyRepository(AbstractRepository):
                 stmt = stmt.where(*conditions)
 
             res = await session.execute(stmt)
-            return res.scalar_one()
+            return res.scalars().first()
 
-    async def add_one(self, data: dict) -> type[model]:
+    async def add_one(self, data: dict) -> None:
         async with db_helper.session_factory() as session:
             stmt = insert(self.model).values(**data)
             await session.execute(stmt)

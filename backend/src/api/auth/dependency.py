@@ -5,8 +5,11 @@ from fastapi import Request, HTTPException, status, Depends
 
 from api.auth.models import User, UserRepository
 from api.auth.services import UserService
-from core.db import DbSession
 from core.security import security
+
+
+def get_user_service():
+    return UserService(UserRepository)
 
 
 async def verify_access_token(request: Request) -> str:
@@ -27,8 +30,11 @@ async def verify_access_token(request: Request) -> str:
 TokenDependency = Annotated[TokenPayload, Depends(verify_access_token)]
 
 
-async def get_current_user(token: TokenDependency, session: DbSession) -> User:
-    user = await UserRepository.get_user_by_user_id(session, int(token.sub))
+async def get_current_user(
+    token: TokenDependency,
+    user_service: Annotated[UserService, Depends(get_user_service)]
+) -> User:
+    user = await user_service.get_user_by_user_id(int(token.sub))
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
@@ -51,6 +57,3 @@ async def get_current_superuser(cur_user: CurrentUser) -> User:
 
 
 CurrentSuperUser = Annotated[User, Depends(get_current_superuser)]
-
-def get_user_service():
-    return UserService(UserRepository)
