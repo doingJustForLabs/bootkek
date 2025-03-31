@@ -12,21 +12,35 @@ import { Button, Form, Input, Flex } from 'antd';
 import { Navigate, useNavigate} from 'react-router-dom';
 
 const Login = () => {
-
-    const [email, setEmail] = useState("");
-    const [password, setPwd] = useState("");
+    // const [email, setEmail] = useState("");
+    // const [password, setPwd] = useState("");
     
-    const { setAccessToken } = useAuth();
+    // const { setAccessToken } = useAuth();
 
-    let navigate = useNavigate();
+    // let navigate = useNavigate();
 
-    const loginButton = () => {
-        API.post('/auth/login', {
-            email: email,
-            password: password
-        }).then(response => setAccessToken(response.data.access_token));
-        navigate("/profile");
-    }
+    // const loginButton = () => {
+    //     API.post('/auth/login', {
+    //         email: email,
+    //         password: password
+    //     }).then(response => setAccessToken(response.data.access_token));
+    //     navigate("/profile");
+    // }
+
+    const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
+
+    const onFinish = async ({ email, password }) => {
+        setLoading(true);
+        try {
+            await login(email, password);
+            message.success('Вход выполнен успешно!');
+        } catch (error) {
+            message.error('Ошибка входа. Проверьте данные.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
 
     return (
@@ -38,6 +52,7 @@ const Login = () => {
             <Form
                 name="login"
                 initialValues={{ remember: true }}
+                onFinish={onFinish}
                 style={{ maxWidth: 360 }}
             >
                 <Form.Item
@@ -59,7 +74,7 @@ const Login = () => {
                 </Form.Item>
 
                 <Form.Item>
-                    <Button onClick={loginButton} block type="primary" htmlType="submit">
+                    <Button loading={loading} block type="primary" htmlType="submit">
                         Войти
                     </Button>
                     <div className="justify-self-end">
