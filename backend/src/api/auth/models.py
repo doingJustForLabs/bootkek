@@ -3,8 +3,8 @@ from datetime import datetime
 from sqlalchemy import String, DateTime, INT, ForeignKey, func, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.db import Base
-from repository import SQLAlchemyRepository
+from database.db import Base
+from database.repository import SQLAlchemyRepository
 
 
 class User(Base):

@@ -1,9 +1,9 @@
-from datetime import datetime
 from abc import ABC, abstractmethod
+from typing import List
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 
-from core.db import DbSession, db_helper
+from database.db import db_helper
 
 
 class AbstractRepository(ABC):
@@ -19,11 +19,15 @@ class AbstractRepository(ABC):
     async def add_one(self, data: dict):
         raise NotImplementedError
 
+    @abstractmethod
+    async def update_one(self, user_id: int, update_data: dict):
+        raise NotImplementedError
+
 
 class SQLAlchemyRepository(AbstractRepository):
     model = None
 
-    async def find_all(self, **filters):
+    async def find_all(self, **filters) -> List[model]:
         async with db_helper.session_factory() as session:
             stmt = select(self.model)
 
@@ -34,9 +38,9 @@ class SQLAlchemyRepository(AbstractRepository):
                 stmt = stmt.where(*conditions)
 
             res = await session.execute(stmt)
-            return res.scalars()
+            return res.scalars().all()
 
-    async def find_one(self, **filters):
+    async def find_one(self, **filters) -> model:
         async with db_helper.session_factory() as session:
             stmt = select(self.model)
 
@@ -52,5 +56,13 @@ class SQLAlchemyRepository(AbstractRepository):
     async def add_one(self, data: dict) -> None:
         async with db_helper.session_factory() as session:
             stmt = insert(self.model).values(**data)
+            await session.execute(stmt)
+            await session.commit()
+
+    async def update_one(self, user_id: int, update_data: dict) -> None:
+        async with db_helper.session_factory() as session:
+            stmt = (
+                update(self.model).where(user_id == self.model.id).values(**update_data)
+            )
             await session.execute(stmt)
             await session.commit()

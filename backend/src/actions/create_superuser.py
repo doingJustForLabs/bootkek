@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from api.auth.models import User
 from core.config import settings
-from core.db import DbSession, db_helper
+from database.db import DbSession, db_helper
 
 
 async def create_super_user(session: DbSession):

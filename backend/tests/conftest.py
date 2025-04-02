@@ -5,7 +5,7 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
 from core.config import settings
-from core.db import db_helper, Base
+from database.db import db_helper, Base
 from main import app
 
 

@@ -3,17 +3,9 @@ from typing import Annotated
 from authx import TokenPayload
 from fastapi import Request, HTTPException, status, Depends
 
-from api.auth.models import User, UserRepository, TokenRepository
-from api.auth.services import UserService, TokenService
+from api.auth.models import User
+from api.auth.services import UserService, get_user_service
 from core.security import security
-
-
-def get_user_service():
-    return UserService(UserRepository)
-
-
-def get_token_service():
-    return TokenService(TokenRepository)
 
 
 async def verify_access_token(request: Request) -> str:

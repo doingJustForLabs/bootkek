@@ -1,14 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from pydantic import EmailStr
-from sqlalchemy import select, delete
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.auth.models import User, UserSession
-from api.auth.schemas import UserRegisterSchema
+from api.auth.models import User, UserSession, UserRepository, TokenRepository
 from core.config import settings
-from repository import AbstractRepository
+from database.repository import AbstractRepository
 
 
 class UserService:
@@ -53,3 +50,11 @@ class TokenService:
 
     async def delete_user_token_session(self, user_id: int):
         pass
+
+
+def get_user_service():
+    return UserService(UserRepository)
+
+
+def get_token_service():
+    return TokenService(TokenRepository)

@@ -1,7 +1,8 @@
 from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.db import Base
+from database.db import Base
+from database.repository import SQLAlchemyRepository
 
 
 class Profile(Base):
@@ -16,3 +17,7 @@ class Profile(Base):
     course: Mapped[int] = mapped_column(Integer, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
     faculty: Mapped[str] = mapped_column(String, nullable=True)
+
+
+class ProfileRepository(SQLAlchemyRepository):
+    model = Profile

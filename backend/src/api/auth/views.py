@@ -3,9 +3,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
-from api.auth.dependency import get_user_service, CurrentUser, get_token_service
+from api.auth.dependency import CurrentUser
 from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
-from api.auth.services import UserService, TokenService
+from api.auth.services import (
+    UserService,
+    TokenService,
+    get_token_service,
+    get_user_service,
+)
 from core.config import settings
 from core.security import security
 from utils import hash_password, verify_password
@@ -34,8 +39,6 @@ async def register_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords doesn't match"
         )
-
-    print(creds.email)
 
     await user_service.create_user(creds.email, user_pwd)
     return {"detail": "User successfully registered"}
