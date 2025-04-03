@@ -29,11 +29,16 @@ class UserSession(Base):
     start_date: Mapped[str] = mapped_column(DateTime)
     end_date: Mapped[str] = mapped_column(DateTime)
 
-class Roles(Base):
-    __tablename__ = "roles"
+class Profile(Base):
+    __tablename__ = "profiles"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    role_name: Mapped[str] = mapped_column(String(20))
+    user_id: Mapped[int] = mapped_column(INT, ForeignKey("users.id"))
+    user_name: Mapped[str] = mapped_column(String(20))
+    course: Mapped[int] = mapped_column(INT)
+    sex: Mapped[str] = mapped_column(String(10))
+    faculty: Mapped[str] = mapped_column(String(10))
+
 
 class Subjects(Base):
     __tablename__ = "subjects"
@@ -41,10 +46,10 @@ class Subjects(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     subject_name: Mapped[str] = mapped_column(String(20))
 
-class Tags(Base):
-    __tablename__ = "tags"
+class Posts(Base):
+    __tablename__ = "posts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(INT, ForeignKey("users.id"))
-    role_id: Mapped[int] = mapped_column(INT, ForeignKey("roles.id"))
+    user_id: Mapped[int] = mapped_column(INT, ForeignKey("profiles.user_id"))
     subject_id: Mapped[int] = mapped_column(INT, ForeignKey("subjects.id"))
+    description: Mapped[int] = mapped_column(String(100))
