@@ -17,6 +17,9 @@ class Profile(Base):
     course: Mapped[int] = mapped_column(Integer, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
     faculty: Mapped[str] = mapped_column(String, nullable=True)
+    avatar_url: Mapped[str] = mapped_column(
+        String, default="static/avatar/default-avatar.jpg"
+    )
 
 
 class ProfileRepository(SQLAlchemyRepository):

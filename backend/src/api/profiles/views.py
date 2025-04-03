@@ -1,6 +1,10 @@
+import os
+import uuid
+from pathlib import Path
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from starlette.responses import FileResponse
 
 from api.auth.dependency import TokenDependency
 from api.auth.views import http_bearer
@@ -8,6 +12,10 @@ from api.profiles.schemas import ProfileSchema
 from api.profiles.services import get_profile_service, ProfileService
 
 router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
+
+AVATAR_DIR = Path("static/avatars")
+AVATAR_DIR.mkdir(parents=True, exist_ok=True)
+ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
 
 
 @router.patch("/me", dependencies=[Depends(http_bearer)])
@@ -34,7 +42,7 @@ async def setup_user_profile(
 
         await profile_service.create_profile(int(token.sub), profile_data)
 
-    return {"detail": "Success"}
+    return {"detail": "Profile Updated", "profile": profile_data}
 
 
 @router.get("/me", dependencies=[Depends(http_bearer)])
@@ -53,17 +61,54 @@ async def get_user_profile(
 
 
 @router.post("/avatar", dependencies=[Depends(http_bearer)])
-async def update_user_avatar(token: TokenDependency, avatar: UploadFile = File(...)):
+async def update_user_avatar(
+    token: TokenDependency,
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    avatar: UploadFile = File(...),
+):
     """Подгружаем аватарку пользователя"""
+    try:
+        if avatar.content_type not in ALLOWED_AVATAR_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type"
+            )
 
-    return {"user": token.sub, "avatar": avatar.file}
+        profile = await profile_service.get_profile_by_user_id(int(token.sub))
+
+        if profile.avatar_url != "static/avatar/default-avatar.jpg":
+            old_file = AVATAR_DIR / Path(str(profile.avatar_url)).name
+            os.remove(old_file)
+            if old_file.exists():
+                os.remove(old_file)
+
+        file_name = f"{uuid.uuid4()}.jpg"
+        file_path = AVATAR_DIR / file_name
+
+        with open(file_path, "wb") as buffer:
+            buffer.write(await avatar.read())
+
+        avatar_url = f"/static/avatars/{file_name}"
+        await profile_service.update_profile_avatar(int(token.sub), avatar_url)
+
+        return {"detail": "Avatar uploaded successfully", "avatar_url": avatar_url}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=e)
 
 
-@router.get("/avatar/{avatar_id}", dependencies=[Depends(http_bearer)])
-async def get_user_avatar(token: TokenDependency, avatar_id: int):
+@router.get("/avatar/{file_name}", dependencies=[Depends(http_bearer)])
+async def get_user_avatar(filename: str):
     """Получаем аватарку пользователя"""
 
-    return ...
+    if ".jpg" not in filename:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bad filename")
+
+    file_path = AVATAR_DIR / filename
+
+    if not file_path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Avatar not found")
+
+    return FileResponse(file_path)
 
 
 @router.get("/search", dependencies=[Depends(http_bearer)])

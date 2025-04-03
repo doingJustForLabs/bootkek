@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 from api import main_router
@@ -25,8 +26,12 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="Granite", lifespan=lifespan)
 
 app.include_router(main_router)
-
 security.handle_errors(app)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# Middleware
 
 origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173"]
 

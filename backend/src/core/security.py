@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from authx import AuthXConfig, AuthX
 
 from core.config import settings

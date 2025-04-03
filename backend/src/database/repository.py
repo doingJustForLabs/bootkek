@@ -62,7 +62,9 @@ class SQLAlchemyRepository(AbstractRepository):
     async def update_one(self, user_id: int, update_data: dict) -> None:
         async with db_helper.session_factory() as session:
             stmt = (
-                update(self.model).where(user_id == self.model.id).values(**update_data)
+                update(self.model)
+                .where(user_id == self.model.user_id)
+                .values(**update_data)
             )
             await session.execute(stmt)
             await session.commit()
