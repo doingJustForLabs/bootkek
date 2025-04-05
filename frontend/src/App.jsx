@@ -1,10 +1,17 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from './pages/AuthContext.jsx';
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import ResetPwd from "./pages/ResetPwd";
 import Profile from "./pages/Profile";
+
+const PrivateRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div>Загрузка...</div>;
+  return user ? children : <Navigate to="/" replace />;
+};
 
 function App() {
   return (
@@ -13,6 +20,7 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Login />} />
+
             <Route path="/signup" element={<SignUp />} />
             <Route path="/reset" element={<ResetPwd />} />
             <Route path="/profile" element={<Profile />} />

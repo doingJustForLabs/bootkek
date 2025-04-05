@@ -14,11 +14,18 @@ class ChatRepository:
 
         # Добавляем пользователей в чат
         for user_id in user_ids:
-            chat_user = ChatUser(chat_id=new_chat.id, user_id=user_id)
-            session.add(chat_user)
+            existing = await session.execute(
+                select(ChatUser).where(
+                    ChatUser.chat_id == new_chat.id,
+                    ChatUser.user_id == user_id
+                )
+            )
+            if not existing.scalar_one_or_none():
+                chat_user = ChatUser(chat_id=new_chat.id, user_id=user_id)
+                session.add(chat_user)
 
         await session.commit()
-        print(f"Chat with ID {new_chat.id} created successfully!")
+        # print(f"Chat with ID {new_chat.id} created successfully!")
         return new_chat
 
     @staticmethod
@@ -36,7 +43,7 @@ class ChatRepository:
     @staticmethod
     async def get_messages_in_chat(session: AsyncSession, chat_id: int, limit: int = 100) -> List[Message]:
         result = await session.execute(
-            select(Message).filter(Message.chat_id == chat_id).order_by(Message.timestamp.desc()).limit(limit)
+            select(Message).filter(Message.chat_id == chat_id).order_by(Message.timestamp.asc()).limit(limit)
         )
         return list(result.scalars())
 

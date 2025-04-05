@@ -7,28 +7,14 @@ import AuthLayout from "../layouts/AuthLayout";
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Flex } from 'antd';
+import { Button, Form, Input, Flex, message } from 'antd';
 
 import { Navigate, useNavigate} from 'react-router-dom';
 
 const Login = () => {
-    // const [email, setEmail] = useState("");
-    // const [password, setPwd] = useState("");
-    
-    // const { setAccessToken } = useAuth();
-
-    // let navigate = useNavigate();
-
-    // const loginButton = () => {
-    //     API.post('/auth/login', {
-    //         email: email,
-    //         password: password
-    //     }).then(response => setAccessToken(response.data.access_token));
-    //     navigate("/profile");
-    // }
-
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
+    const navigate = useNavigate();
 
     const onFinish = async ({ email, password }) => {
         setLoading(true);
@@ -56,16 +42,16 @@ const Login = () => {
                 style={{ maxWidth: 360 }}
             >
                 <Form.Item
-                    name="username"
+                    name="email"
                     rules={[{ required: true, message: 'Please input your Username!' }]}
                 >
-                    <Input onChange={(e) => setEmail(e.target.value)} prefix={<UserOutlined />} placeholder="Логин" />
+                    <Input prefix={<UserOutlined />} placeholder="Логин" autoComplete="username"/>
                 </Form.Item>
                 <Form.Item
                     name="password"
                     rules={[{ required: true, message: 'Please input your Password!' }]}
                 >
-                    <Input onChange={(e) => setPwd(e.target.value)} prefix={<LockOutlined />} type="password" placeholder="Пароль" />
+                    <Input prefix={<LockOutlined />} type="password" placeholder="Пароль" autoComplete="current-password"/>
                 </Form.Item>
                 <Form.Item>
                     <Flex justify="end">

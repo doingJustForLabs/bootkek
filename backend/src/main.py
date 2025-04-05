@@ -38,7 +38,7 @@ app.include_router(main_router)
 
 security.handle_errors(app)
 
-origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173"]
+origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,7 +63,6 @@ async def get_chats_page():
     with open(os.path.join("static", "chats.html"), encoding="utf-8") as f:
         return f.read()
 
-active_chat_connections = {}
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -72,9 +71,8 @@ async def websocket_chat(websocket: WebSocket, db: AsyncSession = Depends(db_hel
     await websocket.accept()
     print("WebSocket connected")
     logging.debug("WebSocket connected")
-    print("WebSocket connected")
+
     try:
-        # Получаем первое сообщение с токеном и chat_id
         data = await websocket.receive_text()
         print(f"Received data: {data}")
         message_data = json.loads(data)
@@ -91,23 +89,16 @@ async def websocket_chat(websocket: WebSocket, db: AsyncSession = Depends(db_hel
             return
 
         # Переадресуем обработку в отдельную функцию
-        await handle_websocket(websocket, token, chat_id)
+        await handle_websocket(websocket, token, chat_id, db)
         print("WebSocket message handled")
 
-    except WebSocketDisconnect:
-        print("User disconnected")
-        print("WebSocket disconnected")
     except json.JSONDecodeError:
-        error_message = "Failed to decode JSON"
-        print(error_message)
-        await websocket.send_text(json.dumps({"error": error_message}))
-        await websocket.close(code=1008, reason=error_message)
+        error_msg = "Invalid JSON data"
+        logger.error(error_msg)
+        await websocket.close(code=1008, reason=error_msg)
     except Exception as e:
-        print(f"Unexpected error: {e}")
-        await websocket.send_text(json.dumps({"error": f"Internal server error: {str(e)}"}))
-        await websocket.close(code=1011, reason="Internal server error")
-    # finally:
-    #     await websocket.close()  # Закрытие соединения
+        logger.error(f"Unexpected error: {str(e)}")
+        await websocket.close(code=1011)
 
 
 @app.get('/')

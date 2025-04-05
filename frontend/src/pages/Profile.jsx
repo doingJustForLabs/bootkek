@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from "./AuthContext.jsx";
 import { API } from "../services/api.js";
 import axios from 'axios';
+import { Modal, Button } from 'antd';
 
 import ChatComponent from '../components/ChatComponent.jsx';
 

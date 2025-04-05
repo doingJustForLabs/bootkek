@@ -163,6 +163,7 @@
 <!--            messageInput.value = ''; // Clear the input field-->
 <!--        }-->
         websocket.send(content);
+        messageInput.value = '';
     });
 
     // Инициализация WebSocket для общения в чате
@@ -213,29 +214,45 @@
     // Создание чата через форму
     createChatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name = document.getElementById('chatName').value;
-        const userIds = Array.from(usersSelectElement.selectedOptions).map(option => parseInt(option.value));
-        userIds.push(parseInt(userId));
+        try {
+            const userId = await getUserId();
+            const name = document.getElementById('chatName').value;
+            const userIds = Array.from(usersSelectElement.selectedOptions).map(option => parseInt(option.value));
+            userIds.push(parseInt(userId));
 
-        const body = { name, user_ids: userIds };
-        console.log(body); // Выведите данные перед отправкой
-        const response = await fetch('/api/chats', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
+            // Проверка данных
+            if (!name) {
+                throw new Error("Название чата не может быть пустым");
+            }
+            if (userIds.length === 0) {
+                throw new Error("Выберите хотя бы одного участника");
+            }
 
-        const result = await response.json();
-        alert(result.message); // Выводим сообщение о результате
-        loadChats();  // Обновляем список чатов
+            // Отправка данных
+            const response = await fetch('/api/chats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, user_ids: userIds })  // Важно: ключ user_ids, а не userIds
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(errorData?.message || "Ошибка сервера");
+            }
+
+            const result = await response.json();
+            alert(`Чат "${result.chat_id}" создан успешно!`);
+            loadChats();  // Обновляем список чатов
+        } catch (error) {
+            console.error("Ошибка:", error);
+            alert(error.message || "Не удалось создать чат");
+        }
     });
 
     // Инициализация
 <!--    getUserId();-->
     loadUsers();
-    loadChats(getUserId());
+    loadChats();
 </script>
 
 </body>

@@ -1,0 +1,47 @@
+[33m306a2d8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/web-socket-test[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33m306a2d8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/web-socket-test[m[33m)[m HEAD@{1}: reset: moving to HEAD
+[33m306a2d8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/web-socket-test[m[33m)[m HEAD@{2}: checkout: moving from dev to feat/web-socket-test
+[33m2959e1f[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m HEAD@{3}: checkout: moving from feat/web-socket-test to dev
+[33m306a2d8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/web-socket-test[m[33m)[m HEAD@{4}: commit (merge): Merge branch 'dev' into feat/web-socket-test
+[33m922fb15[m[33m ([m[1;31morigin/feat/web-socket-test[m[33m)[m HEAD@{5}: reset: moving to HEAD
+[33m922fb15[m[33m ([m[1;31morigin/feat/web-socket-test[m[33m)[m HEAD@{6}: checkout: moving from dev to feat/web-socket-test
+[33m2959e1f[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m HEAD@{7}: checkout: moving from feat/web-socket-test to dev
+[33m922fb15[m[33m ([m[1;31morigin/feat/web-socket-test[m[33m)[m HEAD@{8}: checkout: moving from feat/jwt-auth to feat/web-socket-test
+[33m3f2725c[m[33m ([m[1;31morigin/feat/jwt-auth[m[33m, [m[1;32mfeat/jwt-auth[m[33m)[m HEAD@{9}: checkout: moving from dev to feat/jwt-auth
+[33m2959e1f[m[33m ([m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m HEAD@{10}: pull: Fast-forward
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{11}: checkout: moving from dev to dev
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{12}: checkout: moving from feat/web-socket-test to dev
+[33m922fb15[m[33m ([m[1;31morigin/feat/web-socket-test[m[33m)[m HEAD@{13}: commit: token random
+[33me0d061d[m HEAD@{14}: checkout: moving from main to feat/web-socket-test
+[33m360b012[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{15}: checkout: moving from feat/web-socket-test to main
+[33me0d061d[m HEAD@{16}: commit: Test mode with random generating user_id and token. Modified WebSocket message broadcast logic to prevent duplicate messages
+[33mf224fde[m HEAD@{17}: commit: Подключение пользователя через куки или токен, если успех - пишем в чатик
+[33mc63b89d[m HEAD@{18}: checkout: moving from feat/database to feat/web-socket-test
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{19}: checkout: moving from feat/demo-auth to feat/database
+[33m553e1eb[m[33m ([m[1;31morigin/feat/demo-auth[m[33m, [m[1;32mfeat/demo-auth[m[33m)[m HEAD@{20}: checkout: moving from dev to feat/demo-auth
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{21}: checkout: moving from feat/demo-auth-page to dev
+[33m2ccf951[m[33m ([m[1;32mfeat/demo-auth-page[m[33m)[m HEAD@{22}: checkout: moving from dev to feat/demo-auth-page
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{23}: checkout: moving from feat/database to dev
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{24}: checkout: moving from feat/jwt-auth to feat/database
+[33m99feab7[m HEAD@{25}: checkout: moving from feat/web-socket-test to feat/jwt-auth
+[33mc63b89d[m HEAD@{26}: commit: web-socket-for-fun.test1
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{27}: reset: moving to HEAD
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{28}: checkout: moving from dev to feat/web-socket-test
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{29}: rebase: checkout dev
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{30}: checkout: moving from dev to feat/web-socket-test
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{31}: checkout: moving from feat/demo-auth to dev
+[33m553e1eb[m[33m ([m[1;31morigin/feat/demo-auth[m[33m, [m[1;32mfeat/demo-auth[m[33m)[m HEAD@{32}: checkout: moving from dev to feat/demo-auth
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{33}: reset: moving to HEAD
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{34}: checkout: moving from feat/web-socket-test to dev
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{35}: checkout: moving from feat/demo-auth to feat/web-socket-test
+[33m553e1eb[m[33m ([m[1;31morigin/feat/demo-auth[m[33m, [m[1;32mfeat/demo-auth[m[33m)[m HEAD@{36}: checkout: moving from feat/jwt-auth to feat/demo-auth
+[33m99feab7[m HEAD@{37}: checkout: moving from feat/demo-auth-page to feat/jwt-auth
+[33ma4d1496[m HEAD@{38}: checkout: moving from feat/web-socket-test to feat/demo-auth-page
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{39}: checkout: moving from feat/database to feat/web-socket-test
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{40}: checkout: moving from feat/web-socket-test to feat/database
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{41}: checkout: moving from feat/database to feat/web-socket-test
+[33m687c5d0[m[33m ([m[1;32mfeat/database[m[33m)[m HEAD@{42}: checkout: moving from feat/demo-auth to feat/database
+[33m553e1eb[m[33m ([m[1;31morigin/feat/demo-auth[m[33m, [m[1;32mfeat/demo-auth[m[33m)[m HEAD@{43}: reset: moving to HEAD
+[33m553e1eb[m[33m ([m[1;31morigin/feat/demo-auth[m[33m, [m[1;32mfeat/demo-auth[m[33m)[m HEAD@{44}: checkout: moving from feat/demo-auth to feat/demo-auth
+[33m553e1eb[m[33m ([m[1;31morigin/feat/demo-auth[m[33m, [m[1;32mfeat/demo-auth[m[33m)[m HEAD@{45}: checkout: moving from main to feat/demo-auth
+[33m360b012[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{46}: clone: from https://github.com/doingJustForLabs/bootkek.git
