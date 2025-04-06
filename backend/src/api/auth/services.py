@@ -21,7 +21,7 @@ class UserService:
         return user if user else None
 
     async def create_user(self, email: EmailStr, hashed_password: str) -> None:
-        data = {"email": email, "password": hashed_password}
+        data = {"email": email, "password": hashed_password, "role": "user"}
         await self.user_repository.add_one(data)
 
 

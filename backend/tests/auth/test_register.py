@@ -56,6 +56,15 @@ async def test_register_success(client):
             },
             422,
         ),
+        (
+            {
+                "email": "newtest@example.com",
+                "password": "123",
+                "password_repeat": "123",
+                "extra_key": "smth_wrong",
+            },
+            422,
+        ),
     ],
 )
 async def test_register_user(client, json, expected_status):

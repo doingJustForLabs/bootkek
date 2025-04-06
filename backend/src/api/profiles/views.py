@@ -1,15 +1,17 @@
-import os
-import uuid
-from pathlib import Path
-from typing import Annotated, Optional
-
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from starlette.responses import FileResponse
+from PIL import Image
 
 from api.auth.dependency import TokenDependency
 from api.auth.views import http_bearer
-from api.profiles.schemas import ProfileSchema
+from api.profiles.schemas import ProfileSchema, SearchParams, FileSize
 from api.profiles.services import get_profile_service, ProfileService
+
+import uuid
+from io import BytesIO
+from pathlib import Path
+from typing import Annotated
+
 
 router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
@@ -17,32 +19,98 @@ AVATAR_DIR = Path("static/avatars")
 AVATAR_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
 
+file_sizes = [64, 128, 256]
 
-@router.patch("/me", dependencies=[Depends(http_bearer)])
+
+@router.post("/me", dependencies=[Depends(http_bearer)])
 async def setup_user_profile(
     token: TokenDependency,
     profile_data: ProfileSchema,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
-    """Создание и обновление профиля пользователя"""
+    """
+    Создание профиля пользователя
+
+    :param
+
+        token (TokenDependency): Зависимость заголовка с авторизацией
+        profile_data (ProfileSchema): Поля профиля
+
+            name (str, required): Имя пользователя (возможно с фамилией)
+            username (str, required): Юзернейм пользователя (уникальный идентификатор)
+
+            course (int): Курс пользователя
+            sex (str): Пол пользователя (мужской, женский, другой)
+            faculty (str): Факультет пользователя
+
+    :returns
+
+        profile: Созданный профиль
+
+    :exception
+
+        Если профиль существует -> 409 Ошибка - Конфликт
+    """
 
     profile = await profile_service.get_profile_by_user_id(int(token.sub))
 
     if profile:
-        update_data = profile_data.model_dump(exclude_unset=True)
-        await profile_service.update_profile(int(token.sub), update_data)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Profile is already created"
+        )
 
-    else:
+    if not (profile_data.username or profile_data.name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Both 'name' and 'username' are required for profiles creation.",
+        )
 
-        if not (profile_data.username or profile_data.name):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Both 'name' and 'username' are required for profiles creation.",
-            )
+    await profile_service.create_profile(int(token.sub), profile_data)
 
-        await profile_service.create_profile(int(token.sub), profile_data)
+    return {"detail": "Profile created", "profile": profile_data}
 
-    return {"detail": "Profile Updated", "profile": profile_data}
+
+@router.patch("/me", dependencies=[Depends(http_bearer)])
+async def update_user_profile(
+    token: TokenDependency,
+    profile_data: ProfileSchema,
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+):
+    """
+    Обновление профиля пользователя
+
+    :param
+
+        token (TokenDependency): Зависимость заголовка с авторизацией
+        profile_data (ProfileSchema): Поля профиля
+
+            name (str, required): Имя пользователя (возможно с фамилией)
+            username (str, required): Юзернейм пользователя (уникальный идентификатор)
+
+            course (int): Курс пользователя
+            sex (str): Пол пользователя (мужской, женский, другой)
+            faculty (str): Факультет пользователя
+
+    :returns
+
+        profile: Созданный профиль
+
+    :exception
+
+        Если профиль не существует -> 404 Ошибка
+    """
+
+    profile = await profile_service.get_profile_by_user_id(int(token.sub))
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found"
+        )
+
+    update_data = profile_data.model_dump(exclude_unset=True)
+    updated_profile = await profile_service.update_profile(int(token.sub), update_data)
+
+    return {"detail": "Profile updated", "profile": updated_profile}
 
 
 @router.get("/me", dependencies=[Depends(http_bearer)])
@@ -60,70 +128,92 @@ async def get_user_profile(
     return profile
 
 
-@router.post("/avatar", dependencies=[Depends(http_bearer)])
+@router.post("/avatars", dependencies=[Depends(http_bearer)])
 async def update_user_avatar(
     token: TokenDependency,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     avatar: UploadFile = File(...),
 ):
-    """Подгружаем аватарку пользователя"""
-    try:
-        if avatar.content_type not in ALLOWED_AVATAR_TYPES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type"
-            )
+    """Создание аватарки пользователя"""
 
-        profile = await profile_service.get_profile_by_user_id(int(token.sub))
+    if avatar.content_type not in ALLOWED_AVATAR_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type"
+        )
 
-        if profile.avatar_url != "static/avatar/default-avatar.jpg":
-            old_file = AVATAR_DIR / Path(str(profile.avatar_url)).name
-            os.remove(old_file)
-            if old_file.exists():
-                os.remove(old_file)
+    # profile = await profile_service.get_profile_by_user_id(int(token.sub))
 
-        file_name = f"{uuid.uuid4()}.jpg"
+    # if profile.avatar_url != "/static/avatars/default-avatar.jpg":
+    #     old_file = AVATAR_DIR / Path(str(profile.avatar_url)).name
+    #     if old_file.exists():
+    #         os.remove(old_file)
+
+    basename = f"{uuid.uuid4()}"
+    file_path = AVATAR_DIR / f'{basename}.jpg'
+
+    with open(f'{file_path}.jpg', 'wb') as buffer:
+        buffer.write(image_data := await avatar.read())
+
+    image = Image.open(BytesIO(image_data))
+
+    await profile_service.update_profile_avatar(int(token.sub), basename)
+
+    avatar_urls = {}
+
+    for size in file_sizes:
+        image_copy = image.copy()
+        image_copy.thumbnail((size, size))
+
+        file_name = f"{basename}_{size}.jpg"
         file_path = AVATAR_DIR / file_name
 
-        with open(file_path, "wb") as buffer:
-            buffer.write(await avatar.read())
+        image_copy.convert("RGB")
+        image_copy.save(file_path, format="JPEG")
 
         avatar_url = f"/static/avatars/{file_name}"
-        await profile_service.update_profile_avatar(int(token.sub), avatar_url)
+        avatar_urls.update({size: avatar_url})
 
-        return {"detail": "Avatar uploaded successfully", "avatar_url": avatar_url}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=e)
+    return {"detail": "Avatar uploaded successfully", "basename": basename}
 
 
-@router.get("/avatar/{file_name}", dependencies=[Depends(http_bearer)])
-async def get_user_avatar(filename: str):
-    """Получаем аватарку пользователя"""
+@router.get("/avatars/{basename}", dependencies=[Depends(http_bearer)])
+async def get_user_avatar(
+    basename: str,
+    file_size: FileSize
+):
+    """Запрос на получение аватарки пользователя по basename (сгенерированному имени аватарки без размера)
 
-    if ".jpg" not in filename:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bad filename")
+    :arg
+        basename (str): Сгенерированное имя аватарки без размера (лежит у пользователя в avatar_basename)
+        file_size: (Enum(FileSize)): Размер аватарки (в данной версии это 64x64, 128x128, 256x256)
 
-    file_path = AVATAR_DIR / filename
+    :returns
+        FileResponse: Файл
+    """
+
+    file_path = AVATAR_DIR / f'{basename}_{int(file_size.value)}.jpg'
 
     if not file_path.exists():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Avatar not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Avatar not found"
+        )
 
     return FileResponse(file_path)
 
 
 @router.get("/search", dependencies=[Depends(http_bearer)])
 async def search_profile(
-    token: TokenDependency,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
-    q: Optional[str] = None,
-    limit: int = 100,
+    params: Annotated[SearchParams, Depends()],
 ):
     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
 
-    filters = {...}
+    filters = {}
+    filters.update(params.model_dump())
 
-    # profiles = await profile_service.get_profiles(filters)
-    return ...
+    profiles = await profile_service.get_profiles()
+
+    return {"detail": "success", "profiles": profiles, "filters": filters}
 
 
 @router.get("")
@@ -139,7 +229,7 @@ async def get_all_profiles(
             status_code=status.HTTP_404_NOT_FOUND, detail="Users not found"
         )
 
-    return profile
+    return {"detail": "success", "profiles": profile}
 
 
 @router.get("/{user_id}")
@@ -152,7 +242,7 @@ async def get_user_profile(
 
     if not profile:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Users not found"
         )
 
     return profile

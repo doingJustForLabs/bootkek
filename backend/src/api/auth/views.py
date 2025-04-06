@@ -27,7 +27,16 @@ async def register_user(
 ):
     """
     Регистрация пользователя
+
+    :param
+
+        creds (UserRegisterSchema): Данные пользователя (email, пароль и его повтор)
+
+    :returns
+
+        Пользователь регистрируется (сохраняется в базу данных)
     """
+
     if await user_service.get_user_by_email(creds.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already used"
@@ -52,7 +61,15 @@ async def login_user(
     token_service: Annotated[TokenService, Depends(get_token_service)],
 ):
     """
-    Аутентификация пользователя.
+    Аутентификация пользователя
+
+    :param
+
+        creds (UserLoginSchema): Данные для авторизации пользователя (email, пароль)
+
+    :returns
+
+        TokenResponse: пользователь получает access токен (fresh) и его тип
     """
 
     user = await user_service.get_user_by_email(creds.email)
@@ -94,6 +111,10 @@ async def login_user(
 async def refresh_new_access_token(request: Request):
     """
     Обновление Access токена с помощью Refresh токена
+
+    :returns
+
+        TokenResponse: пользователь получает access токен и его тип
     """
 
     try:
@@ -115,10 +136,15 @@ async def refresh_new_access_token(request: Request):
 @router.get("/me", dependencies=[Depends(http_bearer)])
 async def get_protected(user: CurrentUser):
     """
-    Проверка авторизации
+    Получение данных о пользователе
 
-    Для каждого последующего "защищенного" запроса (с замочком)
-    необходимо указывать header {"Authorization": "Bearer <AccessToken>"}.
+    :header
+
+        token: Пользователь должен отправить в заголовок запроса {"Authorization": "Bearer <access_токен>"}
+
+    :returns
+
+        user: Информация о пользователе (email, хэшированный пароль и другие приватные данные)
     """
     return {"detail": user}
 

@@ -23,6 +23,10 @@ class AbstractRepository(ABC):
     async def update_one(self, user_id: int, update_data: dict):
         raise NotImplementedError
 
+    @abstractmethod
+    async def delete_one(self, user_id: int):
+        raise NotImplementedError
+
 
 class SQLAlchemyRepository(AbstractRepository):
     model = None
@@ -53,18 +57,23 @@ class SQLAlchemyRepository(AbstractRepository):
             res = await session.execute(stmt)
             return res.scalar_one_or_none()
 
-    async def add_one(self, data: dict) -> None:
+    async def add_one(self, data: dict) -> model:
         async with db_helper.session_factory() as session:
-            stmt = insert(self.model).values(**data)
-            await session.execute(stmt)
+            stmt = insert(self.model).values(**data).returning(self.model)
+            result = await session.execute(stmt)
             await session.commit()
+            return result.scalar_one()
 
-    async def update_one(self, user_id: int, update_data: dict) -> None:
+    async def update_one(self, user_id: int, update_data: dict) -> model:
         async with db_helper.session_factory() as session:
             stmt = (
                 update(self.model)
                 .where(user_id == self.model.user_id)
                 .values(**update_data)
-            )
-            await session.execute(stmt)
+            ).returning(self.model)
+            result = await session.execute(stmt)
             await session.commit()
+            return result.scalar_one()
+
+    async def delete_one(self, user_id: int):
+        pass

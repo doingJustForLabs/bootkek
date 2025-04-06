@@ -19,7 +19,9 @@ class Base(AsyncAttrs, DeclarativeBase):
 class DatabaseHelper:
     def __init__(self, url: str, echo: bool):
         self.engine = create_async_engine(url=url, echo=echo, pool_size=5)
-        self.session_factory = async_sessionmaker(bind=self.engine)
+        self.session_factory = async_sessionmaker(
+            bind=self.engine, expire_on_commit=False
+        )
 
     async def dispose(self):
         await self.engine.dispose()

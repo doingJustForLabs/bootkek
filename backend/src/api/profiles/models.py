@@ -1,4 +1,6 @@
-from sqlalchemy import Integer, String, ForeignKey
+from datetime import datetime
+
+from sqlalchemy import Integer, String, ForeignKey, func, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.db import Base
@@ -17,8 +19,13 @@ class Profile(Base):
     course: Mapped[int] = mapped_column(Integer, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
     faculty: Mapped[str] = mapped_column(String, nullable=True)
-    avatar_url: Mapped[str] = mapped_column(
-        String, default="static/avatar/default-avatar.jpg"
+    avatar_basename: Mapped[str] = mapped_column(
+        String, default="default-avatar"
+    )
+
+    create_date: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    update_date: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), onupdate=func.now()
     )
 
 

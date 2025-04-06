@@ -14,12 +14,14 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, unique=True)
     password: Mapped[str] = mapped_column(String)
 
+    role: Mapped[str] = mapped_column(String)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
     create_date: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    update_data: Mapped[datetime] = mapped_column(
+    update_date: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()
     )
 
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
     # is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
