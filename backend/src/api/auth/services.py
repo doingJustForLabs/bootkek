@@ -1,86 +1,60 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from pydantic import EmailStr
-from sqlalchemy import select, delete
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.auth.models import User, UserSession, UserRepository, TokenRepository
 from core.config import settings
-from database.models import User, UserSession
+from database.repository import AbstractRepository
 
 
-class UserAuthRepository:
-    @staticmethod
-    async def start_user(session: AsyncSession, email: EmailStr, password: str):
-        user = await session.scalar(select(User).where(User.email == email))
+class UserService:
+    def __init__(self, user_repository: type[AbstractRepository]):
+        self.user_repository = user_repository()
 
-        if not user:
-            session.add(
-                User(
-                    email=email,
-                    password=password,
-                    create_date=datetime.now(),
-                    update_date=datetime.now(),
-                    active=True,
-                )
-            ),
-            await session.commit()
+    async def get_user_by_user_id(self, user_id: int) -> User:
+        user = await self.user_repository.find_one(id=user_id)
+        return user if user else None
 
-    @staticmethod
-    async def get_user_by_email(
-        session: AsyncSession, email: EmailStr
-    ) -> Optional[User]:
-        res = await session.execute(select(User).filter(User.email == email))
-        return res.scalars().first()
+    async def get_user_by_email(self, email: EmailStr) -> Optional[User]:
+        user = await self.user_repository.find_one(email=email)
+        return user if user else None
 
-    @staticmethod
-    async def get_user_by_user_id(
-        session: AsyncSession, user_id: int
-    ) -> Optional[User]:
-        res = await session.execute(select(User).filter(User.id == user_id))
-        return res.scalars().first()
+    async def create_user(self, email: EmailStr, hashed_password: str) -> None:
+        data = {"email": email, "password": hashed_password, "role": "user"}
+        await self.user_repository.add_one(data)
 
-    @staticmethod
-    async def start_user_session(
-        session: AsyncSession, user_id: int, refresh_token: str
-    ):
-        await session.execute(delete(UserSession).where(UserSession.user_id == user_id))
 
-        time_offset: timedelta = settings.jwt.refresh_token.expires
-        current_datetime = datetime.now()
-        future_datetime = current_datetime + time_offset
-        session.add(
-            UserSession(
-                user_id=user_id,
-                refresh_token=refresh_token,
-                start_date=current_datetime,
-                end_date=future_datetime,
-            )
-        )
-        await session.commit()
+class TokenService:
+    def __init__(self, user_repository: type[AbstractRepository]):
+        self.user_repository = user_repository()
 
-    @staticmethod
-    async def get_user_session_by_user_id(
-        session: AsyncSession, user_id: int
+    async def create_token_session(self, user_id: int, refresh_token: str) -> None:
+        data = {
+            "user_id": user_id,
+            "refresh_token": refresh_token,
+            "start_date": datetime.now(),
+            "end_date": datetime.now() + settings.jwt.refresh_token.expires,
+        }
+        await self.user_repository.add_one(data)
+
+    async def get_token_session_by_user_id(self, user_id: int) -> Optional[UserSession]:
+        user_session = await self.user_repository.find_one(id=user_id)
+        return user_session if user_session else None
+
+    async def get_token_session_by_token(
+        self, refresh_token: str
     ) -> Optional[UserSession]:
-        res = await session.execute(
-            select(UserSession).filter(UserSession.user_id == user_id)
-        )
-        return res.scalars().first()
+        user_session = await self.user_repository.find_one(refresh_token=refresh_token)
+        return user_session if user_session else None
 
-    @staticmethod
-    async def get_user_session_by_token(
-        session: AsyncSession, refresh_token: str
-    ) -> Optional[UserSession]:
-        res = await session.execute(
-            select(UserSession).filter(UserSession.refresh_token == refresh_token)
-        )
-        return res.scalars().first()
+    async def delete_user_token_session(self, user_id: int):
+        pass
 
-    @staticmethod
-    async def delete_user_session(
-        session: AsyncSession, user_id: int
-    ) -> Optional[UserSession]:
-        stmt = delete(UserSession).where(UserSession.user_id == user_id)
-        await session.execute(stmt)
-        await session.commit()
+
+def get_user_service():
+    return UserService(UserRepository)
+
+
+def get_token_service():
+    return TokenService(TokenRepository)

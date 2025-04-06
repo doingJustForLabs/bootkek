@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from dotenv import load_dotenv
-from pydantic import PostgresDsn, BaseModel
+from pydantic import PostgresDsn, BaseModel, EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
@@ -44,10 +44,16 @@ class JWTConfig(BaseModel):
     refresh_token: JWTRefreshToken = JWTRefreshToken()
 
 
+class SuperUserConfig(BaseModel):
+    email: EmailStr
+    password: str
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     db: DBConfig
     jwt: JWTConfig
+    super_user: SuperUserConfig
 
     model_config = SettingsConfigDict(env_nested_delimiter="__", case_sensitive=False)
 

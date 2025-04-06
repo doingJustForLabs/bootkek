@@ -13,7 +13,7 @@ async def test_register_success(client):
     )
 
     assert response.status_code == 200
-    assert response.json() == {"detail": "user registered"}
+    assert response.json() == {"detail": "User successfully registered"}
 
 
 @pytest.mark.asyncio
@@ -53,6 +53,15 @@ async def test_register_success(client):
                 "email": "newtest@example.com",
                 "password": "123",
                 "password_repeat": "123",
+            },
+            422,
+        ),
+        (
+            {
+                "email": "newtest@example.com",
+                "password": "123",
+                "password_repeat": "123",
+                "extra_key": "smth_wrong",
             },
             422,
         ),
