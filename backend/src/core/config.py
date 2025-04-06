@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from dotenv import load_dotenv
-from pydantic import PostgresDsn, BaseModel
+from pydantic import PostgresDsn, BaseModel, EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
@@ -15,30 +15,45 @@ class RunConfig(BaseModel):
 class DBConfig(BaseModel):
     url: PostgresDsn
     echo: int
+    mode: str = "DEV"
 
 
 class JWTAccessToken(BaseModel):
     expires: timedelta = timedelta(minutes=15)
+    expires_int: int = expires.seconds * 1000
 
 
 class JWTRefreshToken(BaseModel):
-    expires: timedelta = timedelta(days=15)
+    expires: timedelta = timedelta(days=30)
+    expires_int: int = expires.seconds * 1000
+
+    cookie_name: str = "refresh_token_cookie"
+    same_site: str = "lax"
+    secure: bool = False
+
+    csrf: bool = False
+    csrf_cookie_name: str = "csrf_refresh_token"
 
 
 class JWTConfig(BaseModel):
     secret_key: str
     algorithm: str = "HS256"
-    access_cookie_name: str = "access_token_cookie"
-    token_location: list[str] = ["cookies"]
+    token_location: list[str] = ["headers", "cookies"]
 
     access_token: JWTAccessToken = JWTAccessToken()
     refresh_token: JWTRefreshToken = JWTRefreshToken()
+
+
+class SuperUserConfig(BaseModel):
+    email: EmailStr
+    password: str
 
 
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     db: DBConfig
     jwt: JWTConfig
+    super_user: SuperUserConfig
 
     model_config = SettingsConfigDict(env_nested_delimiter="__", case_sensitive=False)
 
