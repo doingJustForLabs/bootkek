@@ -6,6 +6,7 @@ from api.auth.dependency import TokenDependency
 from api.auth.views import http_bearer
 from api.profiles.schemas import ProfileSchema, SearchParams, FileSize
 from api.profiles.services import get_profile_service, ProfileService
+from core.config import settings
 
 import uuid
 from io import BytesIO
@@ -149,9 +150,9 @@ async def update_user_avatar(
     #         os.remove(old_file)
 
     basename = f"{uuid.uuid4()}"
-    file_path = AVATAR_DIR / f'{basename}.jpg'
+    file_path = AVATAR_DIR / f"{basename}.jpg"
 
-    with open(f'{file_path}.jpg', 'wb') as buffer:
+    with open(f"{file_path}.jpg", "wb") as buffer:
         buffer.write(image_data := await avatar.read())
 
     image = Image.open(BytesIO(image_data))
@@ -177,10 +178,7 @@ async def update_user_avatar(
 
 
 @router.get("/avatars/{basename}", dependencies=[Depends(http_bearer)])
-async def get_user_avatar(
-    basename: str,
-    file_size: FileSize
-):
+async def get_user_avatar(basename: str, file_size: FileSize):
     """Запрос на получение аватарки пользователя по basename (сгенерированному имени аватарки без размера)
 
     :arg
@@ -191,7 +189,7 @@ async def get_user_avatar(
         FileResponse: Файл
     """
 
-    file_path = AVATAR_DIR / f'{basename}_{int(file_size.value)}.jpg'
+    file_path = AVATAR_DIR / f"{basename}_{int(file_size.value)}.jpg"
 
     if not file_path.exists():
         raise HTTPException(

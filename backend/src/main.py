@@ -28,12 +28,18 @@ app = FastAPI(title="Granite", lifespan=lifespan)
 app.include_router(main_router)
 security.handle_errors(app)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")
 
 
 # Middleware
 
-origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173"]
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+]
 
 app.add_middleware(
     CORSMiddleware,
