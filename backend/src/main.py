@@ -28,7 +28,7 @@ app = FastAPI(title="Granite", lifespan=lifespan)
 app.include_router(main_router)
 security.handle_errors(app)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")
 
 
 # Middleware

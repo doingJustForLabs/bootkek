@@ -6,6 +6,7 @@ from api.auth.dependency import TokenDependency
 from api.auth.views import http_bearer
 from api.profiles.schemas import ProfileSchema, SearchParams, FileSize
 from api.profiles.services import get_profile_service, ProfileService
+from core.config import settings
 
 import uuid
 from io import BytesIO
@@ -15,7 +16,7 @@ from typing import Annotated
 
 router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
-AVATAR_DIR = Path("static/avatars")
+AVATAR_DIR = Path(settings.files.static_dir / "avatars")
 AVATAR_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
 
@@ -140,13 +141,6 @@ async def update_user_avatar(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type"
         )
-
-    # profile = await profile_service.get_profile_by_user_id(int(token.sub))
-
-    # if profile.avatar_url != "/static/avatars/default-avatar.jpg":
-    #     old_file = AVATAR_DIR / Path(str(profile.avatar_url)).name
-    #     if old_file.exists():
-    #         os.remove(old_file)
 
     basename = f"{uuid.uuid4()}"
     file_path = AVATAR_DIR / f'{basename}.jpg'

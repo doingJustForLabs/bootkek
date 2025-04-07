@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 
 from dotenv import load_dotenv
 from pydantic import PostgresDsn, BaseModel, EmailStr
@@ -44,16 +45,15 @@ class JWTConfig(BaseModel):
     refresh_token: JWTRefreshToken = JWTRefreshToken()
 
 
-class SuperUserConfig(BaseModel):
-    email: EmailStr
-    password: str
+class FilesConfig(BaseModel):
+    static_dir: Path = Path(__file__).parent.parent.parent / "static"
 
 
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     db: DBConfig
     jwt: JWTConfig
-    super_user: SuperUserConfig
+    files: FilesConfig = FilesConfig()
 
     model_config = SettingsConfigDict(env_nested_delimiter="__", case_sensitive=False)
 
