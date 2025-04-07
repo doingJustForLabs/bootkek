@@ -1,8 +1,8 @@
 from datetime import timedelta
-from typing import Optional
+from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import PostgresDsn, BaseModel
+from pydantic import PostgresDsn, BaseModel, EmailStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
@@ -21,10 +21,12 @@ class DBConfig(BaseModel):
 
 class JWTAccessToken(BaseModel):
     expires: timedelta = timedelta(minutes=15)
+    expires_int: int = expires.seconds * 1000
 
 
 class JWTRefreshToken(BaseModel):
     expires: timedelta = timedelta(days=30)
+    expires_int: int = expires.seconds * 1000
 
     cookie_name: str = "refresh_token_cookie"
     same_site: str = "lax"

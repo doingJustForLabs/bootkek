@@ -1,14 +1,18 @@
 from typing import Annotated
 
-from authx import TokenPayload
 from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
+from api.auth.dependency import CurrentUser
+from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
+from api.auth.services import (
+    UserService,
+    TokenService,
+    get_token_service,
+    get_user_service,
+)
 from core.config import settings
 from core.security import security
-from database.db import DbSession
-from database.repositories.auth import UserAuthRepository
-from database.schemas.auth import UserRegisterSchema, UserLoginSchema, TokenInfo
 from utils import hash_password, verify_password
 
 router = APIRouter(tags=["Авторизация👤"], prefix="/auth")
@@ -17,64 +21,100 @@ http_bearer = HTTPBearer(auto_error=False)
 
 
 @router.post("/register")
-async def register_user(creds: UserRegisterSchema, session: DbSession):
+async def register_user(
+    creds: UserRegisterSchema,
+    user_service: Annotated[UserService, Depends(get_user_service)],
+):
     """
     Регистрация пользователя
+
+    :param
+
+        creds (UserRegisterSchema): Данные пользователя (email, пароль и его повтор)
+
+    :returns
+
+        Пользователь регистрируется (сохраняется в базу данных)
     """
-    if await UserAuthRepository.get_user_by_email(session, creds.email):
+
+    if await user_service.get_user_by_email(creds.email):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email уже используется"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already used"
         )
 
     user_pwd = hash_password(creds.password)
 
     if not verify_password(creds.password_repeat, user_pwd):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Пароли не совпадают"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords doesn't match"
         )
 
-    await UserAuthRepository.start_user(session, email=creds.email, password=user_pwd)
-    return {"detail": "user registered"}
+    await user_service.create_user(creds.email, user_pwd)
+    return {"detail": "User successfully registered"}
 
 
-@router.post("/login", response_model=TokenInfo)
-async def login_user(creds: UserLoginSchema, response: Response, session: DbSession):
+@router.post("/login", response_model=TokenResponse)
+async def login_user(
+    creds: UserLoginSchema,
+    response: Response,
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    token_service: Annotated[TokenService, Depends(get_token_service)],
+):
     """
-    Аутентификация пользователя.
+    Аутентификация пользователя
+
+    :param
+
+        creds (UserLoginSchema): Данные для авторизации пользователя (email, пароль)
+
+    :returns
+
+        TokenResponse: пользователь получает access токен (fresh) и его тип
     """
 
-    user = await UserAuthRepository.get_user_by_email(session, creds.email)
+    user = await user_service.get_user_by_email(creds.email)
 
     # Проверка почты
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Такая почта не зарегистрирована",
+            detail="Email doesn't registered",
         )
 
     # Проверка пароля
     if not verify_password(creds.password, user.password):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Неправильный пароль"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password"
         )
 
-    access_token = security.create_access_token(uid=str(user.id))
-    refresh_token = security.create_refresh_token(uid=str(user.id))
-
-    security.set_refresh_cookies(token=refresh_token, response=response)
-
-    await UserAuthRepository.start_user_session(
-        session=session, refresh_token=refresh_token, user_id=int(user.id)
+    access_token = security.create_access_token(
+        uid=str(user.id), expiry=settings.jwt.access_token.expires, fresh=True
     )
-    return TokenInfo(access_token=access_token)
+
+    refresh_token = security.create_refresh_token(
+        uid=str(user.id), expiry=settings.jwt.refresh_token.expires
+    )
+
+    security.set_refresh_cookies(
+        token=refresh_token,
+        response=response,
+        max_age=settings.jwt.refresh_token.expires_int,
+    )
+
+    await token_service.create_token_session(
+        refresh_token=refresh_token, user_id=int(user.id)
+    )
+    return TokenResponse(access_token=access_token)
 
 
 @router.get("/refresh")
-async def refresh_new_access_token(
-    request: Request,
-):
+async def refresh_new_access_token(request: Request):
     """
     Обновление Access токена с помощью Refresh токена
+
+    :returns
+
+        TokenResponse: пользователь получает access токен и его тип
     """
 
     try:
@@ -85,46 +125,43 @@ async def refresh_new_access_token(
             token, verify_csrf=settings.jwt.refresh_token.csrf, verify_type=True
         )
 
-        new_access_token = security.create_access_token(uid=payload.sub)
+        new_access_token = security.create_access_token(uid=payload.sub, fresh=False)
 
-        return TokenInfo(access_token=new_access_token)
+        return TokenResponse(access_token=new_access_token)
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
 @router.get("/me", dependencies=[Depends(http_bearer)])
-async def get_protected(
-    session: DbSession, token: TokenPayload = Depends(security.access_token_required)
-):
+async def get_protected(user: CurrentUser):
     """
-    Проверка авторизации
+    Получение данных о пользователе
 
-    Для каждого последующего "защищенного" запроса (с замочком)
-    необходимо указывать header {"Authorization": "Bearer <AccessToken>"}.
+    :header
+
+        token: Пользователь должен отправить в заголовок запроса {"Authorization": "Bearer <access_токен>"}
+
+    :returns
+
+        user: Информация о пользователе (email, хэшированный пароль и другие приватные данные)
     """
-
-    try:
-        user = await UserAuthRepository.get_user_by_user_id(session, int(token.sub))
-        return {"detail": user}
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    return {"detail": user}
 
 
-@router.get("/logout", dependencies=[Depends(http_bearer)])
-async def logout_user(
-    user: Annotated[TokenPayload, Depends(security.access_token_required)],
-    session: DbSession,
-    response: Response,
-):
-    try:
-        await UserAuthRepository.delete_user_session(session, user_id=int(user.sub))
-        security.unset_refresh_cookies(response=response)
-
-        # Добавить блоклист для access токена
-
-        return {"detail": "Пользователь разлогинился"}
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+# @router.get(
+#     "/logout",
+#     status_code=status.HTTP_204_NO_CONTENT,
+#     dependencies=[Depends(http_bearer)],
+# )
+# async def logout_user(
+#     session: DbSession,
+#     response: Response,
+#     token: Annotated[TokenPayload, Depends(verify_access_token)],
+# ):
+#     await UserAuthRepository.delete_user_session(session, user_id=int(token.sub))
+#     security.unset_refresh_cookies(response=response)
+#
+#     # Добавить блок лист для access токена
+#
+#     return {"detail": "User logout"}
