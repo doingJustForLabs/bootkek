@@ -4,6 +4,8 @@ from typing import Optional
 from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 
 from database.models import User, UserSession
 
@@ -34,19 +36,27 @@ class UserAuthRepository:
 
     @staticmethod
     async def start_user_session(
-        session: AsyncSession, user_id: int, refresh_token: str
+            session: AsyncSession, user_id: int, refresh_token: str
     ):
         time_offset = timedelta(days=15)
         current_datetime = datetime.now()
         future_datetime = current_datetime + time_offset
-        session.add(
-            UserSession(
-                user_id=user_id,
-                refresh_token=refresh_token,
-                start_date=current_datetime,
-                end_date=future_datetime,
-            )
+
+        stmt = pg_insert(UserSession).values(
+            user_id=user_id,
+            refresh_token=refresh_token,
+            start_date=current_datetime,
+            end_date=future_datetime
+        ).on_conflict_do_update(
+            index_elements=['user_id'],
+            set_={
+                'refresh_token': refresh_token,
+                'start_date': current_datetime,
+                'end_date': future_datetime
+            }
         )
+
+        await session.execute(stmt)
         await session.commit()
 
     @staticmethod

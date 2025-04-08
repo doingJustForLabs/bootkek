@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import String, DateTime, Boolean, INT, ForeignKey, BINARY
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -19,15 +19,18 @@ class User(Base):
     update_date: Mapped[str] = mapped_column(DateTime)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    session = relationship("UserSession", uselist=False, back_populates="user")
 
 class UserSession(Base):
     __tablename__ = "user_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(INT, ForeignKey("users.id"))
+    user_id: Mapped[int] = mapped_column(INT, ForeignKey("users.id"), unique=True)
     refresh_token: Mapped[str] = mapped_column(String(300), nullable=False)
     start_date: Mapped[str] = mapped_column(DateTime)
     end_date: Mapped[str] = mapped_column(DateTime)
+
+    user = relationship("User", back_populates="session")
 
 class Profile(Base):
     __tablename__ = "profiles"
