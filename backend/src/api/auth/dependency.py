@@ -5,6 +5,7 @@ from fastapi import Request, HTTPException, status, Depends
 
 from api.auth.models import User
 from api.auth.services import UserService, get_user_service
+from core.config import settings
 from core.security import security
 
 
@@ -23,11 +24,30 @@ async def verify_access_token(request: Request) -> str:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
-TokenDependency = Annotated[TokenPayload, Depends(verify_access_token)]
+AccessDependency = Annotated[TokenPayload, Depends(verify_access_token)]
+
+
+async def verify_refresh_token(request: Request) -> str:
+    try:
+        token = await security.get_refresh_token_from_request(
+            request, locations=["cookies"]
+        )
+
+        payload = security.verify_token(
+            token, verify_csrf=settings.jwt.refresh_token.csrf, verify_type=True
+        )
+
+        return payload
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+
+RefreshDependency = Annotated[TokenPayload, Depends(verify_refresh_token)]
 
 
 async def get_current_user(
-    token: TokenDependency,
+    token: AccessDependency,
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> User:
     user = await user_service.get_user_by_user_id(int(token.sub))
@@ -43,19 +63,3 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
-
-
-# TODO Сделать супер юзера
-
-
-async def get_current_superuser(cur_user: CurrentUser) -> User:
-    if not cur_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="The user doesn't have enough privileges",
-        )
-
-    return cur_user
-
-
-CurrentSuperUser = Annotated[User, Depends(get_current_superuser)]

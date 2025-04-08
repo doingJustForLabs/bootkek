@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from starlette.responses import FileResponse
 from PIL import Image
 
-from api.auth.dependency import TokenDependency
+from api.auth.dependency import AccessDependency
 from api.auth.views import http_bearer
 from api.profiles.schemas import ProfileSchema, SearchParams, FileSize
 from api.profiles.services import get_profile_service, ProfileService
@@ -25,7 +25,7 @@ file_sizes = [64, 128, 256]
 
 @router.post("/me", dependencies=[Depends(http_bearer)])
 async def setup_user_profile(
-    token: TokenDependency,
+    token: AccessDependency,
     profile_data: ProfileSchema,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
@@ -66,15 +66,20 @@ async def setup_user_profile(
             detail="Both 'name' and 'username' are required for profiles creation.",
         )
 
-    await profile_service.create_profile(int(token.sub), profile_data)
+    profile = await profile_service.create_profile(int(token.sub), profile_data)
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already used"
+        )
 
     return {"detail": "Profile created", "profile": profile_data}
 
 
 @router.patch("/me", dependencies=[Depends(http_bearer)])
 async def update_user_profile(
-    token: TokenDependency,
-    profile_data: ProfileSchema,
+    token: AccessDependency,
+    update_data: ProfileSchema,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
     """
@@ -108,15 +113,19 @@ async def update_user_profile(
             status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found"
         )
 
-    update_data = profile_data.model_dump(exclude_unset=True)
     updated_profile = await profile_service.update_profile(int(token.sub), update_data)
+
+    if not updated_profile:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already used"
+        )
 
     return {"detail": "Profile updated", "profile": updated_profile}
 
 
 @router.get("/me", dependencies=[Depends(http_bearer)])
 async def get_user_profile(
-    token: TokenDependency,
+    token: AccessDependency,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
     """Получение данных о пользователе"""
@@ -131,7 +140,7 @@ async def get_user_profile(
 
 @router.post("/avatars", dependencies=[Depends(http_bearer)])
 async def update_user_avatar(
-    token: TokenDependency,
+    token: AccessDependency,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     avatar: UploadFile = File(...),
 ):
@@ -143,9 +152,9 @@ async def update_user_avatar(
         )
 
     basename = f"{uuid.uuid4()}"
-    file_path = AVATAR_DIR / f'{basename}.jpg'
+    file_path = AVATAR_DIR / f"{basename}.jpg"
 
-    with open(f'{file_path}.jpg', 'wb') as buffer:
+    with open(f"{file_path}.jpg", "wb") as buffer:
         buffer.write(image_data := await avatar.read())
 
     image = Image.open(BytesIO(image_data))
@@ -171,10 +180,7 @@ async def update_user_avatar(
 
 
 @router.get("/avatars/{basename}", dependencies=[Depends(http_bearer)])
-async def get_user_avatar(
-    basename: str,
-    file_size: FileSize
-):
+async def get_user_avatar(basename: str, file_size: FileSize):
     """Запрос на получение аватарки пользователя по basename (сгенерированному имени аватарки без размера)
 
     :arg
@@ -185,7 +191,7 @@ async def get_user_avatar(
         FileResponse: Файл
     """
 
-    file_path = AVATAR_DIR / f'{basename}_{int(file_size.value)}.jpg'
+    file_path = AVATAR_DIR / f"{basename}_{int(file_size.value)}.jpg"
 
     if not file_path.exists():
         raise HTTPException(

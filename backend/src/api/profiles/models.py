@@ -19,9 +19,7 @@ class Profile(Base):
     course: Mapped[int] = mapped_column(Integer, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
     faculty: Mapped[str] = mapped_column(String, nullable=True)
-    avatar_basename: Mapped[str] = mapped_column(
-        String, default="default-avatar"
-    )
+    avatar_basename: Mapped[str] = mapped_column(String, default="default-avatar")
 
     create_date: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     update_date: Mapped[datetime] = mapped_column(

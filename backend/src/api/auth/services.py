@@ -3,50 +3,64 @@ from typing import Optional
 
 from pydantic import EmailStr
 
-from api.auth.models import User, UserSession, UserRepository, TokenRepository
+from api.auth.models import User, TokenSession, UserRepository, TokenRepository
+from api.auth.schemas import UserRegisterSchema
 from core.config import settings
 from database.repository import AbstractRepository
+from utils import hash_password, verify_password
 
 
 class UserService:
     def __init__(self, user_repository: type[AbstractRepository]):
         self.user_repository = user_repository()
 
-    async def get_user_by_user_id(self, user_id: int) -> User:
+    async def get_user_by_user_id(self, user_id: int) -> Optional[User]:
         user = await self.user_repository.find_one(id=user_id)
-        return user if user else None
+        return user
 
     async def get_user_by_email(self, email: EmailStr) -> Optional[User]:
         user = await self.user_repository.find_one(email=email)
-        return user if user else None
+        return user
 
-    async def create_user(self, email: EmailStr, hashed_password: str) -> None:
-        data = {"email": email, "password": hashed_password, "role": "user"}
-        await self.user_repository.add_one(data)
+    async def create_user(self, creds: UserRegisterSchema) -> Optional[User]:
+        hash_pwd = hash_password(creds.password)
+
+        if not verify_password(creds.password_repeat, hash_pwd):
+            return None
+
+        data = {"email": creds.email, "password": hash_pwd, "role": "user"}
+
+        user = await self.user_repository.add_one(data)
+        return user
 
 
 class TokenService:
     def __init__(self, user_repository: type[AbstractRepository]):
         self.user_repository = user_repository()
 
-    async def create_token_session(self, user_id: int, refresh_token: str) -> None:
+    async def create_token_session(
+        self, user_id: int, refresh_token: str
+    ) -> TokenSession:
         data = {
             "user_id": user_id,
             "refresh_token": refresh_token,
             "start_date": datetime.now(),
             "end_date": datetime.now() + settings.jwt.refresh_token.expires,
         }
-        await self.user_repository.add_one(data)
+        token = await self.user_repository.add_one(data)
+        return token
 
-    async def get_token_session_by_user_id(self, user_id: int) -> Optional[UserSession]:
+    async def get_token_session_by_user_id(
+        self, user_id: int
+    ) -> Optional[TokenSession]:
         user_session = await self.user_repository.find_one(id=user_id)
-        return user_session if user_session else None
+        return user_session
 
     async def get_token_session_by_token(
         self, refresh_token: str
-    ) -> Optional[UserSession]:
+    ) -> Optional[TokenSession]:
         user_session = await self.user_repository.find_one(refresh_token=refresh_token)
-        return user_session if user_session else None
+        return user_session
 
     async def delete_user_token_session(self, user_id: int):
         pass

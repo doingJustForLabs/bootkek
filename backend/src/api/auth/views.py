@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
-from api.auth.dependency import CurrentUser
+from api.auth.dependency import CurrentUser, RefreshDependency
 from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
 from api.auth.services import (
     UserService,
@@ -13,7 +13,7 @@ from api.auth.services import (
 )
 from core.config import settings
 from core.security import security
-from utils import hash_password, verify_password
+from utils import verify_password
 
 router = APIRouter(tags=["Авторизация👤"], prefix="/auth")
 
@@ -42,14 +42,13 @@ async def register_user(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already used"
         )
 
-    user_pwd = hash_password(creds.password)
+    user = await user_service.create_user(creds)
 
-    if not verify_password(creds.password_repeat, user_pwd):
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords doesn't match"
         )
 
-    await user_service.create_user(creds.email, user_pwd)
     return {"detail": "User successfully registered"}
 
 
@@ -98,17 +97,18 @@ async def login_user(
     security.set_refresh_cookies(
         token=refresh_token,
         response=response,
-        max_age=settings.jwt.refresh_token.expires_int,
+        max_age=settings.jwt.refresh_token.expires_int
     )
 
-    await token_service.create_token_session(
-        refresh_token=refresh_token, user_id=int(user.id)
-    )
+    # await token_service.create_token_session(
+    #     refresh_token=refresh_token, user_id=int(user.id)
+    # )
+
     return TokenResponse(access_token=access_token)
 
 
 @router.get("/refresh")
-async def refresh_new_access_token(request: Request):
+async def refresh_new_access_token(payload: RefreshDependency):
     """
     Обновление Access токена с помощью Refresh токена
 
@@ -117,20 +117,9 @@ async def refresh_new_access_token(request: Request):
         TokenResponse: пользователь получает access токен и его тип
     """
 
-    try:
-        token = await security.get_refresh_token_from_request(request)
+    new_access_token = security.create_access_token(uid=payload.sub, fresh=False)
 
-        # CSRF отключен
-        payload = security.verify_token(
-            token, verify_csrf=settings.jwt.refresh_token.csrf, verify_type=True
-        )
-
-        new_access_token = security.create_access_token(uid=payload.sub, fresh=False)
-
-        return TokenResponse(access_token=new_access_token)
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    return TokenResponse(access_token=new_access_token)
 
 
 @router.get("/me", dependencies=[Depends(http_bearer)])

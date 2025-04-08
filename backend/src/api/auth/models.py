@@ -25,7 +25,7 @@ class User(Base):
     # is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class UserSession(Base):
+class TokenSession(Base):
     __tablename__ = "user_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -41,4 +41,4 @@ class UserRepository(SQLAlchemyRepository):
 
 
 class TokenRepository(SQLAlchemyRepository):
-    model = UserSession
+    model = TokenSession

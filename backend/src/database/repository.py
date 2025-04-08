@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy import insert, select, update
 
@@ -44,7 +44,7 @@ class SQLAlchemyRepository(AbstractRepository):
             res = await session.execute(stmt)
             return res.scalars().all()
 
-    async def find_one(self, **filters) -> model:
+    async def find_one(self, **filters) -> Optional[model]:
         async with db_helper.session_factory() as session:
             stmt = select(self.model)
 
