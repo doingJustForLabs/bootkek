@@ -39,7 +39,7 @@ class Chat(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
-    created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
+    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), default=func.now())
 
     # Связь с пользователями через таблицу связи
     users: Mapped[list["User"]] = relationship("User", secondary="chat_users", back_populates="chats")
@@ -51,7 +51,7 @@ class ChatUser(Base):
 
     chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"), primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    join_date: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
+    join_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True), default=func.now())
 
     # chat: Mapped["Chat"] = relationship("Chat", back_populates="users")
     # user: Mapped["User"] = relationship("User", back_populates="chats")
@@ -65,7 +65,7 @@ class Message(Base):
     chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     content: Mapped[str] = mapped_column(String(1000))
-    timestamp: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
+    timestamp: Mapped[DateTime] = mapped_column(DateTime(timezone=True), default=func.now())
 
     chat: Mapped["Chat"] = relationship("Chat", back_populates="messages")
     user: Mapped["User"] = relationship("User", back_populates="messages")

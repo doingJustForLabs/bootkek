@@ -5,7 +5,7 @@ from database.db import db_helper
 from database.repositories.chats import ChatRepository
 from database.repositories.auth import UserAuthRepository
 from database.models import Chat, Message
-# from database.schemas.message_schemas import MessageResponse
+from database.schemas.message_schemas import MessageResponse
 from database.schemas.chat_creation import CreateChatRequest
 
 router = APIRouter()
@@ -43,10 +43,14 @@ async def get_messages(chat_id: int, db: AsyncSession = Depends(db_helper.sessio
 
 # Добавление нового сообщения в чат
 @router.post("/chats/{chat_id}/messages")
-async def add_message(chat_id: int, content: str, user_id: int, db: AsyncSession = Depends(db_helper.session_getter)):
+async def add_message(
+        chat_id: int,
+        content: str,
+        user_id: int,
+        db: AsyncSession = Depends(db_helper.session_getter)
+):
     # Добавление нового сообщения в базу данных
     new_message = await ChatRepository.add_message_to_chat(db, chat_id, user_id, content)
-
     # Возвращаем новое сообщение
     return new_message
 

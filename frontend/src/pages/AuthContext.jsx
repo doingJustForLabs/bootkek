@@ -19,9 +19,13 @@ export const AuthProvider = ({ children }) => {
                 return;
             }
             const userData = await authService.getMe();
+            if (!userData?.id) {
+                throw new Error("Invalid user data");
+            }
             setUser(userData);
         } catch (error) {
             // Если токен невалидный, делаем логаут
+            console.error("Auth check failed:", error);
             await authService.logout();
             setUser(null);
         } finally {
@@ -35,17 +39,16 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await authService.login(email, password);
+            const loginResponse = await authService.login(email, password);
             const userData = await authService.getMe();
 
-            console.log('User data after login:', userData); // Проверьте данные
-
             if (!userData?.id) {
-                throw new Error('User ID not received');
+                throw new Error("User ID not received");
             }
 
             setUser(userData); // Важно: сохраняем полный объект пользователя
             navigate("/profile");
+            return true;
         } catch (error) {
             console.error("Login error:", error);
             setUser(null);
@@ -64,7 +67,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
             {children}
         </AuthContext.Provider>
     );

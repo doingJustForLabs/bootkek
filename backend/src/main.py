@@ -73,23 +73,21 @@ async def websocket_chat(websocket: WebSocket, db: AsyncSession = Depends(db_hel
     logging.debug("WebSocket connected")
 
     try:
-        data = await websocket.receive_text()
-        print(f"Received data: {data}")
-        message_data = json.loads(data)
+        # 1. Получаем первое сообщение с токеном
+        auth_data = await websocket.receive_text()
+        auth = json.loads(auth_data)
 
-        token = message_data.get("token")
-        chat_id = message_data.get("chatId")
+        token = auth.get("token")
+        chat_id = auth.get("chatId")
 
-        # Проверка данных
+        # 2. Проверяем обязательные поля
         if not token or not chat_id:
-            error_message = "Token or chatId missing"
-            print(error_message)
-            await websocket.send_text(json.dumps({"error": error_message}))
-            await websocket.close(code=1008, reason=error_message)
+            await websocket.close(code=1008, reason="Token and chatId required")
             return
 
         # Переадресуем обработку в отдельную функцию
         await handle_websocket(websocket, token, chat_id, db)
+
         print("WebSocket message handled")
 
     except json.JSONDecodeError:

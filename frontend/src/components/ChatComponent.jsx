@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import {useState, useEffect, useRef, useCallback} from 'react';
 import { useAuth } from '../pages/AuthContext';
 import { Input, Button, List, message, Modal, Spin } from 'antd';
 import API from '../services/API';
+import { Navigate } from 'react-router-dom';
 
 const ChatComponent = () => {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, checkAuth } = useAuth();
     const [chats, setChats] = useState([]);
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
@@ -16,25 +17,33 @@ const ChatComponent = () => {
     const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
 
-    if (authLoading) {
-        return <Spin tip="Проверка авторизации..." />;
-    }
+    // Гарантированное получение user.id
+    const getUserId = useCallback(() => {
+        if (!user?.id) {
+            console.error("User ID is missing!", user);
+            // Попытка перепроверить аутентификацию
+            checkAuth().then(() => {
+                if (!user?.id) {
+                    throw new Error("User not authenticated");
+                }
+            });
+        }
+        return user.id;
+    }, [user, checkAuth]);
 
     useEffect(() => {
-        const fetchChats = async () => {
-            try {
-                if (!user?.id) {  // Добавляем проверку
-                    console.error('User ID is undefined');
-                    return;
-                }
-                const response = await API.get(`/chats/${user.id}`);
-                console.log('Ответ от сервера:', response.data); // Проверьте данные в консоли
-            } catch (error) {
-                console.error('Ошибка загрузки чатов:', error);
-            }
-        };
-        fetchChats();
-    }, []);
+        if (authLoading) return;
+
+        if (!user) {
+            message.error("Требуется авторизация");
+            return;
+        }
+
+        // Теперь getUserId() всегда вернет корректный ID
+        console.log("Current user ID:", getUserId());
+
+        // ... остальная логика компонента
+    }, [user, authLoading, getUserId]);
 
     // Загрузка чатов пользователя
     const fetchChats = async () => {
@@ -75,6 +84,62 @@ const ChatComponent = () => {
         }
     };
 
+    // Отправка сообщения
+    const sendMessage = async () => {
+        if (!inputValue.trim() || !selectedChat) return;
+
+        try{
+            const userId = getUserId();
+
+            // Создаем временное сообщение
+            const tempMessage = {
+                tempId: Date.now(), // Временный ID
+                content: inputValue,
+                user_id: userId,
+                timestamp: new Date().toISOString(),
+                status: 'sending'
+            };
+
+            // Сразу добавляем в UI
+            setMessages(prev => [...prev, tempMessage]);
+            setInputValue('');
+
+            // Отправляем через WebSocket
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    type: 'message',
+                    ...tempMessage,
+                    sender_id: userId
+                }));
+            } else {
+                throw new Error('WebSocket not connected');
+            }
+        } catch (error) {
+            // Если ошибка, обновляем статус
+            setMessages(prev => prev.map(msg =>
+                msg.tempId === tempMessage.tempId
+                    ? {...msg, status: 'failed'}
+                    : msg
+            ));
+        }
+    };
+
+    useEffect(() => {
+        const fetchChats = async () => {
+            try {
+                if (!user?.id) {  // Добавляем проверку
+                    console.error('User ID is undefined');
+                    return;
+                }
+                const response = await API.get(`/chats/${user.id}`);
+                console.log('Ответ от сервера:', response.data); // Проверьте данные в консоли
+            } catch (error) {
+                console.error('Ошибка загрузки чатов:', error);
+            }
+        };
+        fetchChats();
+    }, []);
+
     // Создание нового чата
     // const createChat = async () => {
     //     try {
@@ -91,89 +156,104 @@ const ChatComponent = () => {
     //     }
     // };
 
-    // Отправка сообщения
-    const sendMessage = async () => {
-        if (!inputValue.trim() || !selectedChat) return;
-
-        // Создаем временное сообщение
-        const tempMessage = {
-            id: Date.now(), // Временный ID
-            content: inputValue,
-            user_id: user.id,
-            timestamp: new Date().toISOString(),
-            isPending: true
-        };
-
-        // Сразу добавляем в UI
-        setMessages(prev => [...prev, tempMessage]);
-        setInputValue('');
-
-        try {
-            // Параметры теперь передаются в URL, а не в теле запроса
-            const response = await API.post(
-                `/chats/${selectedChat}/messages?content=${encodeURIComponent(inputValue)}&user_id=${user.id}`,
-                {}, // Пустое тело запроса
-                {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            setMessages(prev => prev.map(msg =>
-                msg.id === tempMessage ? { ...response.data, isPending: false } : msg
-            ));
-
-            setInputValue('');
-            console.log('Сообщение отправлено:', response.data);
-
-        } catch (error) {
-            setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-            console.error('Ошибка отправки:', {
-                status: error.response?.status,
-                data: error.response?.data
-            });
-            message.error('Не удалось отправить сообщение');
+    useEffect(() => {
+        if (user?.id) { // Добавлена проверка на user.id
+            fetchChats();
         }
-    };
+    }, [user?.id]); // Зависимость от user.id вместо user
 
 
     useEffect(() => {
         if (!selectedChat) return;
 
-        socketRef.current = new WebSocket('ws://localhost:8000/ws/chat');
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            console.error('No access token found');
+            return;
+        }
 
-        socketRef.current.onopen = () => {
+        const socket = new WebSocket('ws://localhost:8000/ws/chat');
+
+        socket.onopen = () => {
             console.log('WebSocket connected');
-            // Авторизация через куки (HttpOnly)
+            socket.send(JSON.stringify({
+                token: token,
+                chatId: selectedChat
+            }));
         };
 
-        socketRef.current.onmessage = (event) => {
-            try {
-                const serverMessage = JSON.parse(event.data);
-                setMessages(prev => {
-                    // Удаляем все временные сообщения с таким же содержанием
-                    const filtered = prev.filter(msg =>
-                        !(msg.isPending &&
-                            msg.content === serverMessage.content &&
-                            msg.user_id === serverMessage.user_id)
-                    );
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received WS data:', data);
 
-                    // Добавляем подтвержденное сообщение от сервера
-                    return [...filtered, serverMessage];
+            // Обрабатываем подтверждение подключения
+            if (data.type === 'connection_ack') {
+                console.log('Successfully authenticated');
+                return;
+            }
+
+            // Обработка временных сообщений
+            if (data.type === 'message_temp_ack') {
+                setMessages(prev => prev.map(msg =>
+                    msg.tempId === data.tempId
+                        ? { ...msg, status: 'sending', user_id: data.user_id } // Фиксим user_id
+                        : msg
+                ));
+                return;
+            }
+
+            // Обработка подтверждения доставки
+            if (data.type === 'message_confirmation') {
+                setMessages(prev => prev.map(msg =>
+                    msg.tempId === data.tempId
+                        ? {
+                            ...msg,
+                            id: data.messageId,
+                            status: 'delivered',
+                            user_id: data.user_id}
+                        : msg
+                ));
+                return;
+            }
+
+            // Обрабатываем сообщения
+            if (data.type === 'chat_message') {
+                setMessages(prev => {
+                    // Удаляем временное сообщение если есть
+                    const filtered = data.data.tempId
+                        ? prev.filter(msg => msg.tempId !== data.data.tempId)
+                        : prev;
+
+                    // Добавляем/обновляем сообщение
+                    const existingIndex = filtered.findIndex(m => m.id === data.data.id);
+
+                    if (existingIndex >= 0) {
+                        const updated = [...filtered];
+                        updated[existingIndex] = data.data;
+                        return updated;
+                    }
+
+                    return [...filtered, {
+                        ...data.data,
+                        user_id: data.data.user_id
+                    }];
                 });
-            } catch (error) {
-                console.error('Error parsing message:', error);
             }
         };
 
-        socketRef.current.onclose = () => {
-            console.log('WebSocket disconnected');
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
         };
 
+        socket.onclose = (event) => {
+            console.log('WebSocket disconnected', event.code, event.reason);
+        };
+
+        socketRef.current = socket;
+
         return () => {
-            if (socketRef.current) {
-                socketRef.current.close();
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.close(1000, 'Component unmounted');
             }
         };
     }, [selectedChat]);
@@ -182,14 +262,13 @@ const ChatComponent = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    useEffect(() => {
-        if (user?.id) { // Добавлена проверка на user.id
-            fetchChats();
-        }
-    }, [user?.id]); // Зависимость от user.id вместо user
+    if (authLoading) {
+        return <Spin tip="Проверка авторизации..." />;
+    }
 
     if (!user) {
-        return <div>Пожалуйста, войдите в систему</div>;
+        alert("Пожалуйста, войдите в систему");
+        return <Navigate to="/" replace />;
     }
 
     console.log('Current user in ChatComponent:', {
@@ -231,9 +310,13 @@ const ChatComponent = () => {
                             <List
                                 dataSource={messages}
                                 renderItem={msg => (
-                                    <List.Item key={msg.id} style={{ padding: '8px 0' }}>
+                                    <List.Item
+                                        key={msg.id || msg.tempId}
+                                        style={{ padding: '8px 0' }}
+                                        className={`message ${msg.user_id === user.id ? 'sent' : 'received'}`}
+                                    >
                                         <div
-                                            className={`message ${msg.user_id === user.id ? 'sent' : 'received'}`}
+                                            className={`message-bubble ${msg.status || ''}`}
                                             style={{
                                                 maxWidth: '70%',
                                                 padding: '8px 12px',
@@ -253,9 +336,15 @@ const ChatComponent = () => {
                                                 fontSize: '0.8em',
                                                 marginTop: '4px'
                                             }}>
-                                                {new Date(msg.timestamp).toLocaleTimeString()}
-                                                {msg.isPending && ' (отправка...)'}
-                                                {String(msg.id).startsWith('temp-') && !msg.isPending && ' ✓'}
+                                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {/* Индикаторы статуса */}
+                                                {msg.status === 'sending' && ' (отправка...)'}
+                                                {msg.status === 'failed' && ' (не отправлено)'}
+                                                {msg.status === 'delivered' && ' ✓'}
+
+                                                {/* Для обратной совместимости с isPending */}
+                                                {!msg.status && msg.isPending && ' (отправка...)'}
+                                                {!msg.status && !msg.isPending && msg.tempId && ' ✓'}
                                             </small>
                                         </div>
                                     </List.Item>
@@ -334,37 +423,6 @@ const ChatComponent = () => {
                 />
             </Modal>
         </div>
-        // <div className="chat-container">
-        //     <div className="messages-container">
-        //         <List
-        //             dataSource={messages}
-        //             renderItem={msg => (
-        //                 <List.Item>
-        //                     <div className={`message ${msg.sender_id === user.id ? 'sent' : 'received'}`}>
-        //                         <div className="message-content">
-        //                             <p>{msg.content}</p>
-        //                             <small>
-        //                                 {new Date(msg.timestamp).toLocaleTimeString()}
-        //                             </small>
-        //                         </div>
-        //                     </div>
-        //                 </List.Item>
-        //             )}
-        //         />
-        //     </div>
-        //
-        //     <div className="message-input">
-        //         <Input
-        //             value={inputValue}
-        //             onChange={(e) => setInputValue(e.target.value)}
-        //             onPressEnter={sendMessage}
-        //             placeholder="Введите сообщение..."
-        //         />
-        //         <Button type="primary" onClick={sendMessage}>
-        //             Отправить
-        //         </Button>
-        //     </div>
-        // </div>
     );
 };
 

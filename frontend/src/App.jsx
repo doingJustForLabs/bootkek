@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import ResetPwd from "./pages/ResetPwd";
 import Profile from "./pages/Profile";
+import ChatPage from "./pages/ChatPage";
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -24,6 +25,7 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/reset" element={<ResetPwd />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/chat" element={<ChatPage  />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
