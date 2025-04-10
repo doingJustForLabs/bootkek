@@ -38,10 +38,9 @@ class ProfileSchema(BaseModel):
 
 
 class SearchParams(BaseModel):
-    q: Optional[str] = Query(None)
+    q: str = ""
 
-    # Пагинация
-    page: Optional[int] = Field(1, ge=1, description="Выбранная страница")
-    per_page: Optional[int] = Field(
-        10, le=100, gt=0, description="Элементов на одной странице"
-    )
+    page: int = Field(0, ge=0)
+    limit: int = Field(10, le=100, gt=0)
+    order_by: str = "id"
+    desc: bool = False

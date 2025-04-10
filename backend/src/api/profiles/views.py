@@ -73,7 +73,7 @@ async def setup_user_profile(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already used"
         )
 
-    return {"detail": "Profile created", "profile": profile_data}
+    return {"profile": profile_data}
 
 
 @router.patch("/me", dependencies=[Depends(http_bearer)])
@@ -120,7 +120,7 @@ async def update_user_profile(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already used"
         )
 
-    return {"detail": "Profile updated", "profile": updated_profile}
+    return {"profile": updated_profile}
 
 
 @router.get("/me", dependencies=[Depends(http_bearer)])
@@ -176,7 +176,7 @@ async def update_user_avatar(
         avatar_url = f"/static/avatars/{file_name}"
         avatar_urls.update({size: avatar_url})
 
-    return {"detail": "Avatar uploaded successfully", "basename": basename}
+    return {"basename": basename}
 
 
 @router.get("/avatars/{basename}", dependencies=[Depends(http_bearer)])
@@ -202,18 +202,26 @@ async def get_user_avatar(basename: str, file_size: FileSize):
 
 
 @router.get("/search", dependencies=[Depends(http_bearer)])
-async def search_profile(
+async def search_some_profiles(
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     params: Annotated[SearchParams, Depends()],
 ):
     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
+    try :
+        profiles = await profile_service.search_profiles(
+            q=params.q,
+            limit=int(params.limit),
+            page=int(params.page),
+            order_by=params.order_by,
+            desc=params.desc,
+        )
 
-    filters = {}
-    filters.update(params.model_dump())
-
-    profiles = await profile_service.get_profiles()
-
-    return {"detail": "success", "profiles": profiles, "filters": filters}
+        return {
+            "profiles": profiles,
+            "pagination": {**params.model_dump()},
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("")
@@ -222,14 +230,14 @@ async def get_all_profiles(
 ):
     """Получаем информацию о всех пользователях"""
 
-    profile = await profile_service.get_profiles()
+    profiles = await profile_service.get_profiles()
 
-    if not profile:
+    if not profiles:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Users not found"
         )
 
-    return {"detail": "success", "profiles": profile}
+    return {"profiles": profiles}
 
 
 @router.get("/{user_id}")

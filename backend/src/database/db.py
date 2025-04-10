@@ -1,19 +1,26 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy import Integer, func, DateTime
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
     AsyncAttrs,
     AsyncSession,
 )
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from core.config import settings
 
 
 class Base(AsyncAttrs, DeclarativeBase):
-    pass
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    create_date: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    update_date: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), onupdate=func.now()
+    )
 
 
 class DatabaseHelper:
