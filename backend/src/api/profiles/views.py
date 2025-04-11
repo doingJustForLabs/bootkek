@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from starlette.responses import FileResponse
 from PIL import Image
 
-from api.auth.dependency import AccessDependency
-from api.auth.views import http_bearer
+from api.auth.views import http_bearer, AccessDependency
 from api.profiles.schemas import ProfileSchema, SearchParams, FileSize
 from api.profiles.services import get_profile_service, ProfileService
 from core.config import settings

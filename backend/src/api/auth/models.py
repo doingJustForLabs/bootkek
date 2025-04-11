@@ -25,7 +25,6 @@ class TokenSession(Base):
     user_id: Mapped[int] = mapped_column(INT, ForeignKey("users.id"))
     refresh_token: Mapped[str] = mapped_column(String, nullable=False)
 
-    start_date: Mapped[datetime] = mapped_column(DateTime)
     end_date: Mapped[datetime] = mapped_column(DateTime)
 
 

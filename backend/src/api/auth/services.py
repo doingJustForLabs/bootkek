@@ -11,57 +11,61 @@ from utils import hash_password, verify_password
 
 
 class UserService:
-    def __init__(self, profile_repository: type[AbstractRepository]):
-        self.profile_repository = profile_repository()
+    def __init__(self, user_repository: type[AbstractRepository]):
+        self.user_repository = user_repository()
 
     async def get_user_by_user_id(self, user_id: int) -> Optional[User]:
-        user = await self.profile_repository.find_one(id=user_id)
+        user = await self.user_repository.find_one(id=user_id)
         return user
 
     async def get_user_by_email(self, email: EmailStr) -> Optional[User]:
-        user = await self.profile_repository.find_one(email=email)
+        user = await self.user_repository.find_one(email=email)
         return user
 
-    async def create_user(self, creds: UserRegisterSchema) -> Optional[User]:
+    async def create_user(self, creds: UserRegisterSchema) -> User:
         hash_pwd = hash_password(creds.password)
 
         if not verify_password(creds.password_repeat, hash_pwd):
-            return None
+            raise ValueError("Passwords doesn't match")
 
         data = {"email": creds.email, "password": hash_pwd, "role": "user"}
 
-        user = await self.profile_repository.add_one(data)
+        user = await self.user_repository.add_one(data)
         return user
 
 
 class TokenService:
-    def __init__(self, profile_repository: type[AbstractRepository]):
-        self.profile_repository = profile_repository()
+    def __init__(self, token_repository: type[AbstractRepository]):
+        self.token_repository = token_repository()
 
     async def create_token_session(
         self, user_id: int, refresh_token: str
     ) -> TokenSession:
+
+        token = await self.token_repository.find_one(user_id=user_id)
         data = {
-            "user_id": user_id,
             "refresh_token": refresh_token,
-            "start_date": datetime.now(),
             "end_date": datetime.now() + settings.jwt.refresh_token.expires,
         }
-        token = await self.profile_repository.add_one(data)
-        return token
+
+        if token:
+            new_token = await self.token_repository.update_one(user_id, data)
+        else:
+            data.update({"user_id": user_id})
+            new_token = await self.token_repository.add_one(data)
+
+        return new_token
 
     async def get_token_session_by_user_id(
         self, user_id: int
     ) -> Optional[TokenSession]:
-        user_session = await self.profile_repository.find_one(id=user_id)
+        user_session = await self.token_repository.find_one(id=user_id)
         return user_session
 
     async def get_token_session_by_token(
         self, refresh_token: str
     ) -> Optional[TokenSession]:
-        user_session = await self.profile_repository.find_one(
-            refresh_token=refresh_token
-        )
+        user_session = await self.token_repository.find_one(refresh_token=refresh_token)
         return user_session
 
     async def delete_user_token_session(self, user_id: int):
