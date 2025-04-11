@@ -21,12 +21,12 @@ class DBConfig(BaseModel):
 
 class JWTAccessToken(BaseModel):
     expires: timedelta = timedelta(minutes=15)
-    expires_int: int = expires.seconds * 1000
+    expires_int: int = int(expires.total_seconds())
 
 
 class JWTRefreshToken(BaseModel):
     expires: timedelta = timedelta(days=30)
-    expires_int: int = expires.seconds * 1000
+    expires_int: int = int(expires.total_seconds())
 
     cookie_name: str = "refresh_token_cookie"
     same_site: str = "lax"

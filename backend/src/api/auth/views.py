@@ -97,7 +97,7 @@ async def login_user(
     security.set_refresh_cookies(
         token=refresh_token,
         response=response,
-        max_age=settings.jwt.refresh_token.expires_int,
+        max_age=settings.jwt.refresh_token.expires_int
     )
 
     # await token_service.create_token_session(
