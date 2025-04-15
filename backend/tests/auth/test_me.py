@@ -6,8 +6,8 @@ async def test_me_success(auth_client):
     response = await auth_client.get(url="/auth/me")
 
     assert response.status_code == 200
-    assert response.json()["detail"]["email"] == "test@example.com"
-    assert response.json()["detail"]["active"] == True
+    assert response.json()["user"] is not None
+    assert response.json()["user"]["email"] == "test@example.com"
 
 
 @pytest.mark.asyncio

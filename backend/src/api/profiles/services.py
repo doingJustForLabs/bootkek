@@ -1,7 +1,7 @@
 from typing import Optional, List
 
 from api.profiles.models import Profile, ProfileRepository
-from api.profiles.schemas import ProfileSchema
+from api.profiles.schemas import ProfileCreateSchema
 from database.repository import AbstractRepository
 
 
@@ -10,7 +10,7 @@ class ProfileService:
         self.profile_repository = profile_repository()
 
     async def create_profile(
-        self, user_id: int, profile_data: ProfileSchema
+        self, user_id: int, profile_data: ProfileCreateSchema
     ) -> Optional[Profile]:
 
         profile = await self.profile_repository.find_one(username=profile_data.username)
@@ -24,7 +24,7 @@ class ProfileService:
         return user
 
     async def update_profile(
-        self, user_id: int, update_data: ProfileSchema
+        self, user_id: int, update_data: ProfileCreateSchema
     ) -> Optional[Profile]:
 
         if update_data.username:
@@ -58,7 +58,7 @@ class ProfileService:
 
     async def search_profiles(
         self, q: str, limit: int, page: int, order_by: str, desc: bool
-    ) -> Optional[Profile]:
+    ) -> List[Profile]:
         profiles = await self.profile_repository.find_all(
             limit=limit, offset=page * limit, order_by=order_by, desc=desc
         )

@@ -4,7 +4,13 @@ from authx import TokenPayload
 from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
-from api.auth.schemas import UserRegisterSchema, TokenResponse, UserLoginSchema
+from api.auth.schemas import (
+    UserRegisterSchema,
+    TokenResponse,
+    UserLoginSchema,
+    UserResponseSchema,
+    UserDataSchema,
+)
 from api.auth.services import (
     UserService,
     TokenService,
@@ -54,7 +60,7 @@ AccessDependency = Annotated[TokenPayload, Depends(verify_access_token)]
 RefreshDependency = Annotated[TokenPayload, Depends(verify_refresh_token)]
 
 
-@router.post("/register")
+@router.post("/register", response_model=UserResponseSchema)
 async def register_user(
     creds: UserRegisterSchema,
     user_service: Annotated[UserService, Depends(get_user_service)],
@@ -78,7 +84,7 @@ async def register_user(
 
     try:
         user = await user_service.create_user(creds)
-        return {"detail": "User successfully registered"}
+        return UserResponseSchema(user=UserDataSchema.model_validate(user))
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -154,7 +160,9 @@ async def refresh_new_access_token(token: RefreshDependency):
     return TokenResponse(access_token=new_access_token)
 
 
-@router.get("/me", dependencies=[Depends(http_bearer)])
+@router.get(
+    "/me", dependencies=[Depends(http_bearer)], response_model=UserResponseSchema
+)
 async def get_protected(
     token: AccessDependency,
     user_service: Annotated[UserService, Depends(get_user_service)],
@@ -171,7 +179,12 @@ async def get_protected(
         user: Информация о пользователе (email, хэшированный пароль и другие приватные данные)
     """
     user = await user_service.get_user_by_user_id(int(token.sub))
-    return {"user": user}
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    return UserResponseSchema(user=UserDataSchema.model_validate(user))
 
 
 @router.get("/logout", dependencies=[Depends(http_bearer)])

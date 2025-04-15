@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 import pytest_asyncio
 
@@ -13,7 +15,8 @@ async def register_user(client):
         },
     )
     assert response.status_code == 200
-    assert response.json() == {"detail": "User successfully registered"}
+    assert response.json()["user"] is not None
+    assert response.json()["user"]["email"] == "test@example.com"
 
 
 @pytest_asyncio.fixture(scope="function")

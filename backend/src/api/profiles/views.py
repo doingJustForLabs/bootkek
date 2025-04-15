@@ -3,15 +3,23 @@ from starlette.responses import FileResponse
 from PIL import Image
 
 from api.auth.views import http_bearer, AccessDependency
-from api.profiles.schemas import ProfileSchema, SearchParams, FileSize
+from api.profiles.enum import FileSize
+from api.profiles.schemas import (
+    ProfileCreateSchema,
+    SearchParams,
+    ProfileDetailResponseSchema,
+    ProfileDetailDataSchema,
+    SearchResponseSchema,
+    ProfileSummaryDataSchema,
+    PaginationSchema,
+)
 from api.profiles.services import get_profile_service, ProfileService
 from core.config import settings
 
 import uuid
 from io import BytesIO
 from pathlib import Path
-from typing import Annotated
-
+from typing import Annotated, List
 
 router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
@@ -22,10 +30,14 @@ ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
 file_sizes = [64, 128, 256]
 
 
-@router.post("/me", dependencies=[Depends(http_bearer)])
+@router.post(
+    "/me",
+    dependencies=[Depends(http_bearer)],
+    response_model=ProfileDetailResponseSchema,
+)
 async def setup_user_profile(
     token: AccessDependency,
-    profile_data: ProfileSchema,
+    profile_data: ProfileCreateSchema,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
     """
@@ -72,13 +84,19 @@ async def setup_user_profile(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already used"
         )
 
-    return {"profile": profile_data}
+    return ProfileDetailResponseSchema(
+        profile=ProfileDetailDataSchema.model_validate(profile)
+    )
 
 
-@router.patch("/me", dependencies=[Depends(http_bearer)])
+@router.patch(
+    "/me",
+    dependencies=[Depends(http_bearer)],
+    response_model=ProfileDetailResponseSchema,
+)
 async def update_user_profile(
     token: AccessDependency,
-    update_data: ProfileSchema,
+    update_data: ProfileCreateSchema,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
     """
@@ -119,10 +137,16 @@ async def update_user_profile(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already used"
         )
 
-    return {"profile": updated_profile}
+    return ProfileDetailResponseSchema(
+        profile=ProfileDetailDataSchema.model_validate(updated_profile)
+    )
 
 
-@router.get("/me", dependencies=[Depends(http_bearer)])
+@router.get(
+    "/me",
+    dependencies=[Depends(http_bearer)],
+    response_model=ProfileDetailResponseSchema,
+)
 async def get_user_profile(
     token: AccessDependency,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
@@ -134,7 +158,9 @@ async def get_user_profile(
         raise HTTPException(
             status_code=status.HTTP_425_TOO_EARLY, detail="User profile didn't created"
         )
-    return profile
+    return ProfileDetailResponseSchema(
+        profile=ProfileDetailDataSchema.model_validate(profile)
+    )
 
 
 @router.post("/avatars", dependencies=[Depends(http_bearer)])
@@ -200,25 +226,34 @@ async def get_user_avatar(basename: str, file_size: FileSize):
     return FileResponse(file_path)
 
 
-@router.get("/search", dependencies=[Depends(http_bearer)])
+@router.get(
+    "/search", dependencies=[Depends(http_bearer)], response_model=SearchResponseSchema
+)
 async def search_some_profiles(
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     params: Annotated[SearchParams, Depends()],
+    pagination: Annotated[PaginationSchema, Depends(PaginationSchema)],
 ):
     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
-    try :
+    try:
         profiles = await profile_service.search_profiles(
             q=params.q,
-            limit=int(params.limit),
-            page=int(params.page),
+            limit=int(pagination.limit),
+            page=int(pagination.page),
             order_by=params.order_by,
             desc=params.desc,
         )
 
-        return {
-            "profiles": profiles,
-            "pagination": {**params.model_dump()},
-        }
+        validated_profiles = [
+            ProfileSummaryDataSchema.model_validate(profile) for profile in profiles
+        ]
+
+        return SearchResponseSchema(
+            profiles=validated_profiles,
+            filters=SearchParams.model_validate(params),
+            pagination=pagination,
+        )
+
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
