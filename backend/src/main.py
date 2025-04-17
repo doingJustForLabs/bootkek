@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
@@ -23,7 +24,11 @@ async def lifespan(_: FastAPI):
     await db_helper.dispose()
 
 
-app = FastAPI(title="Granite", lifespan=lifespan)
+app = FastAPI(
+    title="Granite",
+    lifespan=lifespan,
+    default_response_class=ORJSONResponse,
+)
 
 app.include_router(main_router)
 security.handle_errors(app)

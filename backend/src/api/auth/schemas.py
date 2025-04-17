@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, model_validator
 
 
 class UserLoginSchema(BaseModel):
@@ -10,8 +10,18 @@ class UserLoginSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class UserRegisterSchema(UserLoginSchema):
+class UserRegisterSchema(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6, max_length=30)
     password_repeat: str
+
+    model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="after")
+    def check_password_match(self):
+        if self.password != self.password_repeat:
+            raise ValueError("Passwords don't match")
+        return self
 
 
 class TokenResponse(BaseModel):

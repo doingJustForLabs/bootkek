@@ -27,7 +27,7 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update_one(self, user_id: int, update_data: dict):
+    async def update_one(self, filters: dict, update_data: dict):
         raise NotImplementedError
 
     @abstractmethod
@@ -90,12 +90,10 @@ class SQLAlchemyRepository(AbstractRepository):
             await session.commit()
             return result.scalar_one()
 
-    async def update_one(self, user_id: int, update_data: dict) -> model:
+    async def update_one(self, filters: dict, update_data: dict) -> model:
         async with db_helper.session_factory() as session:
             stmt = (
-                update(self.model)
-                .where(user_id == self.model.user_id)
-                .values(**update_data)
+                update(self.model).filter_by(**filters).values(**update_data)
             ).returning(self.model)
             result = await session.execute(stmt)
             await session.commit()

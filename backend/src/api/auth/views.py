@@ -13,13 +13,10 @@ from api.auth.schemas import (
 )
 from api.auth.services import (
     UserService,
-    TokenService,
-    get_token_service,
-    get_user_service,
+    get_user_service, AuthService, get_auth_service,
 )
 from core.config import settings
 from core.security import security
-from utils import verify_password
 
 router = APIRouter(tags=["Авторизация👤"], prefix="/auth")
 
@@ -63,7 +60,7 @@ RefreshDependency = Annotated[TokenPayload, Depends(verify_refresh_token)]
 @router.post("/register", response_model=UserResponseSchema)
 async def register_user(
     creds: UserRegisterSchema,
-    user_service: Annotated[UserService, Depends(get_user_service)],
+    auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ):
     """
     Регистрация пользователя
@@ -76,26 +73,15 @@ async def register_user(
 
         Пользователь регистрируется (сохраняется в базу данных)
     """
-
-    if await user_service.get_user_by_email(creds.email):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already used"
-        )
-
-    try:
-        user = await user_service.create_user(creds)
-        return UserResponseSchema(user=UserDataSchema.model_validate(user))
-
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    user = await auth_service.register_user(creds)
+    return UserResponseSchema(user=UserDataSchema.model_validate(user))
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login_user(
     creds: UserLoginSchema,
     response: Response,
-    user_service: Annotated[UserService, Depends(get_user_service)],
-    token_service: Annotated[TokenService, Depends(get_token_service)],
+    auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ):
     """
     Аутентификация пользователя
@@ -108,45 +94,15 @@ async def login_user(
 
         TokenResponse: пользователь получает access токен (fresh) и его тип
     """
-
-    user = await user_service.get_user_by_email(creds.email)
-
-    # Проверка почты
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email doesn't registered",
-        )
-
-    # Проверка пароля
-    if not verify_password(creds.password, user.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password"
-        )
-
-    access_token = security.create_access_token(
-        uid=str(user.id), expiry=settings.jwt.access_token.expires, fresh=True
-    )
-
-    refresh_token = security.create_refresh_token(
-        uid=str(user.id), expiry=settings.jwt.refresh_token.expires
-    )
-
-    security.set_refresh_cookies(
-        token=refresh_token,
-        response=response,
-        max_age=settings.jwt.refresh_token.expires_int,
-    )
-
-    # await token_service.create_token_session(
-    #     refresh_token=refresh_token, user_id=int(user.id)
-    # )
-
-    return TokenResponse(access_token=access_token)
+    token = await auth_service.authenticate_user(creds, response)
+    return TokenResponse(access_token=token)
 
 
 @router.get("/refresh", response_model=TokenResponse)
-async def refresh_new_access_token(token: RefreshDependency):
+async def refresh_new_access_token(
+    token: RefreshDependency,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+):
     """
     Обновление Access токена с помощью Refresh токена
 
@@ -154,10 +110,8 @@ async def refresh_new_access_token(token: RefreshDependency):
 
         TokenResponse: пользователь получает access токен и его тип
     """
-
-    new_access_token = security.create_access_token(uid=token.sub, fresh=False)
-
-    return TokenResponse(access_token=new_access_token)
+    token = await auth_service.refresh_expired_token(token)
+    return TokenResponse(access_token=token)
 
 
 @router.get(
@@ -165,7 +119,7 @@ async def refresh_new_access_token(token: RefreshDependency):
 )
 async def get_protected(
     token: AccessDependency,
-    user_service: Annotated[UserService, Depends(get_user_service)],
+    user_service: Annotated[UserService, Depends(get_user_service)]
 ):
     """
     Получение данных о пользователе
@@ -179,11 +133,6 @@ async def get_protected(
         user: Информация о пользователе (email, хэшированный пароль и другие приватные данные)
     """
     user = await user_service.get_user_by_user_id(int(token.sub))
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-
     return UserResponseSchema(user=UserDataSchema.model_validate(user))
 
 

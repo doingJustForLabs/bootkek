@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import pytest
 
 
@@ -47,7 +45,7 @@ async def test_register_success(client):
                 "password": "qwerty123",
                 "password_repeat": "qwerty122",
             },
-            400,
+            422,
         ),
         # Слишком маленький пароль
         (
