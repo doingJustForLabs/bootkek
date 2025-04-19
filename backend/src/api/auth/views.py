@@ -12,8 +12,8 @@ from api.auth.schemas import (
     UserDataSchema,
 )
 from api.auth.services import (
-    UserService,
-    get_user_service, AuthService, get_auth_service,
+    AuthService,
+    get_auth_service,
 )
 from core.config import settings
 from core.security import security
@@ -60,19 +60,9 @@ RefreshDependency = Annotated[TokenPayload, Depends(verify_refresh_token)]
 @router.post("/register", response_model=UserResponseSchema)
 async def register_user(
     creds: UserRegisterSchema,
-    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ):
-    """
-    Регистрация пользователя
-
-    :param
-
-        creds (UserRegisterSchema): Данные пользователя (email, пароль и его повтор)
-
-    :returns
-
-        Пользователь регистрируется (сохраняется в базу данных)
-    """
+    """Регистрация пользователя"""
     user = await auth_service.register_user(creds)
     return UserResponseSchema(user=UserDataSchema.model_validate(user))
 
@@ -81,19 +71,9 @@ async def register_user(
 async def login_user(
     creds: UserLoginSchema,
     response: Response,
-    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ):
-    """
-    Аутентификация пользователя
-
-    :param
-
-        creds (UserLoginSchema): Данные для авторизации пользователя (email, пароль)
-
-    :returns
-
-        TokenResponse: пользователь получает access токен (fresh) и его тип
-    """
+    """Аутентификация пользователя и выдача Access токена"""
     token = await auth_service.authenticate_user(creds, response)
     return TokenResponse(access_token=token)
 
@@ -101,15 +81,9 @@ async def login_user(
 @router.get("/refresh", response_model=TokenResponse)
 async def refresh_new_access_token(
     token: RefreshDependency,
-    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ):
-    """
-    Обновление Access токена с помощью Refresh токена
-
-    :returns
-
-        TokenResponse: пользователь получает access токен и его тип
-    """
+    """Обновление Access токена с помощью Refresh токена"""
     token = await auth_service.refresh_expired_token(token)
     return TokenResponse(access_token=token)
 
@@ -119,25 +93,20 @@ async def refresh_new_access_token(
 )
 async def get_protected(
     token: AccessDependency,
-    user_service: Annotated[UserService, Depends(get_user_service)]
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ):
-    """
-    Получение данных о пользователе
-
-    :header
-
-        token: Пользователь должен отправить в заголовок запроса {"Authorization": "Bearer <access_токен>"}
-
-    :returns
-
-        user: Информация о пользователе (email, хэшированный пароль и другие приватные данные)
-    """
-    user = await user_service.get_user_by_user_id(int(token.sub))
+    """Получение данных о пользователе"""
+    user = await auth_service.get_auth_user_by_user_id(int(token.sub))
     return UserResponseSchema(user=UserDataSchema.model_validate(user))
 
 
-@router.get("/logout", dependencies=[Depends(http_bearer)])
-async def logout_user(response: Response):
-    security.unset_refresh_cookies(response=response)
-
-    return {"detail": "User logout"}
+@router.post(
+    "/logout",
+    dependencies=[Depends(http_bearer)],
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def logout_user(
+    auth_service: Annotated[AuthService, Depends(get_auth_service)], response: Response
+):
+    """Пользователь разлогинивается"""
+    await auth_service.logout_user(response=response)

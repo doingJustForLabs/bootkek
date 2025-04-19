@@ -47,6 +47,7 @@ class JWTConfig(BaseModel):
 
 class FilesConfig(BaseModel):
     static_dir: Path = Path(__file__).parent.parent.parent / "static"
+    avatar_dir: Path = static_dir / "avatars"
 
 
 class Settings(BaseSettings):

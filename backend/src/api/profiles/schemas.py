@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from api.profiles.enum import Sex, MuctrFaculties
+from api.profiles.enums import Sex, MuctrFaculties
 
 
 class ProfileCreateSchema(BaseModel):
@@ -22,6 +22,7 @@ class ProfileDetailDataSchema(BaseModel):
     username: str
     sex: str
     faculty: str
+    course: int
     avatar_basename: str
     update_date: datetime
 

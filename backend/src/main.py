@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 from api import main_router
+from api.exceptions import init_exception_handlers
 from core.config import settings
 from core.security import security
 from database.db import db_helper, Base
@@ -47,6 +48,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+init_exception_handlers(app)
 
 
 @app.get("/")
