@@ -20,21 +20,6 @@ def verify_password(password: str, hashed_password: str) -> bool:
     return checkpw(password.encode(), hashed_password.encode())
 
 
-async def verify_access_token(request: Request):
-    try:
-        token = await security.get_access_token_from_request(
-            request,
-            locations=["headers"],
-        )
-
-        payload = security.verify_token(token)
-
-        return payload
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-
-
 async def verify_fresh_token(request: Request):
     try:
         token = await security.get_access_token_from_request(

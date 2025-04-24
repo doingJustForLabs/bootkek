@@ -7,13 +7,12 @@ from fastapi import UploadFile
 from fastapi.responses import FileResponse
 
 from api.exceptions import NotFoundException, BadRequestException, TooEarlyException
-from api.profiles.enums import FileSize
+from api.enums import FileSize
 from api.profiles.models import (
     Profile,
     ProfileRepository,
     FollowerRepository,
     Follower,
-    ProfileRepositoryProtocol,
 )
 from api.profiles.schemas import ProfileCreateSchema
 from core.config import settings
@@ -21,8 +20,8 @@ from database.repository import AbstractRepository
 
 
 class ProfileService:
-    def __init__(self, profile_repository: ProfileRepositoryProtocol):
-        self.profile_repository = profile_repository
+    def __init__(self, profile_repository: type[AbstractRepository]):
+        self.profile_repository = profile_repository()
 
     async def create_profile(
         self, user_id: int, profile_data: ProfileCreateSchema
@@ -33,10 +32,10 @@ class ProfileService:
                 "Both 'name' and 'username' are required for profiles creation"
             )
 
-        if await self.profile_repository.find_by_user_id(user_id):
+        if await self.profile_repository.find_one(user_id=user_id):
             raise BadRequestException("Profile already exists")
 
-        if await self.profile_repository.find_by_username(profile_data.username):
+        if await self.profile_repository.find_one(username=profile_data.username):
             raise BadRequestException("Username already used")
 
         data = profile_data.model_dump()
@@ -71,19 +70,19 @@ class ProfileService:
         return updated_profile
 
     async def read_profile(self, user_id: int) -> Profile:
-        profile = await self.profile_repository.find_by_user_id(user_id)
+        profile = await self.profile_repository.find_one(user_id=user_id)
         if not profile:
             raise TooEarlyException("User profile didn't created yet")
         return profile
 
     async def get_profile_by_user_id(self, user_id: int) -> Profile:
-        profile = await self.profile_repository.find_by_user_id(user_id)
+        profile = await self.profile_repository.find_one(user_id=user_id)
         if not profile:
             raise NotFoundException("Profile not found")
         return profile
 
     async def get_profile_by_username(self, username: str) -> Profile:
-        profile = await self.profile_repository.find_by_username(username)
+        profile = await self.profile_repository.find_one(username=username)
         if not profile:
             raise NotFoundException("Profile not found")
         return profile
@@ -107,51 +106,72 @@ class AvatarService:
 
     def __init__(self, profile_repository: type[AbstractRepository]):
         self.profile_repository = profile_repository()
-        self.avatar_dir = settings.files.avatar_dir
-        self.avatar_dir.mkdir(parents=True, exist_ok=True)
+        self.avatar_dir_path = settings.files.avatar_dir
+        self.avatar_dir_path.mkdir(parents=True, exist_ok=True)
         self._ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
         self._file_sizes = [64, 128, 256]
+        self._file_max_size: int = 5 * 1024 * 1024
 
     async def update_profile_avatar(self, user_id: int, avatar: UploadFile) -> str:
-        if avatar.content_type not in self._ALLOWED_AVATAR_TYPES:
-            raise BadRequestException("Invalid file type")
+        """
+        1. Проверяем тип данных
+        2. Создаем папку юзера
+        4. Генерируем basename и сохраняем в БД (для дальнейшего получения)
+        3. Сохраняем исходный файл в локальную папку
+        5. Генерируем с помощью PIL различные форматы файла (64x64, 128x128, 256x256)
+        Как фронтенду лучше всего указывать какой формат ему получать?
 
-        user_avatars = self.avatar_dir / str(user_id)
-        user_avatars.mkdir(exist_ok=True, parents=True)
+        Условия:
+        - Некорректный тип файла: 400 -> Invalid file type
+        - Лимит максимального размера: 400
+        """
+        valid_avatar = self._validate_photo(avatar)
 
-        basename = f"{uuid.uuid4()}"
-        file_path = user_avatars / f"{basename}.jpg"
+        user_avatars_path = self.avatar_dir_path / str(user_id)
+        user_avatars_path.mkdir(exist_ok=True, parents=True)
 
-        with open(file_path, "wb+") as buffer:
-            buffer.write(image_data := await avatar.read())
-
-        image = Image.open(BytesIO(image_data))
+        basename = uuid.uuid4()
+        file_path = user_avatars_path / f"{basename}.jpg"
 
         await self.profile_repository.update_one(
-            update_data={"avatar_basename": basename}, user_id=user_id
+            update_data={"avatar_basename": f"static/avatars/{user_id}/{basename}"},
+            user_id=user_id,
         )
 
-        avatar_urls = {}
+        image_data = await valid_avatar.read()
+
+        with open(file_path, "wb") as buffer:
+            buffer.write(image_data)
+
+        image = Image.open(BytesIO(image_data))
 
         for size in self._file_sizes:
             image_copy = image.copy()
             image_copy.thumbnail((size, size))
 
             file_name = f"{basename}_{size}.jpg"
-            file_path = user_avatars / file_name
+            file_path = user_avatars_path / file_name
 
             image_copy.convert("RGB")
             image_copy.save(file_path, format="JPEG")
 
-            avatar_url = f"/static/avatars/{file_name}"
-            avatar_urls.update({size: avatar_url})
-        print(avatar_urls)
-        return basename
+        return str(basename)
+
+    def _validate_photo(self, avatar: UploadFile) -> UploadFile:
+        if avatar.content_type not in self._ALLOWED_AVATAR_TYPES:
+            raise BadRequestException("Invalid file type. Use 'png' or 'jpeg'")
+        if avatar.size > self._file_max_size:
+            raise BadRequestException("File exceeds maximum size (5Mb)")
+        return avatar
 
     async def get_profile_avatar(
-        self, basename: str, file_size: FileSize
+        self, basename: str, file_size: FileSize, user_id: int
     ) -> FileResponse:
-        file_path = self.avatar_dir / f"{basename}_{int(file_size.value)}.jpg"
+        file_path = (
+            self.avatar_dir_path
+            / str(user_id)
+            / f"{basename}_{int(file_size.value)}.jpg"
+        )
         if not file_path.exists():
             raise NotFoundException("Avatar not found")
         return FileResponse(file_path)
@@ -197,9 +217,9 @@ def get_profile_service():
     return ProfileService(ProfileRepository)
 
 
-def get_follower_service():
-    return FollowerService(FollowerRepository, ProfileRepository)
-
-
 def get_avatar_service():
     return AvatarService(ProfileRepository)
+
+
+def get_follower_service():
+    return FollowerService(FollowerRepository, ProfileRepository)

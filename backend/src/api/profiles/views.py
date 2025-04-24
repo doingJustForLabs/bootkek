@@ -1,20 +1,17 @@
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
 
 from api.auth.views import http_bearer, AccessDependency
-from api.exceptions import BadRequestException
-from api.profiles.enums import FileSize
+from api.enums import FileSize
 from api.profiles.schemas import (
     ProfileCreateSchema,
-    SearchParams,
     ProfileDetailResponseSchema,
     ProfileDetailDataSchema,
-    SearchResponseSchema,
     ProfileSummaryDataSchema,
-    PaginationSchema,
+    SearchResponseSchema,
+    SearchParams,
 )
 from api.profiles.services import (
     ProfileService,
@@ -24,9 +21,10 @@ from api.profiles.services import (
     get_avatar_service,
     get_follower_service,
 )
-from core.config import settings
 
-router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
+router = APIRouter(
+    tags=["Пользователи👨‍💻"], prefix="/profiles", dependencies=[Depends(http_bearer)]
+)
 
 # AVATAR_DIR = Path(settings.files.static_dir / "avatars")
 # AVATAR_DIR.mkdir(parents=True, exist_ok=True)
@@ -37,7 +35,6 @@ router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profil
 
 @router.post(
     "/me",
-    dependencies=[Depends(http_bearer)],
     response_model=ProfileDetailResponseSchema,
 )
 async def setup_user_profile(
@@ -45,29 +42,7 @@ async def setup_user_profile(
     profile_data: ProfileCreateSchema,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
-    """
-    Создание профиля пользователя
-
-    :param
-
-        token (TokenDependency): Зависимость заголовка с авторизацией
-        profile_data (ProfileSchema): Поля профиля
-
-            name (str, required): Имя пользователя (возможно с фамилией)
-            username (str, required): Юзернейм пользователя (уникальный идентификатор)
-
-            course (int): Курс пользователя
-            sex (str): Пол пользователя (мужской, женский, другой)
-            faculty (str): Факультет пользователя
-
-    :returns
-
-        profile: Созданный профиль
-
-    :exception
-
-        Если профиль существует -> 400 Ошибка
-    """
+    """Создание профиля пользователя"""
     profile = await profile_service.create_profile(int(token.sub), profile_data)
 
     return ProfileDetailResponseSchema(
@@ -77,7 +52,6 @@ async def setup_user_profile(
 
 @router.patch(
     "/me",
-    dependencies=[Depends(http_bearer)],
     response_model=ProfileDetailResponseSchema,
 )
 async def update_user_profile(
@@ -85,29 +59,7 @@ async def update_user_profile(
     update_data: ProfileCreateSchema,
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
-    """
-    Обновление профиля пользователя
-
-    :param
-
-        token (TokenDependency): Зависимость заголовка с авторизацией
-        profile_data (ProfileSchema): Поля профиля
-
-            name (str, required): Имя пользователя (возможно с фамилией)
-            username (str, required): Юзернейм пользователя (уникальный идентификатор)
-
-            course (int): Курс пользователя
-            sex (str): Пол пользователя (мужской, женский, другой)
-            faculty (str): Факультет пользователя
-
-    :returns
-
-        profile: Созданный профиль
-
-    :exception
-
-        Если профиль не существует -> 404 Ошибка
-    """
+    """Обновление профиля пользователя"""
     updated_profile = await profile_service.update_profile(int(token.sub), update_data)
 
     return ProfileDetailResponseSchema(
@@ -117,7 +69,6 @@ async def update_user_profile(
 
 @router.get(
     "/me",
-    dependencies=[Depends(http_bearer)],
     response_model=ProfileDetailResponseSchema,
 )
 async def get_user_profile(
@@ -153,7 +104,7 @@ async def get_user_profile(
     )
 
 
-@router.post("/avatars", dependencies=[Depends(http_bearer)])
+@router.post("/avatars")
 async def update_user_avatar(
     token: AccessDependency,
     avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
@@ -167,23 +118,16 @@ async def update_user_avatar(
     return {"basename": basename}
 
 
-@router.get("/avatars/{basename}", dependencies=[Depends(http_bearer)])
-async def get_user_avatar(
-    basename: str,
-    file_size: FileSize,
-    avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
-) -> FileResponse:
-    """Запрос на получение аватарки пользователя по basename (сгенерированному имени аватарки без размера)
-
-    :arg
-        basename (str): Сгенерированное имя аватарки без размера (лежит у пользователя в avatar_basename)
-        file_size: (Enum(FileSize)): Размер аватарки (в данной версии это 64x64, 128x128, 256x256)
-
-    :returns
-        FileResponse: Файл
-    """
-    avatar = await avatar_service.get_profile_avatar(basename, file_size)
-    return avatar
+# @router.get("/avatars/{basename}")
+# async def get_user_avatar(
+#     basename: str,
+#     file_size: FileSize,
+#     avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
+#     token: AccessDependency
+# ) -> FileResponse:
+#     """Запрос на получение аватарки пользователя по basename (сгенерированному имени аватарки без размера)"""
+#     avatar = await avatar_service.get_profile_avatar(basename, file_size, user_id=int(token.sub))
+#     return avatar
 
 
 # @router.get(
@@ -218,19 +162,19 @@ async def get_user_avatar(
 #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post("/followers/{followee_id}", dependencies=[Depends(http_bearer)])
-async def follow_user(
-    token: AccessDependency,
-    followee_id: int,
-    follower_service: Annotated[FollowerService, Depends(get_follower_service)],
-):
-    follower = await follower_service.follow_user(
-        follower_id=int(token.sub), followee_id=followee_id
-    )
-
-    if not follower:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="User cannot follow himself"
-        )
-
-    return follower
+# @router.post("/followers/{followee_id}")
+# async def follow_user(
+#     token: AccessDependency,
+#     followee_id: int,
+#     follower_service: Annotated[FollowerService, Depends(get_follower_service)],
+# ):
+#     follower = await follower_service.follow_user(
+#         follower_id=int(token.sub), followee_id=followee_id
+#     )
+#
+#     if not follower:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST, detail="User cannot follow himself"
+#         )
+#
+#     return follower

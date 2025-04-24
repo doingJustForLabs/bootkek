@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from api.profiles.enums import Sex, MuctrFaculties
+from api.enums import Sex, MuctrFaculties
 
 
 class ProfileCreateSchema(BaseModel):
