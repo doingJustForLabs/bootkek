@@ -41,6 +41,8 @@ class Profile(Base):
     course: Mapped[int] = mapped_column(INT)
     sex: Mapped[str] = mapped_column(String(10))
     faculty: Mapped[str] = mapped_column(String(10))
+    subscribers_count: Mapped[int] = mapped_column(INT)
+    subscriptions_count: Mapped[int] = mapped_column(INT)
 
 
 class Subjects(Base):
@@ -56,3 +58,11 @@ class Posts(Base):
     user_id: Mapped[int] = mapped_column(INT, ForeignKey("profiles.user_id"))
     subject_id: Mapped[int] = mapped_column(INT, ForeignKey("subjects.id"))
     description: Mapped[int] = mapped_column(String(100))
+
+class Follower(Base):
+    __tablename__ = "followers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    follower_id: [int] = mapped_column(INT, ForeignKey("profile.user_id"))
+    target_id: [int] = mapped_column(INT, ForeignKey("profile.user_id"))
+    created_at: Mapped[str] = mapped_column(DateTime)
