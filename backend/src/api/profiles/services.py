@@ -143,17 +143,18 @@ class AvatarService:
         with open(file_path, "wb") as buffer:
             buffer.write(image_data)
 
-        image = Image.open(BytesIO(image_data))
+        with Image.open(valid_avatar.file) as image:
 
-        for size in self._file_sizes:
-            image_copy = image.copy()
-            image_copy.thumbnail((size, size))
+            for size in self._file_sizes:
+                image_copy = image.copy()
+                image_copy.thumbnail((size, size))
 
-            file_name = f"{basename}_{size}.jpg"
-            file_path = user_avatars_path / file_name
+                file_name = f"{basename}_{size}.jpg"
+                file_path = user_avatars_path / file_name
 
-            image_copy.convert("RGB")
-            image_copy.save(file_path, format="JPEG")
+                if image_copy.mode in ("RGBA", "P"):
+                    image_copy = image_copy.convert("RGB")
+                image_copy.save(file_path, format="JPEG")
 
         return str(basename)
 
@@ -163,18 +164,6 @@ class AvatarService:
         if avatar.size > self._file_max_size:
             raise BadRequestException("File exceeds maximum size (5Mb)")
         return avatar
-
-    async def get_profile_avatar(
-        self, basename: str, file_size: FileSize, user_id: int
-    ) -> FileResponse:
-        file_path = (
-            self.avatar_dir_path
-            / str(user_id)
-            / f"{basename}_{int(file_size.value)}.jpg"
-        )
-        if not file_path.exists():
-            raise NotFoundException("Avatar not found")
-        return FileResponse(file_path)
 
 
 class FollowerService:
