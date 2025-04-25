@@ -1,33 +1,34 @@
-import {React} from 'react';
-
 import { useState, useEffect } from 'react';
-
-import {useAuth} from "../../http/AuthContext.jsx";
-import axios from 'axios';
+import { useNavigate } from "react-router-dom";
+import ProfileStore from "../../store/ProfileStore.js";
 
 const Profile = () => {
-
-    const { accessToken } = useAuth();
-    const [data, setData] = useState(null);
+    const [profileData, setProfileData] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        if (!accessToken) return;
+        const fetchProfile = async () => {
+            try {
+                const data = await ProfileStore.getProfile();
+                setProfileData(data);
+            } catch (error) {
+                switch (error.response?.status) {
+                    case 401: navigate("/"); break;
+                    case 425: navigate("/newprofile/1"); break;
+                    default: navigate("/"); break;
+                }
+            }
+        };
 
-        axios.get("http://127.0.0.1:8000/api/auth/me", {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        })
-        .then((response) => {
-            setData(response.data);
-            console.log(response.data);
-        })
-    }, [accessToken]);
+        fetchProfile();
+    }, []);
+
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-[url(/assets/muctr-bg.png)]">
-            <div className="flex-col justify-self-start w-full max-w-sm p-8 rounded-4xl bg-white shadow-md">
+            <div className="text-black justify-self-start w-full max-w-sm p-8 rounded-4xl bg-white shadow-md">
                 <img className="w-3/5 m-6" src="/assets/muctr-logo.png" alt="РХТУ-лого" />
+                {profileData?.name}
             </div>
         </div>
     );

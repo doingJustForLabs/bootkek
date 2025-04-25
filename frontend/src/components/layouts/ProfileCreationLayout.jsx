@@ -1,6 +1,7 @@
 import "../Sandbox.css";
+import StepProgress from "../ui/StepProgress.jsx";
 
-const AuthLayout = ({ children }) => {
+const ProfileCreationLayout = ({step = 1, children}) => {
     return (
         <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0 z-0">
@@ -9,12 +10,11 @@ const AuthLayout = ({ children }) => {
             </div>
 
             <div className="justify-items-center relative z-10 w-full max-w-md p-8 bg-amber-50 rounded-3xl shadow-xl">
-                <h1 className="text-muctr text-5xl">Granite</h1>
-                {children}
+                <StepProgress currentStep={step} />
+                <div>{children}</div>
             </div>
         </div>
     );
-  };
-  
-  export default AuthLayout;
-  
+};
+
+export default ProfileCreationLayout;
