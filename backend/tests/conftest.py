@@ -27,7 +27,7 @@ async def setup_db(event_loop):
     db_helper.session_getter()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="package")
 async def client(event_loop):
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://127.0.0.1:8000/api"
@@ -35,7 +35,43 @@ async def client(event_loop):
         yield client
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="package")
+async def register_user(client):
+    response = await client.post(
+        url="/auth/register",
+        json={
+            "email": "test@example.com",
+            "password": "qwerty123",
+            "password_repeat": "qwerty123",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["user"] is not None
+    assert response.json()["user"]["email"] == "test@example.com"
+
+
+@pytest_asyncio.fixture(scope="package")
+async def login_user(client, register_user):
+    response = await client.post(
+        url="/auth/login",
+        json={
+            "email": "test@example.com",
+            "password": "qwerty123",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+    assert response.json()["token_type"] == "Bearer"
+    assert response.cookies.get("refresh_token_cookie") is not None
+
+    return {
+        "access_token": response.json()["access_token"],
+        "refresh_token": response.cookies.get("refresh_token_cookie"),
+    }
+
+
+@pytest_asyncio.fixture(scope="package")
 async def auth_client(event_loop, login_user):
     async with AsyncClient(
         transport=ASGITransport(app=app),

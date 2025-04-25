@@ -2,10 +2,12 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 from api import main_router
+from api.exceptions import init_exception_handlers
 from core.config import settings
 from core.security import security
 from database.db import db_helper, Base
@@ -23,7 +25,11 @@ async def lifespan(_: FastAPI):
     await db_helper.dispose()
 
 
-app = FastAPI(title="Granite", lifespan=lifespan)
+app = FastAPI(
+    title="Granite",
+    lifespan=lifespan,
+    default_response_class=ORJSONResponse,
+)
 
 app.include_router(main_router)
 security.handle_errors(app)
@@ -33,13 +39,7 @@ app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="sta
 
 # Middleware
 
-origins = [
-    "http://localhost",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-]
+origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,6 +48,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+init_exception_handlers(app)
 
 
 @app.get("/")

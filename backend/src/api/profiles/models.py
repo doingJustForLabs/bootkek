@@ -1,6 +1,4 @@
-from datetime import datetime
-
-from sqlalchemy import Integer, String, ForeignKey, func, DateTime
+from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.db import Base
@@ -10,7 +8,6 @@ from database.repository import SQLAlchemyRepository
 class Profile(Base):
     __tablename__ = "profiles"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True)
 
     username: Mapped[str] = mapped_column(String, unique=True)
@@ -19,13 +16,22 @@ class Profile(Base):
     course: Mapped[int] = mapped_column(Integer, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
     faculty: Mapped[str] = mapped_column(String, nullable=True)
-    avatar_basename: Mapped[str] = mapped_column(String, default="default-avatar")
 
-    create_date: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    update_date: Mapped[datetime] = mapped_column(
-        DateTime, default=func.now(), onupdate=func.now()
+    avatar_basename: Mapped[str] = mapped_column(
+        String, default="static/avatars/default-avatar.jpg"
     )
 
 
 class ProfileRepository(SQLAlchemyRepository):
     model = Profile
+
+
+class Follower(Base):
+    __tablename__ = "followers"
+
+    follower_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    followee_id: Mapped[int] = mapped_column(Integer)
+
+
+class FollowerRepository(SQLAlchemyRepository):
+    model = Follower
