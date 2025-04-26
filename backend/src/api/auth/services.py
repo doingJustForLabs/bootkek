@@ -1,60 +1,83 @@
-from datetime import datetime
-from typing import Optional
+from authx import TokenPayload
+from fastapi import HTTPException, status, Response
 
-from pydantic import EmailStr
-
-from api.auth.models import User, UserSession, UserRepository, TokenRepository
+from api.auth.models import User, UserRepository
+from api.auth.schemas import UserRegisterSchema, UserLoginSchema
 from core.config import settings
+from core.security import security
 from database.repository import AbstractRepository
+from utils import hash_password, verify_password
 
 
-class UserService:
+class AuthService:
     def __init__(self, user_repository: type[AbstractRepository]):
         self.user_repository = user_repository()
 
-    async def get_user_by_user_id(self, user_id: int) -> User:
-        user = await self.user_repository.find_one(id=user_id)
-        return user if user else None
+    async def register_user(self, creds: UserRegisterSchema) -> User:
+        user = await self.user_repository.find_one(email=creds.email)
 
-    async def get_user_by_email(self, email: EmailStr) -> Optional[User]:
-        user = await self.user_repository.find_one(email=email)
-        return user if user else None
+        if user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already used"
+            )
 
-    async def create_user(self, email: EmailStr, hashed_password: str) -> None:
-        data = {"email": email, "password": hashed_password, "role": "user"}
-        await self.user_repository.add_one(data)
-
-
-class TokenService:
-    def __init__(self, user_repository: type[AbstractRepository]):
-        self.user_repository = user_repository()
-
-    async def create_token_session(self, user_id: int, refresh_token: str) -> None:
         data = {
-            "user_id": user_id,
-            "refresh_token": refresh_token,
-            "start_date": datetime.now(),
-            "end_date": datetime.now() + settings.jwt.refresh_token.expires,
+            "email": creds.email,
+            "password": hash_password(creds.password),
+            "role": "user",
         }
-        await self.user_repository.add_one(data)
 
-    async def get_token_session_by_user_id(self, user_id: int) -> Optional[UserSession]:
-        user_session = await self.user_repository.find_one(id=user_id)
-        return user_session if user_session else None
+        new_user = await self.user_repository.add_one(data=data)
+        return new_user
 
-    async def get_token_session_by_token(
-        self, refresh_token: str
-    ) -> Optional[UserSession]:
-        user_session = await self.user_repository.find_one(refresh_token=refresh_token)
-        return user_session if user_session else None
+    async def authenticate_user(
+        self, creds: UserLoginSchema, response: Response
+    ) -> str:
+        user = await self.user_repository.find_one(email=creds.email)
 
-    async def delete_user_token_session(self, user_id: int):
-        pass
+        # Проверка почты
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email doesn't registered",
+            )
+
+        # Проверка пароля
+        if not verify_password(creds.password, user.password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password"
+            )
+
+        access_token = security.create_access_token(
+            uid=str(user.id), expiry=settings.jwt.access_token.expires, fresh=True
+        )
+
+        refresh_token = security.create_refresh_token(
+            uid=str(user.id), expiry=settings.jwt.refresh_token.expires
+        )
+
+        security.set_refresh_cookies(
+            token=refresh_token,
+            response=response,
+            max_age=settings.jwt.refresh_token.expires_int,
+        )
+
+        return access_token
+
+    async def get_auth_user_by_user_id(self, user_id: int) -> User:
+        user = await self.user_repository.find_one(id=user_id)
+        return user
+
+    @staticmethod
+    async def refresh_expired_token(token: TokenPayload) -> str:
+        new_access_token = security.create_access_token(uid=token.sub, fresh=False)
+        return new_access_token
+
+    @staticmethod
+    async def logout_user(response: Response) -> None:
+        security.unset_refresh_cookies(response=response)
+        return
 
 
-def get_user_service():
-    return UserService(UserRepository)
-
-
-def get_token_service():
-    return TokenService(TokenRepository)
+def get_auth_service():
+    return AuthService(UserRepository)

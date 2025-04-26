@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Optional
 
 from sqlalchemy import insert, select, update
 
@@ -8,7 +8,14 @@ from database.db import db_helper
 
 class AbstractRepository(ABC):
     @abstractmethod
-    async def find_all(self, **kwargs):
+    async def find_all(
+        self,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
+        desc: Optional[bool] = None,
+        filters: Optional[dict] = None,
+    ):
         raise NotImplementedError
 
     @abstractmethod
@@ -20,7 +27,7 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update_one(self, user_id: int, update_data: dict):
+    async def update_one(self, update_data: dict, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
@@ -31,30 +38,49 @@ class AbstractRepository(ABC):
 class SQLAlchemyRepository(AbstractRepository):
     model = None
 
-    async def find_all(self, **filters) -> List[model]:
+    async def find_all(
+        self,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
+        desc: Optional[bool] = None,
+        filters: Optional[dict] = None,
+    ):
         async with db_helper.session_factory() as session:
-            stmt = select(self.model)
+            query = select(self.model)
 
             if filters:
-                conditions = [
-                    getattr(self.model, key) == value for key, value in filters.items()
-                ]
-                stmt = stmt.where(*conditions)
+                for key, value in filters.items():
+                    if not hasattr(self.model, key):
+                        raise ValueError(f"Invalid filter field: {key}")
+                    query = query.where(getattr(self.model, key) == value)
 
-            res = await session.execute(stmt)
+            if order_by:
+                if hasattr(self.model, order_by):
+                    order_field = getattr(self.model, order_by)
+                    query = query.order_by(order_field.desc() if desc else order_field)
+                else:
+                    raise ValueError(f"Invalid order_by field: {order_by}")
+
+            if limit:
+                query = query.limit(limit)
+            if offset:
+                query = query.offset(offset)
+
+            res = await session.execute(query)
             return res.scalars().all()
 
-    async def find_one(self, **filters) -> model:
+    async def find_one(self, **filters):
         async with db_helper.session_factory() as session:
-            stmt = select(self.model)
+            query = select(self.model)
 
             if filters:
-                conditions = [
-                    getattr(self.model, key) == value for key, value in filters.items()
-                ]
-                stmt = stmt.where(*conditions)
+                for key, value in filters.items():
+                    if not hasattr(self.model, key):
+                        raise ValueError(f"Invalid filter field: {key}")
+                    query = query.where(getattr(self.model, key) == value)
 
-            res = await session.execute(stmt)
+            res = await session.execute(query)
             return res.scalar_one_or_none()
 
     async def add_one(self, data: dict) -> model:
@@ -64,12 +90,10 @@ class SQLAlchemyRepository(AbstractRepository):
             await session.commit()
             return result.scalar_one()
 
-    async def update_one(self, user_id: int, update_data: dict) -> model:
+    async def update_one(self, update_data: dict, **filters) -> model:
         async with db_helper.session_factory() as session:
             stmt = (
-                update(self.model)
-                .where(user_id == self.model.user_id)
-                .values(**update_data)
+                update(self.model).filter_by(**filters).values(**update_data)
             ).returning(self.model)
             result = await session.execute(stmt)
             await session.commit()
