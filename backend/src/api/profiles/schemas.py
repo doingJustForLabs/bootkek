@@ -20,9 +20,9 @@ class ProfileCreateSchema(BaseModel):
 class ProfileDetailDataSchema(BaseModel):
     name: str
     username: str
-    sex: str
-    faculty: str
-    course: int
+    sex: Optional[str] = None
+    faculty: Optional[str] = None
+    course: Optional[int] = None
     avatar_basename: str
     update_date: datetime
 

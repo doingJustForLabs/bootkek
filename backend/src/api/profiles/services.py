@@ -1,13 +1,10 @@
 import uuid
-from io import BytesIO
 from typing import Optional, List
 
 from PIL import Image
 from fastapi import UploadFile
-from fastapi.responses import FileResponse
 
 from api.exceptions import NotFoundException, BadRequestException, TooEarlyException
-from api.enums import FileSize
 from api.profiles.models import (
     Profile,
     ProfileRepository,
@@ -26,11 +23,6 @@ class ProfileService:
     async def create_profile(
         self, user_id: int, profile_data: ProfileCreateSchema
     ) -> Profile:
-
-        if not (profile_data.username or profile_data.name):
-            raise BadRequestException(
-                "Both 'name' and 'username' are required for profiles creation"
-            )
 
         if await self.profile_repository.find_one(user_id=user_id):
             raise BadRequestException("Profile already exists")
@@ -93,13 +85,13 @@ class ProfileService:
             raise NotFoundException("Profiles not found")
         return profiles
 
-    # async def search_profiles(
-    #     self, q: str, limit: int, page: int, order_by: str, desc: bool
-    # ) -> List[Profile]:
-    #     profiles = await self.profile_repository.find_all(
-    #         limit=limit, offset=page * limit, order_by=order_by, desc=desc
-    #     )
-    #     return profiles
+    async def search_profiles(
+        self, q: str, limit: int, page: int, order_by: str, desc: bool
+    ) -> List[Profile]:
+        profiles = await self.profile_repository.find_all(
+            limit=limit, offset=page * limit, order_by=order_by, desc=desc
+        )
+        return profiles
 
 
 class AvatarService:

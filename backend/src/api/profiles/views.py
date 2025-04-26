@@ -11,7 +11,7 @@ from api.profiles.schemas import (
     ProfileDetailDataSchema,
     ProfileSummaryDataSchema,
     SearchResponseSchema,
-    SearchParams,
+    SearchParams, PaginationSchema,
 )
 from api.profiles.services import (
     ProfileService,
@@ -25,12 +25,6 @@ from api.profiles.services import (
 router = APIRouter(
     tags=["Пользователи👨‍💻"], prefix="/profiles", dependencies=[Depends(http_bearer)]
 )
-
-# AVATAR_DIR = Path(settings.files.static_dir / "avatars")
-# AVATAR_DIR.mkdir(parents=True, exist_ok=True)
-# ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
-#
-# file_sizes = [64, 128, 256]
 
 
 @router.post(
@@ -83,53 +77,6 @@ async def get_user_profile(
     )
 
 
-@router.get("")
-async def get_all_profiles(
-    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
-):
-    """Получаем информацию о всех пользователях"""
-    profiles = await profile_service.get_profiles()
-    return {"profiles": profiles}
-
-
-@router.get("/{user_id}", response_model=ProfileDetailResponseSchema)
-async def get_user_profile(
-    user_id: int,
-    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
-):
-    """Получаем информацию о пользователе"""
-    profile = await profile_service.get_profile_by_user_id(user_id)
-    return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile)
-    )
-
-
-@router.post("/avatars")
-async def update_user_avatar(
-    token: AccessDependency,
-    avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
-    avatar: UploadFile = File(...),
-):
-    """Создание аватарки пользователя"""
-
-    # TODO png формат не принимается, решить проблему
-
-    basename = await avatar_service.update_profile_avatar(int(token.sub), avatar)
-    return {"basename": basename}
-
-
-# @router.get("/avatars/{basename}")
-# async def get_user_avatar(
-#     basename: str,
-#     file_size: FileSize,
-#     avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
-#     token: AccessDependency
-# ) -> FileResponse:
-#     """Запрос на получение аватарки пользователя по basename (сгенерированному имени аватарки без размера)"""
-#     avatar = await avatar_service.get_profile_avatar(basename, file_size, user_id=int(token.sub))
-#     return avatar
-
-
 # @router.get(
 #     "/search", dependencies=[Depends(http_bearer)], response_model=SearchResponseSchema
 # )
@@ -160,6 +107,53 @@ async def update_user_avatar(
 #
 #     except ValueError as e:
 #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+#
+
+@router.get("")
+async def get_all_profiles(
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+):
+    """Получаем информацию о всех пользователях"""
+    profiles = await profile_service.get_profiles()
+    return {"profiles": profiles}
+
+
+@router.get("/{user_id}", response_model=ProfileDetailResponseSchema)
+async def get_user_profile(
+    user_id: int,
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+):
+    """Получаем информацию о пользователе"""
+    profile = await profile_service.get_profile_by_user_id(user_id)
+    return ProfileDetailResponseSchema(
+        profile=ProfileDetailDataSchema.model_validate(profile)
+    )
+
+
+@router.post("/avatars")
+async def update_user_avatar(
+    token: AccessDependency,
+    avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
+    avatar: UploadFile = File(...),
+):
+    """
+    Создание аватарки пользователя
+
+    Чтобы получить аватарку необходимо отправить запрос на `/static/avatars/1/basename.jpg`
+    """
+    basename = await avatar_service.update_profile_avatar(int(token.sub), avatar)
+    return {"basename": basename}
+
+
+@router.post("/followers/{target_id}")
+async def follow_user(
+    token: AccessDependency,
+    target_id: int,
+):
+    """Пользователь подписывается на другого"""
+    return ...
+
+
 
 
 # @router.post("/followers/{followee_id}")
