@@ -25,6 +25,8 @@ class Profile(Base):
     update_date: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()
     )
+    subscribers_count: Mapped[int] = mapped_column(Integer)
+    subscriptions_count: Mapped[int] = mapped_column(Integer)
 
 
 class ProfileRepository(SQLAlchemyRepository):
