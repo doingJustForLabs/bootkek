@@ -1,10 +1,8 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import FileResponse
 
 from api.auth.views import http_bearer, AccessDependency
-from api.enums import FileSize
 from api.profiles.schemas import (
     ProfileCreateSchema,
     ProfileDetailResponseSchema,
@@ -16,10 +14,8 @@ from api.profiles.schemas import (
 from api.profiles.services import (
     ProfileService,
     AvatarService,
-    FollowerService,
     get_profile_service,
     get_avatar_service,
-    get_follower_service,
 )
 
 router = APIRouter(
@@ -77,6 +73,21 @@ async def get_user_profile(
     )
 
 
+@router.post("/avatars")
+async def update_user_avatar(
+    token: AccessDependency,
+    avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
+    avatar: UploadFile = File(...),
+):
+    """
+    Создание аватарки пользователя
+
+    Чтобы получить аватарку необходимо отправить запрос на `/static/avatars/1/basename.jpg`
+    """
+    basename = await avatar_service.update_profile_avatar(int(token.sub), avatar)
+    return {"basename": basename}
+
+
 @router.get(
     "/search", dependencies=[Depends(http_bearer)], response_model=SearchResponseSchema
 )
@@ -107,68 +118,3 @@ async def search_some_profiles(
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.get("")
-async def get_all_profiles(
-    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
-):
-    """Получаем информацию о всех пользователях"""
-    profiles = await profile_service.get_profiles()
-    return {"profiles": profiles}
-
-
-@router.get("/{user_id}", response_model=ProfileDetailResponseSchema)
-async def get_user_profile(
-    user_id: int,
-    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
-):
-    """Получаем информацию о пользователе"""
-    profile = await profile_service.get_profile_by_user_id(user_id)
-    return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile)
-    )
-
-
-@router.post("/avatars")
-async def update_user_avatar(
-    token: AccessDependency,
-    avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
-    avatar: UploadFile = File(...),
-):
-    """
-    Создание аватарки пользователя
-
-    Чтобы получить аватарку необходимо отправить запрос на `/static/avatars/1/basename.jpg`
-    """
-    basename = await avatar_service.update_profile_avatar(int(token.sub), avatar)
-    return {"basename": basename}
-
-
-@router.post("/followers/{target_id}")
-async def follow_user(
-    token: AccessDependency,
-    target_id: int,
-):
-    """Пользователь подписывается на другого"""
-    return ...
-
-
-
-
-# @router.post("/followers/{followee_id}")
-# async def follow_user(
-#     token: AccessDependency,
-#     followee_id: int,
-#     follower_service: Annotated[FollowerService, Depends(get_follower_service)],
-# ):
-#     follower = await follower_service.follow_user(
-#         follower_id=int(token.sub), followee_id=followee_id
-#     )
-#
-#     if not follower:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST, detail="User cannot follow himself"
-#         )
-#
-#     return follower
