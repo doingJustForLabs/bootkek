@@ -77,37 +77,37 @@ async def get_user_profile(
     )
 
 
-# @router.get(
-#     "/search", dependencies=[Depends(http_bearer)], response_model=SearchResponseSchema
-# )
-# async def search_some_profiles(
-#     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
-#     params: Annotated[SearchParams, Depends()],
-#     pagination: Annotated[PaginationSchema, Depends(PaginationSchema)],
-# ):
-#     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
-#     try:
-#         profiles = await profile_service.search_profiles(
-#             q=params.q,
-#             limit=int(pagination.limit),
-#             page=int(pagination.page),
-#             order_by=params.order_by,
-#             desc=params.desc,
-#         )
-#
-#         validated_profiles = [
-#             ProfileSummaryDataSchema.model_validate(profile) for profile in profiles
-#         ]
-#
-#         return SearchResponseSchema(
-#             profiles=validated_profiles,
-#             filters=SearchParams.model_validate(params),
-#             pagination=pagination,
-#         )
-#
-#     except ValueError as e:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-#
+@router.get(
+    "/search", dependencies=[Depends(http_bearer)], response_model=SearchResponseSchema
+)
+async def search_some_profiles(
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    params: Annotated[SearchParams, Depends()],
+    pagination: Annotated[PaginationSchema, Depends(PaginationSchema)],
+):
+    """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
+    try:
+        profiles = await profile_service.search_profiles(
+            q=params.q,
+            limit=int(pagination.limit),
+            page=int(pagination.page),
+            order_by=params.order_by,
+            desc=params.desc,
+        )
+
+        validated_profiles = [
+            ProfileSummaryDataSchema.model_validate(profile) for profile in profiles
+        ]
+
+        return SearchResponseSchema(
+            profiles=validated_profiles,
+            filters=SearchParams.model_validate(params),
+            pagination=pagination,
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 
 @router.get("")
 async def get_all_profiles(
