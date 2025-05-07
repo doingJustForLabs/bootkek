@@ -20,3 +20,9 @@ class MuctrFaculties(str, Enum):
     ipur = "ИПУР"
     fen = "ФЕН"
     other = "other"
+
+
+class Skills(str, Enum):
+    maths = "Математика"
+    cpp = "C++"
+    cs = "C#"

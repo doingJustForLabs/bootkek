@@ -1,5 +1,35 @@
 # Granite (Backend)
 
+## Alembic (_новое!_)
+
+### Основные команды
+
+Все команды нужно запускать из папки `src` иначе он просто не увидит alembic
+
+#### Обновление и откат миграций
+
+```shell
+alembic upgrade head
+alembic downgrade -1
+```
+
+#### Создание новой миграции
+
+```shell
+alembic revision --autogenerate -m "название миграции"
+```
+
+> **Важно!** Для создания новой миграции нужно обязательно:
+> - Проверить миграцию (в папке `versions`), что все корректно создается
+> - Импортировать _новые модели_ в файл `alembic/env.py` как сделано сейчас
+>   ```
+>   from api.auth.models import User
+>   from api.profiles.models import Profile
+>   
+>   # Например создал новую модель -> импортируй
+>   from api.followers.models import Follower
+>   ``` 
+
 ## Запуск серверов
 
 ### Установка зависимостей (_обновление!_)

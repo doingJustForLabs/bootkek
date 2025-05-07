@@ -3,6 +3,7 @@ from typing import Optional
 
 from sqlalchemy import insert, select, update
 
+from api.exceptions import BadRequestException
 from database.db import db_helper
 
 
@@ -10,11 +11,9 @@ class AbstractRepository(ABC):
     @abstractmethod
     async def find_all(
         self,
+        filters: Optional[dict] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[str] = None,
-        desc: Optional[bool] = None,
-        filters: Optional[dict] = None,
     ):
         raise NotImplementedError
 
@@ -42,8 +41,6 @@ class SQLAlchemyRepository(AbstractRepository):
         self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        order_by: Optional[str] = None,
-        desc: Optional[bool] = None,
         filters: Optional[dict] = None,
     ):
         async with db_helper.session_factory() as session:
@@ -52,15 +49,8 @@ class SQLAlchemyRepository(AbstractRepository):
             if filters:
                 for key, value in filters.items():
                     if not hasattr(self.model, key):
-                        raise ValueError(f"Invalid filter field: {key}")
+                        raise BadRequestException(f"Invalid filter field: {key}")
                     query = query.where(getattr(self.model, key) == value)
-
-            if order_by:
-                if hasattr(self.model, order_by):
-                    order_field = getattr(self.model, order_by)
-                    query = query.order_by(order_field.desc() if desc else order_field)
-                else:
-                    raise ValueError(f"Invalid order_by field: {order_by}")
 
             if limit:
                 query = query.limit(limit)
@@ -77,7 +67,7 @@ class SQLAlchemyRepository(AbstractRepository):
             if filters:
                 for key, value in filters.items():
                     if not hasattr(self.model, key):
-                        raise ValueError(f"Invalid filter field: {key}")
+                        raise BadRequestException(f"Invalid filter field: {key}")
                     query = query.where(getattr(self.model, key) == value)
 
             res = await session.execute(query)
