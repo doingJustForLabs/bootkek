@@ -12,7 +12,7 @@ nums = [str(i) for i in range(10)]
 
 class ProfileCreateSchema(BaseModel):
     name: Optional[str] = None
-    username: Optional[str] = Field(None, min_length=5)
+    username: Optional[str] = Field(None, min_length=5, max_length=25)
 
     course: Optional[int] = Field(None, ge=1, le=4)
     sex: Optional[Sex] = None
@@ -20,10 +20,12 @@ class ProfileCreateSchema(BaseModel):
 
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
-    @model_validator(mode="before")
+    @model_validator(mode="after")
     def validate_username(self):
-        if any(let not in "".join(alf + nums) for let in self["username"].lower()):
-            raise BadRequestException("Invalid username. Use (0-9) and (a-z, A-Z)")
+        if self.username:
+            if any(let not in "".join(alf + nums) for let in self.username.lower()):
+                raise BadRequestException("Invalid username. Use (0-9) and (a-z, A-Z)")
+            return self
         return self
 
 

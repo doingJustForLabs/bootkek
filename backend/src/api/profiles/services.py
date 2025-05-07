@@ -34,11 +34,14 @@ class ProfileRepository:
     async def update_profile(
         cls, session: AsyncSession, user_id: int, update_data: ProfileCreateSchema
     ) -> Profile:
-        profile = await cls.get_profile_by_user_id(session, user_id)
 
-        profile_by_username = await cls.get_profile_by_username(
-            session, update_data.username
-        )
+        profile: Profile = await session.scalar(select(Profile).where(Profile.user_id == user_id))
+
+        if not await session.scalar(select(Profile).where(Profile.user_id == user_id)):
+            raise NotFoundException("Profile not found")
+
+        profile_by_username = await session.scalar(select(Profile).where(Profile.username == update_data.username))
+
         if profile_by_username and profile.username != update_data.username:
             raise BadRequestException("Username already used")
 
@@ -48,7 +51,7 @@ class ProfileRepository:
             raise BadRequestException("Empty data")
 
         for key, value in data.items():
-            if key not in profile:
+            if not getattr(profile, key):
                 raise BadRequestException(f"Invalid key for update: {key}")
             setattr(profile, key, value)
 
