@@ -24,14 +24,3 @@ class Profile(Base):
 
 class ProfileRepository(SQLAlchemyRepository):
     model = Profile
-
-
-class Follower(Base):
-    __tablename__ = "followers"
-
-    follower_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
-    followee_id: Mapped[int] = mapped_column(Integer)
-
-
-class FollowerRepository(SQLAlchemyRepository):
-    model = Follower

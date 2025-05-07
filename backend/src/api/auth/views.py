@@ -23,7 +23,7 @@ router = APIRouter(tags=["Авторизация👤"], prefix="/auth")
 http_bearer = HTTPBearer(auto_error=False)
 
 
-async def verify_access_token(request: Request) -> str:
+async def verify_access_token(request: Request) -> TokenPayload:
     try:
         token = await security.get_access_token_from_request(
             request,
@@ -37,7 +37,7 @@ async def verify_access_token(request: Request) -> str:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
-async def verify_refresh_token(request: Request) -> str:
+async def verify_refresh_token(request: Request) -> TokenPayload:
     try:
         token = await security.get_refresh_token_from_request(
             request, locations=["cookies"]

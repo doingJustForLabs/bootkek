@@ -8,8 +8,6 @@ from api.exceptions import NotFoundException, BadRequestException, TooEarlyExcep
 from api.profiles.models import (
     Profile,
     ProfileRepository,
-    FollowerRepository,
-    Follower,
 )
 from api.profiles.schemas import ProfileCreateSchema
 from core.config import settings
@@ -85,13 +83,13 @@ class ProfileService:
             raise NotFoundException("Profiles not found")
         return profiles
 
-    async def search_profiles(
-        self, q: str, limit: int, page: int, order_by: str, desc: bool
-    ) -> List[Profile]:
-        profiles = await self.profile_repository.find_all(
-            limit=limit, offset=page * limit, order_by=order_by, desc=desc
-        )
-        return profiles
+    # async def search_profiles(
+    #     self, q: str, limit: int, page: int, order_by: str = "id", desc: bool = False
+    # ) -> List[Profile]:
+    #     profiles = await self.profile_repository.find_all(
+    #         limit=limit, offset=page * limit, order_by=order_by, desc=desc
+    #     )
+    #     return profiles
 
 
 class AvatarService:
@@ -158,40 +156,17 @@ class AvatarService:
         return avatar
 
 
-class FollowerService:
-
-    def __init__(
-        self,
-        follower_repository: type[AbstractRepository],
-        profile_repository: type[AbstractRepository],
-    ):
-        self.follower_repository = follower_repository()
-        self.profile_repository = profile_repository()
-
-    async def follow_user(
-        self, follower_id: int, followee_id: int
-    ) -> Optional[Follower]:
-        if followee_id == follower_id:
-            return None
-
-        followee = await self.profile_repository.find_one(user_id=followee_id)
-
-        payload = {"follower_id": follower_id, "followee_id": followee_id}
-        follower = await self.follower_repository.add_one(data=payload)
-        return follower
-
-
-class SearchService:
-    def __init__(self, profile_repository: type[AbstractRepository]):
-        self.profile_repository = profile_repository()
-
-    async def search_profiles(
-        self, q: str, limit: int, page: int, order_by: str, desc: bool
-    ) -> List[Profile]:
-        profiles = await self.profile_repository.find_all(
-            limit=limit, offset=page * limit, order_by=order_by, desc=desc
-        )
-        return profiles
+# class SearchService:
+#     def __init__(self, profile_repository: type[AbstractRepository]):
+#         self.profile_repository = profile_repository()
+#
+#     async def search_profiles(
+#         self, q: str, limit: int, page: int, order_by: str, desc: bool
+#     ) -> List[Profile]:
+#         profiles = await self.profile_repository.find_all(
+#             limit=limit, offset=page * limit, order_by=order_by, desc=desc
+#         )
+#         return profiles
 
 
 def get_profile_service():
@@ -200,7 +175,3 @@ def get_profile_service():
 
 def get_avatar_service():
     return AvatarService(ProfileRepository)
-
-
-def get_follower_service():
-    return FollowerService(FollowerRepository, ProfileRepository)

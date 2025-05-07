@@ -59,3 +59,8 @@ class SearchResponseSchema(BaseModel):
     profiles: List[ProfileSummaryDataSchema]
     filters: SearchParams
     pagination: PaginationSchema
+
+
+class SearchFilters(BaseModel):
+    q: Optional[str] = None
+    skill: Optional[str] = None
