@@ -13,7 +13,3 @@ class User(Base):
 
     role: Mapped[str] = mapped_column(String(20))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
-
-
-# class UserRepository(SQLAlchemyRepository):
-#     model = User

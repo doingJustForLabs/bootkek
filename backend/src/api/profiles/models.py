@@ -11,16 +11,16 @@ class Profile(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True)
 
     username: Mapped[str] = mapped_column(String, unique=True)
-    name: Mapped[str] = mapped_column(String)
+    name: Mapped[str]
 
-    course: Mapped[int] = mapped_column(Integer, nullable=True)
-    sex: Mapped[str] = mapped_column(String, nullable=True)
-    faculty: Mapped[str] = mapped_column(String, nullable=True)
+    course: Mapped[int | None]
+    sex: Mapped[str | None]
+    faculty: Mapped[str | None]
 
     avatar_basename: Mapped[str] = mapped_column(
         String, default="static/avatars/default-avatar.jpg"
     )
 
 
-class ProfileRepository(SQLAlchemyRepository):
-    model = Profile
+# class ProfileRepository(SQLAlchemyRepository):
+#     model = Profile

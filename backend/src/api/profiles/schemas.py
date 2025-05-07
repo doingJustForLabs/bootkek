@@ -1,9 +1,13 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from api.enums import Sex, MuctrFaculties
+from api.exceptions import BadRequestException
+
+alf = [chr(i) for i in range(ord("a"), ord("z") + 1)]
+nums = [str(i) for i in range(10)]
 
 
 class ProfileCreateSchema(BaseModel):
@@ -15,6 +19,12 @@ class ProfileCreateSchema(BaseModel):
     faculty: Optional[MuctrFaculties] = None
 
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
+
+    @model_validator(mode="before")
+    def validate_username(self):
+        if any(let not in "".join(alf + nums) for let in self["username"].lower()):
+            raise BadRequestException("Invalid username. Use (0-9) and (a-z, A-Z)")
+        return self
 
 
 class ProfileDetailDataSchema(BaseModel):

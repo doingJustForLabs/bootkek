@@ -11,11 +11,7 @@ from api.auth.schemas import (
     UserResponseSchema,
     UserDataSchema,
 )
-from api.auth.services import (
-    AuthService,
-    get_auth_service,
-    UserRepository,
-)
+from api.auth.services import UserRepository
 from core.config import settings
 from core.security import security
 from database.db import DbSession

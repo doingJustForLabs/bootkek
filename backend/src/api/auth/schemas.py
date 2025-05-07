@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, model_validator
 
+from api.exceptions import BadRequestException
+
 
 class UserLoginSchema(BaseModel):
     email: EmailStr
@@ -20,7 +22,7 @@ class UserRegisterSchema(BaseModel):
     @model_validator(mode="after")
     def check_password_match(self):
         if self.password != self.password_repeat:
-            raise ValueError("Passwords don't match")
+            raise BadRequestException("Passwords don't match")
         return self
 
 

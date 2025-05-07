@@ -1,51 +1,51 @@
 import uuid
-from typing import Optional, List
 
-from PIL import Image
 from fastapi import UploadFile
+from sqlalchemy import select, insert
+from sqlalchemy.ext.asyncio import AsyncSession
+from PIL import Image
 
-from api.exceptions import NotFoundException, BadRequestException, TooEarlyException
+from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import (
     Profile,
-    ProfileRepository,
 )
 from api.profiles.schemas import ProfileCreateSchema
 from core.config import settings
-from database.repository import AbstractRepository
 
 
-class ProfileService:
-    def __init__(self, profile_repository: type[AbstractRepository]):
-        self.profile_repository = profile_repository()
-
+class ProfileRepository:
+    @classmethod
     async def create_profile(
-        self, user_id: int, profile_data: ProfileCreateSchema
+        cls, session: AsyncSession, user_id: int, profile_data: ProfileCreateSchema
     ) -> Profile:
-
-        if await self.profile_repository.find_one(user_id=user_id):
+        if await cls.get_profile_by_user_id(session, user_id):
             raise BadRequestException("Profile already exists")
 
-        if await self.profile_repository.find_one(username=profile_data.username):
+        if await cls.get_profile_by_username(session, profile_data.username):
             raise BadRequestException("Username already used")
 
-        data = profile_data.model_dump()
-        data.update({"user_id": user_id})
-        user = await self.profile_repository.add_one(data)
-        return user
+        data = {"user_id": user_id, **profile_data.model_dump()}
 
+        stmt = insert(Profile).values(**data).returning(Profile)
+        res = await session.execute(stmt)
+
+        await session.commit()
+        return res.scalar_one()
+
+    @classmethod
     async def update_profile(
-        self, user_id: int, update_data: ProfileCreateSchema
+        cls, session: AsyncSession, user_id: int, update_data: ProfileCreateSchema
     ) -> Profile:
-
-        profile = await self.profile_repository.find_one(user_id=user_id)
+        profile = await cls.get_profile_by_user_id(session, user_id)
 
         if not profile:
             raise NotFoundException("Profile not found")
 
-        if (
-            await self.profile_repository.find_one(username=update_data.username)
-            and profile.username != update_data.username
-        ):
+        profile_by_username = await cls.get_profile_by_username(
+            session, update_data.username
+        )
+
+        if profile_by_username and profile.username != update_data.username:
             raise BadRequestException("Username already used")
 
         data = update_data.model_dump(exclude_none=True)
@@ -53,80 +53,70 @@ class ProfileService:
         if not data:
             raise BadRequestException("Empty data")
 
-        updated_profile = await self.profile_repository.update_one(
-            update_data=data, user_id=user_id
+        for key, value in data.items():
+            if key not in profile:
+                raise BadRequestException(f"Invalid key for update: {key}")
+            setattr(profile, key, value)
+
+        await session.commit()
+        await session.refresh(profile)
+        return profile
+
+    @classmethod
+    async def get_profile_by_username(
+        cls, session: AsyncSession, username: str
+    ) -> Profile:
+        profile = await session.scalar(
+            select(Profile).where(Profile.username == username)
         )
-
-        return updated_profile
-
-    async def read_profile(self, user_id: int) -> Profile:
-        profile = await self.profile_repository.find_one(user_id=user_id)
-        if not profile:
-            raise TooEarlyException("User profile didn't created yet")
-        return profile
-
-    async def get_profile_by_user_id(self, user_id: int) -> Profile:
-        profile = await self.profile_repository.find_one(user_id=user_id)
         if not profile:
             raise NotFoundException("Profile not found")
         return profile
 
-    async def get_profile_by_username(self, username: str) -> Profile:
-        profile = await self.profile_repository.find_one(username=username)
+    @classmethod
+    async def get_profile_by_user_id(
+        cls, session: AsyncSession, user_id: int
+    ) -> Profile:
+        profile = await session.scalar(
+            select(Profile).where(Profile.user_id == user_id)
+        )
         if not profile:
             raise NotFoundException("Profile not found")
         return profile
 
-    async def get_profiles(self) -> List[Profile]:
-        profiles = await self.profile_repository.find_all()
-        if not profiles:
-            raise NotFoundException("Profiles not found")
-        return profiles
 
-    # async def search_profiles(
-    #     self, q: str, limit: int, page: int, order_by: str = "id", desc: bool = False
-    # ) -> List[Profile]:
-    #     profiles = await self.profile_repository.find_all(
-    #         limit=limit, offset=page * limit, order_by=order_by, desc=desc
-    #     )
-    #     return profiles
+class AvatarRepository:
+    _AVATAR_DIR_PATH = settings.files.avatar_dir
+    _ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
+    _FILE_MAX_SIZE = 5 * 1024 * 1024 * 8
+    _FILE_SIZES = [64, 128, 256]
 
-
-class AvatarService:
-
-    def __init__(self, profile_repository: type[AbstractRepository]):
-        self.profile_repository = profile_repository()
-        self.avatar_dir_path = settings.files.avatar_dir
-        self.avatar_dir_path.mkdir(parents=True, exist_ok=True)
-        self._ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
-        self._file_sizes = [64, 128, 256]
-        self._file_max_size: int = 5 * 1024 * 1024
-
-    async def update_profile_avatar(self, user_id: int, avatar: UploadFile) -> str:
+    @classmethod
+    async def update_profile_avatar(
+        cls, session: AsyncSession, user_id: int, avatar: UploadFile
+    ) -> str:
         """
         1. Проверяем тип данных
         2. Создаем папку юзера
         4. Генерируем basename и сохраняем в БД (для дальнейшего получения)
         3. Сохраняем исходный файл в локальную папку
         5. Генерируем с помощью PIL различные форматы файла (64x64, 128x128, 256x256)
-        Как фронтенду лучше всего указывать какой формат ему получать?
-
-        Условия:
-        - Некорректный тип файла: 400 -> Invalid file type
-        - Лимит максимального размера: 400
         """
-        valid_avatar = self._validate_photo(avatar)
 
-        user_avatars_path = self.avatar_dir_path / str(user_id)
+        valid_avatar = cls._validate_photo(avatar)
+        cls._create_dir()
+
+        user_avatars_path = cls._AVATAR_DIR_PATH / str(user_id)
         user_avatars_path.mkdir(exist_ok=True, parents=True)
 
         basename = uuid.uuid4()
         file_path = user_avatars_path / f"{basename}.jpg"
 
-        await self.profile_repository.update_one(
-            update_data={"avatar_basename": f"static/avatars/{user_id}/{basename}"},
-            user_id=user_id,
-        )
+        profile = await ProfileRepository.get_profile_by_user_id(session, user_id)
+        profile.avatar_basename = f"static/avatars/{user_id}/{basename}"
+
+        await session.commit()
+        await session.refresh(profile)
 
         image_data = await valid_avatar.read()
 
@@ -134,8 +124,7 @@ class AvatarService:
             buffer.write(image_data)
 
         with Image.open(valid_avatar.file) as image:
-
-            for size in self._file_sizes:
+            for size in cls._FILE_SIZES:
                 image_copy = image.copy()
                 image_copy.thumbnail((size, size))
 
@@ -148,30 +137,14 @@ class AvatarService:
 
         return str(basename)
 
-    def _validate_photo(self, avatar: UploadFile) -> UploadFile:
-        if avatar.content_type not in self._ALLOWED_AVATAR_TYPES:
+    @classmethod
+    def _validate_photo(cls, avatar: UploadFile) -> UploadFile:
+        if avatar.content_type not in cls._ALLOWED_AVATAR_TYPES:
             raise BadRequestException("Invalid file type. Use 'png' or 'jpeg'")
-        if avatar.size > self._file_max_size:
+        if avatar.size > cls._FILE_MAX_SIZE:
             raise BadRequestException("File exceeds maximum size (5Mb)")
         return avatar
 
-
-# class SearchService:
-#     def __init__(self, profile_repository: type[AbstractRepository]):
-#         self.profile_repository = profile_repository()
-#
-#     async def search_profiles(
-#         self, q: str, limit: int, page: int, order_by: str, desc: bool
-#     ) -> List[Profile]:
-#         profiles = await self.profile_repository.find_all(
-#             limit=limit, offset=page * limit, order_by=order_by, desc=desc
-#         )
-#         return profiles
-
-
-def get_profile_service():
-    return ProfileService(ProfileRepository)
-
-
-def get_avatar_service():
-    return AvatarService(ProfileRepository)
+    @classmethod
+    def _create_dir(cls) -> None:
+        cls._AVATAR_DIR_PATH.mkdir(parents=True, exist_ok=True)

@@ -13,13 +13,9 @@ from api.profiles.schemas import (
     PaginationSchema,
     SearchFilters,
 )
-from api.profiles.services import (
-    ProfileService,
-    AvatarService,
-    get_profile_service,
-    get_avatar_service,
-)
+from api.profiles.services import ProfileRepository, AvatarRepository
 from api.search.service import SearchService, get_search_service
+from database.db import DbSession
 
 router = APIRouter(
     tags=["Пользователи👨‍💻"], prefix="/profiles", dependencies=[Depends(http_bearer)]
@@ -31,12 +27,14 @@ router = APIRouter(
     response_model=ProfileDetailResponseSchema,
 )
 async def setup_user_profile(
+    session: DbSession,
     token: AccessDependency,
     profile_data: ProfileCreateSchema,
-    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
     """Создание профиля пользователя"""
-    profile = await profile_service.create_profile(int(token.sub), profile_data)
+    profile = await ProfileRepository.create_profile(
+        session, int(token.sub), profile_data
+    )
 
     return ProfileDetailResponseSchema(
         profile=ProfileDetailDataSchema.model_validate(profile)
@@ -48,15 +46,17 @@ async def setup_user_profile(
     response_model=ProfileDetailResponseSchema,
 )
 async def update_user_profile(
+    session: DbSession,
     token: AccessDependency,
     update_data: ProfileCreateSchema,
-    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
     """Обновление профиля пользователя"""
-    updated_profile = await profile_service.update_profile(int(token.sub), update_data)
+    profile = await ProfileRepository.update_profile(
+        session, int(token.sub), update_data
+    )
 
     return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(updated_profile)
+        profile=ProfileDetailDataSchema.model_validate(profile)
     )
 
 
@@ -66,10 +66,10 @@ async def update_user_profile(
 )
 async def get_user_profile(
     token: AccessDependency,
-    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    session: DbSession,
 ):
     """Получение данных о пользователе"""
-    profile = await profile_service.read_profile(int(token.sub))
+    profile = await ProfileRepository.get_profile_by_user_id(session, int(token.sub))
 
     return ProfileDetailResponseSchema(
         profile=ProfileDetailDataSchema.model_validate(profile)
@@ -79,7 +79,7 @@ async def get_user_profile(
 @router.post("/avatars")
 async def update_user_avatar(
     token: AccessDependency,
-    avatar_service: Annotated[AvatarService, Depends(get_avatar_service)],
+    session: DbSession,
     avatar: UploadFile = File(...),
 ):
     """
@@ -87,48 +87,50 @@ async def update_user_avatar(
 
     Чтобы получить аватарку необходимо отправить запрос на `/static/avatars/1/basename.jpg`
     """
-    basename = await avatar_service.update_profile_avatar(int(token.sub), avatar)
+    basename = await AvatarRepository.update_profile_avatar(
+        session, int(token.sub), avatar
+    )
     return {"basename": basename}
 
 
-# @router.get(
-#     "/search", dependencies=[Depends(http_bearer)], response_model=SearchResponseSchema
-# )
-# async def search_some_profiles(
-#     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
-#     params: Annotated[SearchParams, Depends()],
-#     pagination: Annotated[PaginationSchema, Depends(PaginationSchema)],
-# ):
-#     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
-#     try:
-#         profiles = await profile_service.search_profiles(
-#             q=params.q,
-#             limit=int(pagination.limit),
-#             page=int(pagination.page),
-#             order_by=params.order_by,
-#             desc=params.desc,
-#         )
+# # @router.get(
+# #     "/search", dependencies=[Depends(http_bearer)], response_model=SearchResponseSchema
+# # )
+# # async def search_some_profiles(
+# #     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+# #     params: Annotated[SearchParams, Depends()],
+# #     pagination: Annotated[PaginationSchema, Depends(PaginationSchema)],
+# # ):
+# #     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
+# #     try:
+# #         profiles = await profile_service.search_profiles(
+# #             q=params.q,
+# #             limit=int(pagination.limit),
+# #             page=int(pagination.page),
+# #             order_by=params.order_by,
+# #             desc=params.desc,
+# #         )
+# #
+# #         validated_profiles = [
+# #             ProfileSummaryDataSchema.model_validate(profile) for profile in profiles
+# #         ]
+# #
+# #         return SearchResponseSchema(
+# #             profiles=validated_profiles,
+# #             filters=SearchParams.model_validate(params),
+# #             pagination=pagination,
+# #         )
+# #
+# #     except ValueError as e:
+# #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 #
-#         validated_profiles = [
-#             ProfileSummaryDataSchema.model_validate(profile) for profile in profiles
-#         ]
 #
-#         return SearchResponseSchema(
-#             profiles=validated_profiles,
-#             filters=SearchParams.model_validate(params),
-#             pagination=pagination,
-#         )
-#
-#     except ValueError as e:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-# @router.get("/search")
-# async def search_profiles(
-#     filters: Annotated[SearchFilters, Depends()],
-#     pagination: Annotated[PaginationSchema, Depends()],
-#     search_service: Annotated[SearchService, Depends(get_search_service)],
-# ):
-#     profiles = await search_service.search_profiles(pagination, filters)
-#
-#     return profiles
+# # @router.get("/search")
+# # async def search_profiles(
+# #     filters: Annotated[SearchFilters, Depends()],
+# #     pagination: Annotated[PaginationSchema, Depends()],
+# #     search_service: Annotated[SearchService, Depends(get_search_service)],
+# # ):
+# #     profiles = await search_service.search_profiles(pagination, filters)
+# #
+# #     return profiles

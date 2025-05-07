@@ -1,6 +1,6 @@
 from typing import List
 
-from api.profiles.models import ProfileRepository, Profile
+from api.profiles.models import Profile
 from api.search.schemas import PaginationSchema, FiltersSchema
 from database.repository import AbstractRepository
 
