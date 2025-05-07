@@ -1,14 +1,12 @@
 import uuid
 
-from fastapi import UploadFile
+from fastapi import UploadFile, status
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from PIL import Image
 
 from api.exceptions import NotFoundException, BadRequestException
-from api.profiles.models import (
-    Profile,
-)
+from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
 from core.config import settings
 
@@ -18,10 +16,10 @@ class ProfileRepository:
     async def create_profile(
         cls, session: AsyncSession, user_id: int, profile_data: ProfileCreateSchema
     ) -> Profile:
-        if await cls.get_profile_by_user_id(session, user_id):
+        if await session.scalar(select(Profile).where(Profile.user_id == user_id)):
             raise BadRequestException("Profile already exists")
 
-        if await cls.get_profile_by_username(session, profile_data.username):
+        if await session.scalar(select(Profile).where(Profile.username == profile_data.username)):
             raise BadRequestException("Username already used")
 
         data = {"user_id": user_id, **profile_data.model_dump()}
@@ -38,13 +36,9 @@ class ProfileRepository:
     ) -> Profile:
         profile = await cls.get_profile_by_user_id(session, user_id)
 
-        if not profile:
-            raise NotFoundException("Profile not found")
-
         profile_by_username = await cls.get_profile_by_username(
             session, update_data.username
         )
-
         if profile_by_username and profile.username != update_data.username:
             raise BadRequestException("Username already used")
 
