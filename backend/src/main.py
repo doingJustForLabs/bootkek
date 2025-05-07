@@ -16,8 +16,8 @@ from database.db import db_helper, Base
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # startup
-    async with db_helper.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # async with db_helper.engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
 
     yield
 

@@ -33,3 +33,18 @@ async def verify_fresh_token(request: Request):
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+
+async def verify_fresh_token(request: Request):
+    try:
+        token = await security.get_access_token_from_request(
+            request,
+            locations=["headers"],
+        )
+
+        payload = security.verify_token(token, verify_fresh=True)
+
+        return payload
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
