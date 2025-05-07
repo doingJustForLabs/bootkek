@@ -5,6 +5,7 @@ import ResetPwd from "./components/pages/ResetPwd";
 import Profile from "./components/pages/Profile";
 import ProfileStepOne from "./components/pages/ProfileStepOne.jsx";
 import ProfileStepTwo from "./components/pages/ProfileStepTwo.jsx";
+import ProfileCreation from "./components/pages/ProfileCreation.jsx";
 
 function App() {
 
@@ -12,13 +13,14 @@ function App() {
     <>
       <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/registration" element={<Registration />} />
-            <Route path="/reset" element={<ResetPwd />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/newprofile/1" element={<ProfileStepOne />} />
-            <Route path="/newprofile/2" element={<ProfileStepTwo />} />
-            <Route path="/newprofile/3" element={<ProfileStepOne />} />
+              <Route path="/" element={<Login />} />
+              <Route path="/registration" element={<Registration />} />
+              <Route path="/reset" element={<ResetPwd />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/newprofile" element={<ProfileCreation />} />
+              <Route path="/newprofile/1" element={<ProfileStepOne />} />
+              <Route path="/newprofile/2" element={<ProfileStepTwo />} />
+              <Route path="/newprofile/3" element={<ProfileStepOne />} />
           </Routes>
       </BrowserRouter>
     </>

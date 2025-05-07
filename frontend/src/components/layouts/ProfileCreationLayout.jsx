@@ -9,7 +9,8 @@ const ProfileCreationLayout = ({step = 1, children}) => {
                 <div className="noise-overlay absolute inset-0" />
             </div>
 
-            <div className="justify-items-center relative z-10 w-full max-w-md p-8 bg-amber-50 rounded-3xl shadow-xl">
+            <div className="justify-items-center relative z-10 w-full max-w-sm p-8 bg-amber-50 rounded-3xl shadow-xl">
+                <h1 className="text-muctr justify-self-center text-2xl mb-5">Создание профиля!!!</h1>
                 <StepProgress currentStep={step} />
                 <div>{children}</div>
             </div>

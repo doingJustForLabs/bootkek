@@ -10,6 +10,9 @@ export default class ProfileService {
         return API.post("/profiles/me", {
             name: name,
             username: username,
+            sex: "other",
+            course: 1,
+            faculty: "other"
         })
     }
 
@@ -23,16 +26,10 @@ export default class ProfileService {
         const formData = new FormData();
         formData.append("avatar", file);
 
-        return API.post("/avatars", formData, {
+        return API.post("/profiles/avatars", formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
-        });
-    }
-
-    static async getAvatar (basename, fileSize){
-        return API.get(`/profiles/avatars/${basename}`, {
-            params: { file_size: fileSize }
         });
     }
 

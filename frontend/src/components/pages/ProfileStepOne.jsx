@@ -51,6 +51,7 @@ const ProfileStepOne = () => {
             var messageText = "";
             switch (error.response.status) {
                 case 409: messageText = "Такой никнейм уже занят!"; break;
+                case 422: messageText = "Слишком короткий никнейм!"; break;
                 default: messageText = `Ошибка! ${error.response.status}`; break;
             }
 
@@ -64,7 +65,7 @@ const ProfileStepOne = () => {
     return (
         <ProfileCreationLayout step={1}>
             {contextHolder}
-            <Form layout="vertical" form={form} onFinish={handleNext}>
+            <Form layout="vertical" style={{ justifyItems: 'center' }} form={form} onFinish={handleNext}>
                 <Form.Item style={{ justifyItems: 'center' }}>
                     <Upload
                         showUploadList={false}

@@ -34,7 +34,7 @@ const Registration = () => {
 
         try {
             await AuthStore.register(email, password, passwordRepeat).then(
-                () => {navigate("/newprofile/1");}
+                () => { navigate("/");}
             );
         } catch (error) {
             var messageText = "";
