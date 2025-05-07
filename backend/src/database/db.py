@@ -24,20 +24,20 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 
 class DatabaseHelper:
-    def __init__(self, url: str, echo: bool):
-        self.engine = create_async_engine(url=url, echo=echo, pool_size=5)
-        self.session_factory = async_sessionmaker(
-            bind=self.engine, expire_on_commit=False
+    def __init__(self, url: str, echo: int):
+        self._engine = create_async_engine(url=url, echo=echo, pool_size=5)
+        self._session_factory = async_sessionmaker(
+            bind=self._engine, expire_on_commit=False
         )
 
     async def dispose(self):
-        await self.engine.dispose()
+        await self._engine.dispose()
 
     async def session_getter(self):
-        async with self.session_factory() as session:
+        async with self._session_factory() as session:
             yield session
 
 
 # App DB
-db_helper = DatabaseHelper(url=str(settings.db.url), echo=settings.db.echo)
+db_helper = DatabaseHelper(url=str(settings.db.url), echo=int(settings.db.echo))
 DbSession = Annotated[AsyncSession, Depends(db_helper.session_getter)]
