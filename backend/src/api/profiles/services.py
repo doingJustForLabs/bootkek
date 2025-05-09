@@ -1,9 +1,9 @@
 import uuid
 
-from fastapi import UploadFile, status
+from PIL import Image
+from fastapi import UploadFile
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from PIL import Image
 
 from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import Profile
@@ -16,31 +16,35 @@ class ProfileRepository:
     async def create_profile(
         cls, session: AsyncSession, user_id: int, profile_data: ProfileCreateSchema
     ) -> Profile:
-        if await session.scalar(select(Profile).where(Profile.user_id == user_id)):
+        if await cls.get_profile_by_user_id(session, user_id, not_found_error=False):
             raise BadRequestException("Profile already exists")
 
-        if await session.scalar(select(Profile).where(Profile.username == profile_data.username)):
+        if await cls.get_profile_by_username(session, profile_data.username, not_found_error=False):
             raise BadRequestException("Username already used")
 
         data = {"user_id": user_id, **profile_data.model_dump()}
+        profile = Profile(**data)
 
-        stmt = insert(Profile).values(**data).returning(Profile)
-        res = await session.execute(stmt)
-
+        session.add(profile)
         await session.commit()
-        return res.scalar_one()
+
+        return profile
 
     @classmethod
     async def update_profile(
         cls, session: AsyncSession, user_id: int, update_data: ProfileCreateSchema
     ) -> Profile:
 
-        profile: Profile = await session.scalar(select(Profile).where(Profile.user_id == user_id))
+        profile: Profile = await session.scalar(
+            select(Profile).where(Profile.user_id == user_id)
+        )
 
-        if not await session.scalar(select(Profile).where(Profile.user_id == user_id)):
+        if not profile:
             raise NotFoundException("Profile not found")
 
-        profile_by_username = await session.scalar(select(Profile).where(Profile.username == update_data.username))
+        profile_by_username = await session.scalar(
+            select(Profile).where(Profile.username == update_data.username)
+        )
 
         if profile_by_username and profile.username != update_data.username:
             raise BadRequestException("Username already used")
@@ -61,23 +65,23 @@ class ProfileRepository:
 
     @classmethod
     async def get_profile_by_username(
-        cls, session: AsyncSession, username: str
+        cls, session: AsyncSession, username: str, not_found_error: bool = False
     ) -> Profile:
         profile = await session.scalar(
             select(Profile).where(Profile.username == username)
         )
-        if not profile:
+        if not profile and not_found_error:
             raise NotFoundException("Profile not found")
         return profile
 
     @classmethod
     async def get_profile_by_user_id(
-        cls, session: AsyncSession, user_id: int
+        cls, session: AsyncSession, user_id: int, not_found_error: bool = False
     ) -> Profile:
         profile = await session.scalar(
             select(Profile).where(Profile.user_id == user_id)
         )
-        if not profile:
+        if not profile and not_found_error:
             raise NotFoundException("Profile not found")
         return profile
 

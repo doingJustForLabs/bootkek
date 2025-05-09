@@ -69,7 +69,9 @@ async def get_user_profile(
     session: DbSession,
 ):
     """Получение данных о пользователе"""
-    profile = await ProfileRepository.get_profile_by_user_id(session, int(token.sub))
+    profile = await ProfileRepository.get_profile_by_user_id(
+        session, int(token.sub), not_found_error=True
+    )
 
     return ProfileDetailResponseSchema(
         profile=ProfileDetailDataSchema.model_validate(profile)
