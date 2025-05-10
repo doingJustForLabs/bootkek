@@ -23,7 +23,9 @@ class ProfileRepository:
         if await cls.get_profile_by_user_id(session, user_id, not_found_error=False):
             raise BadRequestException("Profile already exists")
 
-        if await cls.get_profile_by_username(session, profile_data.username, not_found_error=False):
+        if await cls.get_profile_by_username(
+            session, profile_data.username, not_found_error=False
+        ):
             raise BadRequestException("Username already used")
 
         data = {"user_id": user_id, **profile_data.model_dump()}

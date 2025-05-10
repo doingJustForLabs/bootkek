@@ -1,31 +1,25 @@
-from typing import Annotated
+from fastapi import APIRouter, Depends, UploadFile, File
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File
 
 from api.auth.views import http_bearer, AccessDependency
 from api.profiles.schemas import (
     ProfileCreateSchema,
     ProfileDetailResponseSchema,
     ProfileDetailDataSchema,
-    ProfileSummaryDataSchema,
-    SearchResponseSchema,
-    SearchParams,
-    PaginationSchema,
-    SearchFilters,
 )
 from api.profiles.services import ProfileRepository, AvatarRepository
 
 # from api.search.service import SearchService, get_search_service
 from database.db import DbSession
 
-router = APIRouter(
-    tags=["Пользователи👨‍💻"], prefix="/profiles", dependencies=[Depends(http_bearer)]
-)
+router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
 
 @router.post(
     "/me",
     response_model=ProfileDetailResponseSchema,
+    dependencies=[Depends(http_bearer)],
 )
 async def setup_user_profile(
     session: DbSession,
@@ -45,6 +39,7 @@ async def setup_user_profile(
 @router.patch(
     "/me",
     response_model=ProfileDetailResponseSchema,
+    dependencies=[Depends(http_bearer)],
 )
 async def update_user_profile(
     session: DbSession,
@@ -64,6 +59,7 @@ async def update_user_profile(
 @router.get(
     "/me",
     response_model=ProfileDetailResponseSchema,
+    dependencies=[Depends(http_bearer)],
 )
 async def get_user_profile(
     token: AccessDependency,
@@ -79,7 +75,7 @@ async def get_user_profile(
     )
 
 
-@router.post("/avatars")
+@router.post("/avatars", dependencies=[Depends(http_bearer)])
 async def update_user_avatar(
     token: AccessDependency,
     session: DbSession,
@@ -94,3 +90,21 @@ async def update_user_avatar(
         session, int(token.sub), avatar
     )
     return {"basename": basename}
+
+
+@router.get(
+    "/{user_id}",
+    response_model=ProfileDetailResponseSchema,
+)
+async def get_user_profile_by_user_id(
+    user_id: int,
+    session: DbSession,
+):
+    """Получение данных о пользователе по user_id"""
+    profile = await ProfileRepository.get_profile_by_user_id(
+        session, user_id, not_found_error=True
+    )
+
+    return ProfileDetailResponseSchema(
+        profile=ProfileDetailDataSchema.model_validate(profile)
+    )

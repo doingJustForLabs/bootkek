@@ -36,6 +36,10 @@ class ProfileDetailDataSchema(BaseModel):
     faculty: Optional[str] = None
     course: Optional[int] = None
     avatar_basename: str
+
+    subscribers_count: int
+    subscriptions_count: int
+
     update_date: datetime
 
     model_config = ConfigDict(from_attributes=True)

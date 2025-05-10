@@ -18,9 +18,6 @@ class Base(AsyncAttrs, DeclarativeBase):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
     create_date: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    update_date: Mapped[datetime] = mapped_column(
-        DateTime, default=func.now(), onupdate=func.now()
-    )
 
 
 class DatabaseHelper:

@@ -1,9 +1,10 @@
-from sqlalchemy import Integer, String, ForeignKey
+from datetime import datetime
+
+from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql.functions import func
 
 from database.db import Base
-
-# from database.repository import SQLAlchemyRepository
 
 
 class Profile(Base):
@@ -18,12 +19,13 @@ class Profile(Base):
     sex: Mapped[str | None]
     faculty: Mapped[str | None]
 
-    skills: Mapped[str] = relationship("skills")
-
     avatar_basename: Mapped[str] = mapped_column(
         String, default="static/avatars/default-avatar.jpg"
     )
 
+    subscribers_count: Mapped[int] = mapped_column(Integer, default=0)
+    subscriptions_count: Mapped[int] = mapped_column(Integer, default=0)
 
-# class ProfileRepository(SQLAlchemyRepository):
-#     model = Profile
+    update_date: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), onupdate=func.now()
+    )

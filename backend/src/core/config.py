@@ -2,7 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import PostgresDsn, BaseModel, EmailStr
+from pydantic import PostgresDsn, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()

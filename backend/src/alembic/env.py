@@ -11,6 +11,7 @@ from core.config import settings
 from database.db import Base
 from api.auth.models import User
 from api.profiles.models import Profile
+from api.followers.models import Follower
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
