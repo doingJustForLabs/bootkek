@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, AsyncGenerator
 
 from fastapi import Depends
 from sqlalchemy import Integer, func, DateTime
@@ -33,9 +33,13 @@ class DatabaseHelper:
     async def dispose(self):
         await self._engine.dispose()
 
-    async def session_getter(self):
+    async def session_getter(self) -> AsyncGenerator[AsyncSession, None]:
         async with self._session_factory() as session:
             yield session
+
+    @property
+    def get_engine(self):
+        return self._engine
 
 
 # App DB

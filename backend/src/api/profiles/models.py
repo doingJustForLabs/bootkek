@@ -1,7 +1,8 @@
 from sqlalchemy import Integer, String, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.db import Base
+
 # from database.repository import SQLAlchemyRepository
 
 
@@ -16,6 +17,8 @@ class Profile(Base):
     course: Mapped[int | None]
     sex: Mapped[str | None]
     faculty: Mapped[str | None]
+
+    skills: Mapped[str] = relationship("skills")
 
     avatar_basename: Mapped[str] = mapped_column(
         String, default="static/avatars/default-avatar.jpg"

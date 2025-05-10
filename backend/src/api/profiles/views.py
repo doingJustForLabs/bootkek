@@ -14,7 +14,8 @@ from api.profiles.schemas import (
     SearchFilters,
 )
 from api.profiles.services import ProfileRepository, AvatarRepository
-from api.search.service import SearchService, get_search_service
+
+# from api.search.service import SearchService, get_search_service
 from database.db import DbSession
 
 router = APIRouter(
@@ -93,46 +94,3 @@ async def update_user_avatar(
         session, int(token.sub), avatar
     )
     return {"basename": basename}
-
-
-# # @router.get(
-# #     "/search", dependencies=[Depends(http_bearer)], response_model=SearchResponseSchema
-# # )
-# # async def search_some_profiles(
-# #     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
-# #     params: Annotated[SearchParams, Depends()],
-# #     pagination: Annotated[PaginationSchema, Depends(PaginationSchema)],
-# # ):
-# #     """Поиск пользователя (по юзернейму, тегам, чему угодно)"""
-# #     try:
-# #         profiles = await profile_service.search_profiles(
-# #             q=params.q,
-# #             limit=int(pagination.limit),
-# #             page=int(pagination.page),
-# #             order_by=params.order_by,
-# #             desc=params.desc,
-# #         )
-# #
-# #         validated_profiles = [
-# #             ProfileSummaryDataSchema.model_validate(profile) for profile in profiles
-# #         ]
-# #
-# #         return SearchResponseSchema(
-# #             profiles=validated_profiles,
-# #             filters=SearchParams.model_validate(params),
-# #             pagination=pagination,
-# #         )
-# #
-# #     except ValueError as e:
-# #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-#
-#
-# # @router.get("/search")
-# # async def search_profiles(
-# #     filters: Annotated[SearchFilters, Depends()],
-# #     pagination: Annotated[PaginationSchema, Depends()],
-# #     search_service: Annotated[SearchService, Depends(get_search_service)],
-# # ):
-# #     profiles = await search_service.search_profiles(pagination, filters)
-# #
-# #     return profiles

@@ -2,6 +2,7 @@ from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.db import Base
+
 # from database.repository import SQLAlchemyRepository
 
 

@@ -10,7 +10,6 @@ class FileSize(int, Enum):
 class Sex(str, Enum):
     male = "male"
     female = "female"
-    other = "other"
 
 
 class MuctrFaculties(str, Enum):
@@ -19,7 +18,6 @@ class MuctrFaculties(str, Enum):
     hft = "ХФТ"
     ipur = "ИПУР"
     fen = "ФЕН"
-    other = "other"
 
 
 class Skills(str, Enum):

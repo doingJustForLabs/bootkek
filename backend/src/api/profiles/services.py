@@ -16,6 +16,10 @@ class ProfileRepository:
     async def create_profile(
         cls, session: AsyncSession, user_id: int, profile_data: ProfileCreateSchema
     ) -> Profile:
+
+        if not (profile_data.username and profile_data.name):
+            raise BadRequestException("Fields 'username', 'name' are required")
+
         if await cls.get_profile_by_user_id(session, user_id, not_found_error=False):
             raise BadRequestException("Profile already exists")
 

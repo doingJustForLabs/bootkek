@@ -1,12 +1,17 @@
 import asyncio
+from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from alembic import command
+from alembic.config import Config
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from database.db import db_helper, Base
 from main import app
+from pathlib import Path
 
 
 @pytest.fixture(scope="session")
@@ -16,23 +21,49 @@ def event_loop():
     loop.close()
 
 
+@pytest.fixture(scope="session")
+def alembic_config():
+    print(Path(__file__))
+    config = Config("alembic.ini")
+    # config.set_main_option("sqlalchemy.url", str(settings.db.url))
+    return config
+
+
 @pytest_asyncio.fixture(scope="session", autouse=True)
-async def setup_db(event_loop):
+async def setup_db(alembic_config):
+    """Применяем миграции перед всеми тестами и очищаем после"""
     assert settings.db.mode == "TEST"
 
-    async with db_helper.engine.begin() as conn:
+    # Применяем все миграции
+    command.upgrade(alembic_config, "head")
+
+    yield
+
+    # Полная очистка базы после всех тестов
+    async with db_helper.get_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
 
-    db_helper.session_getter()
+    await db_helper.dispose()
 
 
-@pytest_asyncio.fixture(scope="package")
-async def client(event_loop):
+@pytest_asyncio.fixture
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Сессия для работы с базой, автоматически откатывает изменения после теста"""
+    async with db_helper.session_getter() as session:
+        try:
+            yield session
+        finally:
+            # Откатываем транзакцию после каждого теста
+            await session.rollback()
+
+
+@pytest_asyncio.fixture
+async def client(db_session) -> AsyncGenerator[AsyncClient, None]:
+    """Тестовый клиент"""
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://127.0.0.1:8000/api"
-    ) as client:
-        yield client
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
 
 
 @pytest_asyncio.fixture(scope="package")
