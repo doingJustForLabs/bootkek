@@ -3,6 +3,8 @@ from typing import List
 from sqlalchemy import select, and_, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import aliased
 
 from api.exceptions import BadRequestException, NotFoundException
 from api.profiles.models import Profile
@@ -88,14 +90,10 @@ class FollowerRepository:
         )
 
     @classmethod
-    async def get_user_followers(
-        cls, session: AsyncSession, user_id: int
-    ) -> List[Profile]:
+    async def get_user_followers(cls, session: AsyncSession, user_id: int):
         """
         Вывести список пользователей с полями (user_id, name, username, avatar_basename) на которых
-        подписан текущий пользователь (по user_id)
-
-        Может использовать relationship?
+        подписан текущий пользователь (по user_id). Если пользователя нет, бросать NotFoundException("Profile not found")
 
         Примерный ответ:
         [
@@ -113,12 +111,18 @@ class FollowerRepository:
             }
         ]
         """
-        pass
+
+        query = (
+            select(Profile)
+            .where(Follower.follower_id == user_id, Profile.user_id != user_id)
+            .order_by(Profile.user_id)
+        )
+
+        res = await session.execute(query)
+        return res.scalars().unique().all()
 
     @classmethod
-    async def get_user_follows(
-        cls, session: AsyncSession, user_id: int
-    ) -> List[Profile]:
+    async def get_user_follows(cls, session: AsyncSession, user_id: int):
         """
         Вывести список пользователей с полями (user_id, name, username, avatar_basename) на которые
         подписаны на текущего пользователя (по его user_id)
@@ -139,4 +143,11 @@ class FollowerRepository:
             }
         ]
         """
-        pass
+        query = (
+            select(Profile)
+            .where(Follower.target_id == user_id)
+            .order_by(Profile.user_id)
+        )
+
+        res = await session.execute(query)
+        return res.scalars().unique().all()

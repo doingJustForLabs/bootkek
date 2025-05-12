@@ -1,10 +1,15 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.functions import func
 
+from api.followers.models import Follower
 from database.db import Base
+
+if TYPE_CHECKING:
+    from api.followers.models import Follower
 
 
 class Profile(Base):

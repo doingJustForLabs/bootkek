@@ -10,9 +10,7 @@ from api.auth.views import AccessDependency, http_bearer
 router = APIRouter(tags=["Фолловеры🫂"])
 
 
-@router.get(
-    "/profiles/{user_id}/followers", response_model=List[ProfileSummaryDataSchema]
-)
+@router.get("/profiles/{user_id}/followers")
 async def get_user_followers(
     session: DbSession,
     user_id: int,
@@ -22,9 +20,7 @@ async def get_user_followers(
     return followers
 
 
-@router.get(
-    "/profiles/{user_id}/following", response_model=List[ProfileSummaryDataSchema]
-)
+@router.get("/profiles/{user_id}/following")
 async def get_user_follows(
     session: DbSession,
     user_id: int,
