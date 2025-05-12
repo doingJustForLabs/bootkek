@@ -93,7 +93,12 @@ class FollowerRepository:
     async def get_user_followers(cls, session: AsyncSession, user_id: int):
         try:
             query = (
-                select(Profile.user_id, Profile.name, Profile.username, Profile.avatar_basename)
+                select(
+                    Profile.user_id,
+                    Profile.name,
+                    Profile.username,
+                    Profile.avatar_basename,
+                )
                 .distinct()
                 .where(Follower.target_id == user_id, Profile.user_id != user_id)
                 .order_by(Profile.user_id)
@@ -102,21 +107,27 @@ class FollowerRepository:
             res = await session.execute(query)
             return [
                 {
-                    'user_id': row.user_id,
-                    'name': row.name,
-                    'username': row.username,
-                    'avatar_basename': row.avatar_basename
+                    "user_id": row.user_id,
+                    "name": row.name,
+                    "username": row.username,
+                    "avatar_basename": row.avatar_basename,
                 }
                 for row in res
             ]
 
         except NotFoundException as e:
             return e
+
     @classmethod
     async def get_user_follows(cls, session: AsyncSession, user_id: int):
         try:
             query = (
-                select(Profile.user_id, Profile.name, Profile.username, Profile.avatar_basename)
+                select(
+                    Profile.user_id,
+                    Profile.name,
+                    Profile.username,
+                    Profile.avatar_basename,
+                )
                 .distinct()
                 .where(Follower.follower_id == user_id)
                 .order_by(Profile.user_id)
@@ -125,10 +136,10 @@ class FollowerRepository:
             res = await session.execute(query)
             return [
                 {
-                    'user_id': row.user_id,
-                    'name': row.name,
-                    'username': row.username,
-                    'avatar_basename': row.avatar_basename
+                    "user_id": row.user_id,
+                    "name": row.name,
+                    "username": row.username,
+                    "avatar_basename": row.avatar_basename,
                 }
                 for row in res
             ]
