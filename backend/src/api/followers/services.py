@@ -18,7 +18,7 @@ class FollowerRepository:
     ) -> Follower:
 
         if follower_id == target_id:
-            raise BadRequestException("You can't subscribe to yourself")
+            raise BadRequestException("Вы не можете подписаться на самого себя")
 
         existing = await session.scalar(
             select(Follower).where(
@@ -29,7 +29,7 @@ class FollowerRepository:
         )
 
         if existing:
-            raise BadRequestException("Subscription already exists")
+            raise BadRequestException("Подписка уже существует")
 
         try:
             new_follow = Follower(
@@ -46,7 +46,7 @@ class FollowerRepository:
 
         except IntegrityError:
             await session.rollback()
-            raise NotFoundException("Profile not found")
+            raise NotFoundException("Профиль не найден")
 
     @classmethod
     async def unsubscribe(
@@ -62,7 +62,7 @@ class FollowerRepository:
         )
 
         if not follow:
-            raise NotFoundException("Follow not found")
+            raise NotFoundException("Подписка не найдена")
 
         await session.delete(follow)
         await cls._update_profile_counts(
