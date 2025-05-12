@@ -12,6 +12,7 @@ from database.db import Base
 from api.auth.models import User
 from api.profiles.models import Profile
 from api.followers.models import Follower
+from api.skills.models import Skills
 
 config = context.config
 
