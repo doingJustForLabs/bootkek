@@ -40,8 +40,7 @@ const Login = () => {
         <AuthLayout>
             {contextHolder}
             <div className="m-5">
-                <h2 className="text-muctr text-2xl">ДОБРО ПОЖАЛОВАТЬ!</h2>
-                <h3 className="text-muctr text-xl justify-self-end">...а вы кто?</h3>
+                <h2 className="text-muctr text-2xl">АВТОРИЗАЦИЯ</h2>
             </div>
             <Form
                 form={form}
@@ -64,7 +63,7 @@ const Login = () => {
                 </Form.Item>
                 <Form.Item>
                     <Flex justify="end">
-                        <a href="/reset">Забыл пароль :C</a>
+                        {/*<a href="/reset">Забыл пароль :C</a>*/}
                     </Flex>
                 </Form.Item>
                 <Form.Item>
@@ -72,7 +71,7 @@ const Login = () => {
                         Войти
                     </Button>
                     <div className="justify-self-end mt-2">
-                        или <a href="/registration">Создать профиль!</a>
+                        или <a href="/registration">создать профиль!</a>
                     </div>
                 </Form.Item>
             </Form>

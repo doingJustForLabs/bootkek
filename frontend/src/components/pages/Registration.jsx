@@ -53,7 +53,7 @@ const Registration = () => {
     return (
         <AuthLayout>
             <div className="m-5">
-                <h2 className="text-muctr text-xl">ДАВАЙТЕ ЗНАКОМИТЬСЯ!</h2>
+                <h2 className="text-muctr text-xl">РЕГИСТРАЦИЯ</h2>
             </div>
             <Form
                 form={form}
@@ -89,7 +89,7 @@ const Registration = () => {
                         Создать профиль
                     </Button>
                     <div className="justify-self-end mt-2">
-                        <a href="/">Я уже смешарик!</a>
+                        или <a href="/">использовать существующий</a>
                     </div>
                 </Form.Item>
             </Form>

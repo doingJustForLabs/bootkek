@@ -4,17 +4,19 @@ import { UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import ProfileCreationLayout from '../layouts/ProfileCreationLayout.jsx';
 import ProfileStore from "../../store/ProfileStore.js";
+import SkillsSelector from "../ui/SkillsSelector.jsx";
 
 const ProfileCreation = () => {
     const [formStep1] = Form.useForm();
     const [formStep2] = Form.useForm();
+    const [formStep3] = Form.useForm();
     const [step, setStep] = useState(1);
+    const [isProfileCreated, setIsProfileCreated] = useState(false);
     const [avatarFile, setAvatarFile] = useState(null);
     const [messageApi, contextHolder] = message.useMessage();
     const [showSkip, setShowSkip] = useState(true);
     const navigate = useNavigate();
 
-    // Аватар
     const handleAvatarChange = (info) => {
         const fileObj = info?.file;
         if (!fileObj) {
@@ -26,13 +28,20 @@ const ProfileCreation = () => {
         reader.readAsDataURL(fileObj);
     };
 
-    // Переход к шагу 2
     const handleNextStep1 = async (values) => {
         try {
             const { name, username } = values;
-            await ProfileStore.createProfile(name, username);
+            if (isProfileCreated){
+                messageApi.info("PATCH profile/me");
+                // await ProfileStore.createProfile(name, username);
+            } else {
+                messageApi.info("POST profile/me");
+                setIsProfileCreated(true);
+                // await ProfileStore.updateProfile({name, username});
+            }
             if (avatarFile) {
-                await ProfileStore.setAvatar(avatarFile);
+                messageApi.info("PATCH avatar");
+                // await ProfileStore.setAvatar(avatarFile);
             }
             setStep(2);
         } catch (error) {
@@ -40,7 +49,7 @@ const ProfileCreation = () => {
 
             let messageText = "";
             switch (error.response?.status) {
-                case 409: messageText = "Такой никнейм уже занят!"; break;
+                case 400: messageText = "Такой никнейм уже занят!"; break;
                 case 422: messageText = "Слишком короткий никнейм!"; break;
                 default: messageText = `Ошибка! ${error.response?.status}`; break;
             }
@@ -48,24 +57,38 @@ const ProfileCreation = () => {
         }
     };
 
-    // Завершение
-    const handleFinish = async () => {
+    const handleNextStep2 = async () => {
         try {
             const values = await formStep2.validateFields();
-            const { sex, birthDate } = values;
+            const { sex } = values;
 
-            await ProfileStore.updateProfile({
-                sex,
-                birthDate: birthDate ? birthDate.toISOString() : null
-            });
+            // await ProfileStore.updateProfile({
+            //     sex,
+            // });
+            setStep(3);
+        } catch (error) {
+            messageApi.error(`Ошибка! ${error?.response?.status || 'Неверные данные'}`);
+        }
+    };
 
+    const handleFinish = async () => {
+        try {
+            const values = await formStep3.validateFields();
+            const { faculty, course } = values;
             navigate("/profile");
         } catch (error) {
             messageApi.error(`Ошибка! ${error?.response?.status || 'Неверные данные'}`);
         }
     };
 
-    const handleSkip = () => navigate("/profile");
+    const handleSkip = () =>
+    {
+        if (step === 2) {
+            setStep(3)
+        } else {
+            navigate("/profile");
+        }
+    };
 
     // Следим за заполненностью второго шага
     useEffect(() => {
@@ -115,7 +138,6 @@ const ProfileCreation = () => {
                             type="primary"
                             htmlType="submit"
                             style={{ transition: 'opacity 0.3s' }}
-                            disabled={!formStep1.isFieldsTouched(true) || !!formStep1.getFieldsError().filter(({ errors }) => errors.length).length}
                         >
                             Дальше
                         </Button>
@@ -157,8 +179,70 @@ const ProfileCreation = () => {
                             {showSkip ? (
                                 <Button type="primary" onClick={handleSkip}>Пропустить</Button>
                             ) : (
-                                <Button type="primary" onClick={handleFinish}>Дальше</Button>
+                                <Button type="primary" onClick={handleNextStep2}>Дальше</Button>
                             )}
+                        </div>
+                    </Form.Item>
+                </Form>
+            )}
+            {step === 3 && (
+                <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep3} onFinish={handleFinish}>
+                    <Form.Item>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <Form.Item
+                                name="faculty"
+                                style={{ flex: 1 }}
+                                rules={[{ required: true, message: 'Пожалуйста, выберите факультет' }]}
+                            >
+                                <Select
+                                    style={{ width: 125 }}
+                                    placeholder="Факультет"
+                                    options={[
+                                        { value: 'ЦиТХИн', label: 'ЦиТХИн' },
+                                        { value: 'НПМ', label: 'НПМ' },
+                                        { value: 'ХФТ', label: 'ХФТ' },
+                                        { value: 'ИПУР', label: 'ИПУР' },
+                                        { value: 'ФЕН', label: 'ФЕН' },
+                                    ]}
+                                />
+                            </Form.Item>
+
+                            <Form.Item
+                                name="course"
+                                style={{ flex: 1 }}
+                                rules={[{ required: true, message: 'Пожалуйста, выберите курс' }]}
+                            >
+                                <Select
+                                    style={{ width: 100 }}
+                                    placeholder="Курс"
+                                    options={[
+                                        { value: 1, label: '1 курс' },
+                                        { value: 2, label: '2 курс' },
+                                        { value: 3, label: '3 курс' },
+                                        { value: 4, label: '4 курс' },
+                                        { value: 5, label: '5 курс' },
+                                    ]}
+                                />
+                            </Form.Item>
+
+                        </div>
+
+                        <Form.Item>
+                            <SkillsSelector/>
+                        </Form.Item>
+
+                    </Form.Item>
+
+                    <Form.Item>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <Button
+                                shape="square"
+                                icon={<ArrowLeftOutlined />}
+                                onClick={() => setStep(2)}
+                            />
+                            <Button type="primary" htmlType="submit">
+                                Завершить
+                            </Button>
                         </div>
                     </Form.Item>
                 </Form>

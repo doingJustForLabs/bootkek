@@ -6,6 +6,7 @@ import Profile from "./components/pages/Profile";
 import ProfileStepOne from "./components/pages/ProfileStepOne.jsx";
 import ProfileStepTwo from "./components/pages/ProfileStepTwo.jsx";
 import ProfileCreation from "./components/pages/ProfileCreation.jsx";
+import ProfileEditing from "./components/pages/ProfileEditing.jsx";
 
 function App() {
 
@@ -17,10 +18,8 @@ function App() {
               <Route path="/registration" element={<Registration />} />
               <Route path="/reset" element={<ResetPwd />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/newprofile" element={<ProfileCreation />} />
-              <Route path="/newprofile/1" element={<ProfileStepOne />} />
-              <Route path="/newprofile/2" element={<ProfileStepTwo />} />
-              <Route path="/newprofile/3" element={<ProfileStepOne />} />
+              <Route path="/profile/create" element={<ProfileCreation />} />
+              <Route path={"/profile/edit"} element={<ProfileEditing />} />
           </Routes>
       </BrowserRouter>
     </>
