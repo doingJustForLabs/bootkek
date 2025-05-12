@@ -73,6 +73,5 @@ def run_migrations_online() -> None:
 
 if context.is_offline_mode():
     run_migrations_offline()
-
-elif __name__ == "__main__":
+else:
     run_migrations_online()
