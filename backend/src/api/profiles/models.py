@@ -1,8 +1,15 @@
-from sqlalchemy import Integer, String, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+from typing import TYPE_CHECKING
 
+from sqlalchemy import Integer, String, ForeignKey, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql.functions import func
+
+from api.followers.models import Follower
 from database.db import Base
-from database.repository import SQLAlchemyRepository
+
+if TYPE_CHECKING:
+    from api.followers.models import Follower
 
 
 class Profile(Base):
@@ -21,6 +28,9 @@ class Profile(Base):
         String, default="static/avatars/default-avatar.jpg"
     )
 
+    subscribers_count: Mapped[int] = mapped_column(Integer, default=0)
+    subscriptions_count: Mapped[int] = mapped_column(Integer, default=0)
 
-# class ProfileRepository(SQLAlchemyRepository):
-#     model = Profile
+    update_date: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), onupdate=func.now()
+    )
