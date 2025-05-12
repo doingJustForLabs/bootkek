@@ -2,14 +2,13 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 from api import main_router
-# from api import get_routers
 from core.config import settings
 from core.security import security
-from database.db import db_helper
-from database.models import Base
+from database.db import db_helper, Base
 
 from fastapi import WebSocket, WebSocketDisconnect, Depends
 import json
@@ -28,17 +27,28 @@ async def lifespan(_: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
 
     yield
+
     # shutdown
     await db_helper.dispose()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(title="Granite", lifespan=lifespan)
 
 app.include_router(main_router)
-
 security.handle_errors(app)
 
-origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174"]
+app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")
+
+
+# Middleware
+
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,20 +58,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-security.handle_errors(app)
-
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/", response_class=HTMLResponse)
-async def get_login_page():
-    with open(os.path.join("static", "login.html"), encoding="utf-8") as f:
-        return f.read()
-
-@app.get("/chats", response_class=HTMLResponse)
-async def get_chats_page():
-    with open(os.path.join("static", "chats.html"), encoding="utf-8") as f:
-        return f.read()
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -99,7 +96,7 @@ async def websocket_chat(websocket: WebSocket, db: AsyncSession = Depends(db_hel
         await websocket.close(code=1011)
 
 
-@app.get('/')
+@app.get("/")
 def get_root():
     return {"message": "Api is working!~!!"}
 

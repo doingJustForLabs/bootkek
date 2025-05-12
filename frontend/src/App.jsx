@@ -21,7 +21,6 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Login />} />
-
             <Route path="/signup" element={<SignUp />} />
             <Route path="/reset" element={<ResetPwd />} />
             <Route path="/profile" element={<Profile />} />

@@ -3,7 +3,7 @@ import axios from "axios";
 export const API = axios.create({
     baseURL: "http://127.0.0.1:8000/api",
     timeout: 1000,
-    withCredentials: true,
+    withCredentials: true
 });
 
 // Добавляем интерсептор для автоматической подстановки токена
@@ -21,10 +21,10 @@ API.interceptors.response.use(
       if (error.response?.status === 401 && !error.config._retry) {
         try {
           // Отправляем запрос без тела, полагаясь на куки
-          const refreshResponse = await API.get("/auth/refresh", { 
-            withCredentials: true 
+          const refreshResponse = await API.get("/auth/refresh", {
+            withCredentials: true
           });
-          
+
           const { access_token } = refreshResponse.data;
           localStorage.setItem("access_token", access_token);
           error.config.headers.Authorization = `Bearer ${access_token}`;

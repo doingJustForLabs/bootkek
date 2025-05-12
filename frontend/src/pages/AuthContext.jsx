@@ -65,9 +65,11 @@ export const AuthProvider = ({ children }) => {
             console.error("Logout error:", error);
         }
     };
+//     const [accessToken, setAccessToken] = useState(null);
 
     return (
         <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+//         <AuthContext.Provider value={{ accessToken, setAccessToken }}>
             {children}
         </AuthContext.Provider>
     );

@@ -29,6 +29,23 @@ const Login = () => {
     };
 
 
+
+//     const [email, setEmail] = useState("");
+//     const [password, setPwd] = useState("");
+//
+//     const { setAccessToken } = useAuth();
+//
+//     let navigate = useNavigate();
+//
+//     const loginButton = () => {
+//         API.post('/auth/login', {
+//             email: email,
+//             password: password
+//         }).then(response => setAccessToken(response.data.access_token));
+//         navigate("/profile");
+//     }
+
+
     return (
         <AuthLayout>
             <div className="m-5">
@@ -43,15 +60,18 @@ const Login = () => {
             >
                 <Form.Item
                     name="email"
+//                     name="username"
                     rules={[{ required: true, message: 'Please input your Username!' }]}
                 >
                     <Input prefix={<UserOutlined />} placeholder="Логин" autoComplete="username"/>
+//                     <Input onChange={(e) => setEmail(e.target.value)} prefix={<UserOutlined />} placeholder="Логин" />
                 </Form.Item>
                 <Form.Item
                     name="password"
                     rules={[{ required: true, message: 'Please input your Password!' }]}
                 >
                     <Input prefix={<LockOutlined />} type="password" placeholder="Пароль" autoComplete="current-password"/>
+//                     <Input onChange={(e) => setPwd(e.target.value)} prefix={<LockOutlined />} type="password" placeholder="Пароль" />
                 </Form.Item>
                 <Form.Item>
                     <Flex justify="end">
@@ -61,6 +81,7 @@ const Login = () => {
 
                 <Form.Item>
                     <Button loading={loading} block type="primary" htmlType="submit">
+//                     <Button onClick={loginButton} block type="primary" htmlType="submit">
                         Войти
                     </Button>
                     <div className="justify-self-end">
