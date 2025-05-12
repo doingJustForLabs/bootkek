@@ -1,14 +1,16 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 from api import main_router
+from api.exceptions import AppException
 from core.config import settings
 from core.security import security
-from database.db import db_helper, Base
+from database.db import db_helper
 
 from fastapi import WebSocket, WebSocketDisconnect, Depends
 import json
@@ -23,8 +25,6 @@ from fastapi.staticfiles import StaticFiles
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # startup
-    async with db_helper.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
     yield
 
@@ -32,23 +32,20 @@ async def lifespan(_: FastAPI):
     await db_helper.dispose()
 
 
-app = FastAPI(title="Granite", lifespan=lifespan)
+app = FastAPI(
+    title="Granite",
+    lifespan=lifespan,
+    default_response_class=ORJSONResponse,
+)
 
 app.include_router(main_router)
-security.handle_errors(app)
-
-app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")
-
 
 # Middleware
 
-origins = [
-    "http://localhost",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-]
+origins = ["http://localhost",
+           "http://localhost:5173",
+           "http://127.0.0.1:5173"
+           ]
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,6 +54,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+security.handle_errors(app)
+
+
+@app.exception_handler(AppException)
+def handle_not_found_error(request: Request, exc: AppException):
+    return ORJSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -99,6 +103,9 @@ async def websocket_chat(websocket: WebSocket, db: AsyncSession = Depends(db_hel
 @app.get("/")
 def get_root():
     return {"message": "Api is working!~!!"}
+
+
+app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")
 
 
 if __name__ == "__main__":
