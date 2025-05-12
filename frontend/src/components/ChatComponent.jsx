@@ -2,7 +2,7 @@ import {useState, useEffect, useRef, useCallback} from 'react';
 import { useAuth } from '../pages/AuthContext';
 import { Input, Button, List, message, Modal, Spin } from 'antd';
 import API from '../services/API';
-import { Navigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 
 const ChatComponent = () => {
     const { user, loading: authLoading, checkAuth } = useAuth();
@@ -16,6 +16,8 @@ const ChatComponent = () => {
     const [loading, setLoading] = useState(false);
     const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
+
+    const navigate = useNavigate();
 
     // Гарантированное получение user.id
     const getUserId = useCallback(() => {
@@ -65,7 +67,15 @@ const ChatComponent = () => {
             setChats(chatsData);
         } catch (error) {
             console.error('Chats load error:', error.response?.data || error);
-            message.error('Ошибка загрузки чатов');
+            
+            // Если ошибка 401 и refresh токен не помог - разлогиниваем
+            if (error.response?.status === 401) {
+                message.error('Сессия истекла. Пожалуйста, войдите снова');
+                localStorage.removeItem("access_token");
+                navigate("/login");
+            } else {
+                message.error('Ошибка загрузки чатов');
+            }
         } finally {
             setLoading(false);
         }
@@ -165,98 +175,136 @@ const ChatComponent = () => {
 
     useEffect(() => {
         if (!selectedChat) return;
-
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            console.error('No access token found');
-            return;
-        }
-
-        const socket = new WebSocket('ws://localhost:8000/ws/chat');
-
-        socket.onopen = () => {
-            console.log('WebSocket connected');
-            socket.send(JSON.stringify({
-                token: token,
-                chatId: selectedChat
-            }));
-        };
-
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log('Received WS data:', data);
-
-            // Обрабатываем подтверждение подключения
-            if (data.type === 'connection_ack') {
-                console.log('Successfully authenticated');
-                return;
-            }
-
-            // Обработка временных сообщений
-            if (data.type === 'message_temp_ack') {
-                setMessages(prev => prev.map(msg =>
-                    msg.tempId === data.tempId
-                        ? { ...msg, status: 'sending', user_id: data.user_id } // Фиксим user_id
-                        : msg
-                ));
-                return;
-            }
-
-            // Обработка подтверждения доставки
-            if (data.type === 'message_confirmation') {
-                setMessages(prev => prev.map(msg =>
-                    msg.tempId === data.tempId
-                        ? {
-                            ...msg,
-                            id: data.messageId,
-                            status: 'delivered',
-                            user_id: data.user_id}
-                        : msg
-                ));
-                return;
-            }
-
-            // Обрабатываем сообщения
-            if (data.type === 'chat_message') {
-                setMessages(prev => {
-                    // Удаляем временное сообщение если есть
-                    const filtered = data.data.tempId
-                        ? prev.filter(msg => msg.tempId !== data.data.tempId)
-                        : prev;
-
-                    // Добавляем/обновляем сообщение
-                    const existingIndex = filtered.findIndex(m => m.id === data.data.id);
-
-                    if (existingIndex >= 0) {
-                        const updated = [...filtered];
-                        updated[existingIndex] = data.data;
-                        return updated;
+    
+        const connectWebSocket = async () => {
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    throw new Error('No access token found');
+                }
+    
+                const socket = new WebSocket('ws://localhost:8000/ws/chat');
+    
+                socket.onopen = () => {
+                    console.log('WebSocket connected');
+                    socket.send(JSON.stringify({
+                        token: token,
+                        chatId: selectedChat
+                    }));
+                };
+    
+                socket.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log('Received WS data:', data);
+    
+                    // Обработка ошибки авторизации
+                    if (data.type === 'auth_error') {
+                        console.error('WebSocket auth error:', data.message);
+                        handleAuthError();
+                        return;
                     }
-
-                    return [...filtered, {
-                        ...data.data,
-                        user_id: data.data.user_id
-                    }];
-                });
+    
+                    // Остальная обработка сообщений (как у вас было)
+                    if (data.type === 'connection_ack') {
+                        console.log('Successfully authenticated');
+                        return;
+                    }
+    
+                    if (data.type === 'message_temp_ack') {
+                        setMessages(prev => prev.map(msg =>
+                            msg.tempId === data.tempId
+                                ? { ...msg, status: 'sending', user_id: data.user_id }
+                                : msg
+                        ));
+                        return;
+                    }
+    
+                    if (data.type === 'message_confirmation') {
+                        setMessages(prev => prev.map(msg =>
+                            msg.tempId === data.tempId
+                                ? {
+                                    ...msg,
+                                    id: data.messageId,
+                                    status: 'delivered',
+                                    user_id: data.user_id
+                                }
+                                : msg
+                        ));
+                        return;
+                    }
+    
+                    if (data.type === 'chat_message') {
+                        setMessages(prev => {
+                            const filtered = data.data.tempId
+                                ? prev.filter(msg => msg.tempId !== data.data.tempId)
+                                : prev;
+    
+                            const existingIndex = filtered.findIndex(m => m.id === data.data.id);
+    
+                            if (existingIndex >= 0) {
+                                const updated = [...filtered];
+                                updated[existingIndex] = data.data;
+                                return updated;
+                            }
+    
+                            return [...filtered, {
+                                ...data.data,
+                                user_id: data.data.user_id
+                            }];
+                        });
+                    }
+                };
+    
+                socket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    // Если ошибка связана с авторизацией
+                    if (error.message.includes('401')) {
+                        handleAuthError();
+                    }
+                };
+    
+                socket.onclose = (event) => {
+                    console.log('WebSocket disconnected', event.code, event.reason);
+                    // Если отключение из-за авторизации
+                    if (event.code === 4001) { // Ваш код для auth errors
+                        handleAuthError();
+                    }
+                };
+    
+                socketRef.current = socket;
+    
+            } catch (error) {
+                console.error('WebSocket connection error:', error);
+                if (error.message.includes('auth') || error.message.includes('401')) {
+                    handleAuthError();
+                } else {
+                    message.error('Ошибка подключения к чату');
+                }
             }
         };
-
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
+    
+        const handleAuthError = async () => {
+            try {
+                // Пытаемся обновить токен через API
+                await API.get('/auth/refresh');
+                // После успешного обновления переподключаемся
+                connectWebSocket();
+            } catch (refreshError) {
+                console.error('Refresh token failed:', refreshError);
+                // Если не удалось обновить - разлогиниваем
+                localStorage.removeItem('access_token');
+                navigate('/login');
+            }
         };
-
-        socket.onclose = (event) => {
-            console.log('WebSocket disconnected', event.code, event.reason);
-        };
-
-        socketRef.current = socket;
-
+    
+        connectWebSocket();
+    
         return () => {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.close(1000, 'Component unmounted');
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.close(1000, 'Component unmounted');
             }
         };
-    }, [selectedChat]);
+    }, [selectedChat, navigate]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
