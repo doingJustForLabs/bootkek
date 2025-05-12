@@ -2,7 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import PostgresDsn, BaseModel, EmailStr
+from pydantic import PostgresDsn, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
@@ -21,12 +21,12 @@ class DBConfig(BaseModel):
 
 class JWTAccessToken(BaseModel):
     expires: timedelta = timedelta(minutes=15)
-    expires_int: int = expires.seconds * 1000
+    expires_int: int = int(expires.total_seconds())
 
 
 class JWTRefreshToken(BaseModel):
     expires: timedelta = timedelta(days=30)
-    expires_int: int = expires.seconds * 1000
+    expires_int: int = int(expires.total_seconds())
 
     cookie_name: str = "refresh_token_cookie"
     same_site: str = "lax"
@@ -45,10 +45,16 @@ class JWTConfig(BaseModel):
     refresh_token: JWTRefreshToken = JWTRefreshToken()
 
 
+class FilesConfig(BaseModel):
+    static_dir: Path = Path(__file__).parent.parent.parent / "static"
+    avatar_dir: Path = static_dir / "avatars"
+
+
 class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     db: DBConfig
     jwt: JWTConfig
+    files: FilesConfig = FilesConfig()
 
     model_config = SettingsConfigDict(env_nested_delimiter="__", case_sensitive=False)
 

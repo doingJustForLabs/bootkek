@@ -1,0 +1,29 @@
+[project]
+name = "Granite"
+version = "0.4.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.15.2",
+    "asyncpg>=0.30.0",
+    "authx>=1.4.2",
+    "bcrypt>=4.3.0",
+    "fastapi>=0.115.12",
+    "orjson>=3.10.16",
+    "pillow>=11.2.1",
+    "pydantic-settings>=2.9.1",
+    "pydantic[email]>=2.11.3",
+    "python-multipart>=0.0.20",
+    "sqlalchemy>=2.0.40",
+    "uvicorn>=0.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pytest-dotenv>=0.5.2",
+    "httpx>=0.28.1",
+]

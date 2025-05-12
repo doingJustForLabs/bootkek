@@ -1,60 +1,82 @@
-from datetime import datetime
-from typing import Optional
+from authx import TokenPayload
+from fastapi import Response
+from sqlalchemy import insert, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from pydantic import EmailStr
-
-from api.auth.models import User, UserSession, UserRepository, TokenRepository
+from api.auth.models import User
+from api.auth.schemas import UserRegisterSchema, UserLoginSchema, TokenResponse
+from api.exceptions import BadRequestException
 from core.config import settings
-from database.repository import AbstractRepository
+from core.security import security
+from utils import hash_password, verify_password
 
 
-class UserService:
-    def __init__(self, user_repository: type[AbstractRepository]):
-        self.user_repository = user_repository()
+class UserRepository:
+    @classmethod
+    async def register_user(
+        cls, session: AsyncSession, creds: UserRegisterSchema
+    ) -> User:
+        query = select(User).where(User.email == str(creds.email))
+        user = await session.scalar(query)
 
-    async def get_user_by_user_id(self, user_id: int) -> User:
-        user = await self.user_repository.find_one(id=user_id)
-        return user if user else None
+        if user:
+            raise BadRequestException("Email is already used")
 
-    async def get_user_by_email(self, email: EmailStr) -> Optional[User]:
-        user = await self.user_repository.find_one(email=email)
-        return user if user else None
-
-    async def create_user(self, email: EmailStr, hashed_password: str) -> None:
-        data = {"email": email, "password": hashed_password, "role": "user"}
-        await self.user_repository.add_one(data)
-
-
-class TokenService:
-    def __init__(self, user_repository: type[AbstractRepository]):
-        self.user_repository = user_repository()
-
-    async def create_token_session(self, user_id: int, refresh_token: str) -> None:
         data = {
-            "user_id": user_id,
-            "refresh_token": refresh_token,
-            "start_date": datetime.now(),
-            "end_date": datetime.now() + settings.jwt.refresh_token.expires,
+            "email": creds.email,
+            "password": hash_password(creds.password),
+            "role": "user",
         }
-        await self.user_repository.add_one(data)
 
-    async def get_token_session_by_user_id(self, user_id: int) -> Optional[UserSession]:
-        user_session = await self.user_repository.find_one(id=user_id)
-        return user_session if user_session else None
+        stmt = insert(User).values(**data).returning(User)
+        res = await session.execute(stmt)
+        await session.commit()
 
-    async def get_token_session_by_token(
-        self, refresh_token: str
-    ) -> Optional[UserSession]:
-        user_session = await self.user_repository.find_one(refresh_token=refresh_token)
-        return user_session if user_session else None
+        return res.scalar_one()
 
-    async def delete_user_token_session(self, user_id: int):
-        pass
+    @classmethod
+    async def authenticate_user(
+        cls, session: AsyncSession, creds: UserLoginSchema, response: Response
+    ) -> TokenResponse:
+        query = select(User).where(User.email == str(creds.email))
+        user = await session.scalar(query)
 
+        if not user:
+            raise BadRequestException(
+                "Email doesn't registered",
+            )
 
-def get_user_service():
-    return UserService(UserRepository)
+        if not verify_password(creds.password, user.password):
+            raise BadRequestException("Incorrect password")
 
+        access_token = security.create_access_token(
+            uid=str(user.id), expiry=settings.jwt.access_token.expires, fresh=True
+        )
 
-def get_token_service():
-    return TokenService(TokenRepository)
+        refresh_token = security.create_refresh_token(
+            uid=str(user.id), expiry=settings.jwt.refresh_token.expires
+        )
+
+        security.set_refresh_cookies(
+            token=refresh_token,
+            response=response,
+            max_age=settings.jwt.refresh_token.expires_int,
+        )
+
+        return TokenResponse(access_token=access_token)
+
+    @classmethod
+    async def get_user_by_user_id(cls, session: AsyncSession, user_id: int) -> User:
+        query = select(User).where(User.id == user_id)
+        user = await session.execute(query)
+        return user.scalar_one()
+
+    @classmethod
+    async def refresh_expired_token(cls, token: TokenPayload) -> str:
+        new_access_token = security.create_access_token(uid=token.sub, fresh=False)
+        return new_access_token
+
+    @classmethod
+    async def logout_user(cls, response: Response) -> None:
+        security.unset_refresh_cookies(response=response)
+        return
