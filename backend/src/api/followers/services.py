@@ -129,7 +129,7 @@ class FollowerRepository:
                     Profile.avatar_basename,
                 )
                 .distinct()
-                .where(Follower.follower_id == user_id)
+                .where(Follower.follower_id == user_id, Profile.user_id != user_id)
                 .order_by(Profile.user_id)
             )
 

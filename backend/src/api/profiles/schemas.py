@@ -35,7 +35,7 @@ class ProfileDetailDataSchema(BaseModel):
     sex: Optional[str] = None
     faculty: Optional[str] = None
     course: Optional[int] = None
-    avatar_basename: str
+    avatar_basename: Optional[str] = None
 
     subscribers_count: int
     subscriptions_count: int

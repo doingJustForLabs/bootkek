@@ -46,6 +46,12 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_users_skills_id"), "users_skills", ["id"], unique=False)
+    op.alter_column(
+        "profiles",
+        "avatar_basename",
+        existing_type=sa.VARCHAR(),
+        nullable=True,
+    )
 
 
 def downgrade() -> None:
@@ -54,3 +60,9 @@ def downgrade() -> None:
     op.drop_table("users_skills")
     op.drop_index(op.f("ix_skills_id"), table_name="skills")
     op.drop_table("skills")
+    op.alter_column(
+        "profiles",
+        "avatar_basename",
+        existing_type=sa.VARCHAR(),
+        nullable=False,
+    )
