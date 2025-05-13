@@ -6,6 +6,7 @@ import NavLayout from "../../components/layouts/NavLayout.jsx";
 import ProfilePreview from "../../components/ProfilePreview.jsx";
 
 const Profiles = () => {
+    const [profileData, setProfileData] = useState(null);
     const [profiles, setProfiles] = useState([]);
     const [notFound, setNotFound] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
@@ -15,6 +16,8 @@ const Profiles = () => {
         const fetchProfiles = async () => {
             setNotFound(false);
             try {
+                const responseUser = await ProfileStore.getProfile();
+                setProfileData(responseUser.data.profile);
                 const response = await ProfileStore.getAllProfiles();
                 setProfiles(response.data);
             } catch (error) {
@@ -46,7 +49,8 @@ const Profiles = () => {
     }
 
     return (
-        <NavLayout>
+        <NavLayout
+        userId={profileData?.user_id}>
             {contextHolder}
             <div style={{backgroundColor: '#3b488c', minHeight: '100vh'}}>
                 <div className="w-full max-w-4xl space-y-4 p-4">

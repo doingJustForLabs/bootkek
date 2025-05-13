@@ -90,6 +90,7 @@ const ProfileEditing = () => {
             }
 
             if (Object.keys(updatedFields).length > 0) {
+                console.log(updatedFields);
                 await ProfileStore.updateProfile(updatedFields);
             }
 
@@ -98,7 +99,7 @@ const ProfileEditing = () => {
             }
 
             messageApi.success("Профиль успешно обновлен!");
-            navigate("/profile/me");
+            navigate(`/profile/${profileData.user_id}`);
         } catch (error) {
             messageApi.open({
                 type: 'error',
@@ -159,7 +160,7 @@ const ProfileEditing = () => {
                                 Сохранить
                             </Button>
                             <Button style={{ margin: '10px', alignSelf: 'center', fontSize: "16px" }}
-                                    onClick={() => {navigate('/profile/me')}}>
+                                    onClick={() => {navigate(`/profile/${profileData.user_id}`)}}>
                                 Отменить
                             </Button>
                         </div>

@@ -59,7 +59,8 @@ const Profile = () => {
     }
 
     return (
-        <NavLayout>
+        <NavLayout
+            userId={userId}>
             <ProfileLayout
                 contextHolder={contextHolder}
                 avatar={avatar}

@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom';
 
 const { Content, Sider } = Layout;
 
-const NavLayout = ({ children }) => {
+const NavLayout = ({ children, userId }) => {
     const navigate = useNavigate();
 
     const icons = [UserOutlined, TeamOutlined];
-    const paths = ['/profile/me', '/profiles'];
+    const paths = [`/profile/${userId}`, '/profiles'];
 
     const items = ['Профиль', 'Люди'].map((label, index) => ({
         key: String(index), // ключ — индекс

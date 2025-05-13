@@ -30,6 +30,7 @@ const ProfileCreation = () => {
     const handleNextStep1 = async (values) => {
         try {
             const { name, username } = values;
+            console.log(name, username);
             if (!isProfileCreated) {
                 await ProfileStore.createProfile(name, username);
                 setIsProfileCreated(true);
@@ -55,7 +56,6 @@ const ProfileCreation = () => {
         try {
             const values = await formStep2.validateFields();
             const { sex } = values;
-            console.log(sex)
 
             await ProfileStore.updateProfile({ sex });
             setStep(3);
