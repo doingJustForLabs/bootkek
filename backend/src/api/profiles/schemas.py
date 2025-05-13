@@ -56,6 +56,11 @@ class ProfileSummaryDataSchema(BaseModel):
 
 class ProfileDetailResponseSchema(BaseModel):
     profile: ProfileDetailDataSchema
+
+    model_config = ConfigDict(from_attributes=True)
+
+class SearchUserSchema(BaseModel):
+    profile: ProfileDetailDataSchema
     is_current_user: bool
     model_config = ConfigDict(from_attributes=True)
 
