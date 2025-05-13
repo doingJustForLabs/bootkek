@@ -6,6 +6,10 @@ export default class ProfileService {
         return API.get("/profiles/me")
     }
 
+    static async getProfileByUserId (userId) {
+        return API.get(`/profiles/${userId}`)
+    }
+
     static async postProfileMe (name, username){
         return API.post("/profiles/me", {
             name: name,

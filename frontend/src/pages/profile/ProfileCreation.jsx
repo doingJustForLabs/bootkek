@@ -44,7 +44,7 @@ const ProfileCreation = () => {
 
             messageApi.open({
                 type: 'error',
-                content: error?.response?.statusText || 'Ошибка регистрации.',
+                content: error?.response?.data?.detail || 'Ошибка создания профиля.',
             });
 
             if (error.response?.status === 401) navigate("/");
@@ -59,7 +59,13 @@ const ProfileCreation = () => {
             await ProfileStore.updateProfile({ sex });
             setStep(3);
         } catch (error) {
-            messageApi.error(`Ошибка! ${error?.response?.status || 'Неверные данные'}`);
+
+            messageApi.open({
+                type: 'error',
+                content: error?.response?.data?.detail || 'Ошибка создания профиля.',
+            });
+
+            if (error.response?.status === 401) navigate("/");
         }
     };
 
@@ -73,7 +79,13 @@ const ProfileCreation = () => {
             }
             navigate("/profile");
         } catch (error) {
-            messageApi.error(`Ошибка! ${error?.response?.status || 'Неверные данные'}`);
+
+            messageApi.open({
+                type: 'error',
+                content: error?.response?.data?.detail || 'Ошибка создания профиля.',
+            });
+
+            if (error.response?.status === 401) navigate("/");
         }
     };
 
@@ -205,7 +217,6 @@ const ProfileCreation = () => {
                                         { value: 2, label: '2 курс' },
                                         { value: 3, label: '3 курс' },
                                         { value: 4, label: '4 курс' },
-                                        { value: 5, label: '5 курс' },
                                     ]}
                                 />
                             </Form.Item>

@@ -26,7 +26,7 @@ const Registration = () => {
         } catch (error) {
             messageApi.open({
                 type: 'error',
-                content: error?.response?.statusText || 'Ошибка регистрации.',
+                content: error?.response?.data?.detail || 'Ошибка регистрации.',
             });
         }
     };

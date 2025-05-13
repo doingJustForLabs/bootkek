@@ -45,7 +45,7 @@ const ProfileEditing = () => {
 
                 messageApi.open({
                     type: 'error',
-                    content: error?.response?.statusText || 'Ошибка регистрации.',
+                    content: error?.response?.statusText || 'Ошибка загрузки профиля.',
                 });
 
                 switch (error.response?.status) {
@@ -88,7 +88,6 @@ const ProfileEditing = () => {
                 return;
             }
 
-            // Отправляем только измененные данные
             await ProfileStore.updateProfile({
                 name,
                 username,
@@ -96,12 +95,18 @@ const ProfileEditing = () => {
                 faculty,
                 course
             });
-            await ProfileStore.setAvatar(avatarFile);
+
+            if (isAvatarChanged){
+                await ProfileStore.setAvatar(avatarFile);
+            }
 
             messageApi.success("Профиль успешно обновлен!");
-            navigate("/profile");
+            navigate("/profile/me");
         } catch (error) {
-            messageApi.error(`Ошибка! ${error?.response?.status || 'Неверные данные'}`);
+            messageApi.open({
+                type: 'error',
+                content: error?.response?.data?.detail || 'Ошибка обновления профиля.',
+            });
         }
     };
 
@@ -157,7 +162,7 @@ const ProfileEditing = () => {
                                 Сохранить
                             </Button>
                             <Button style={{ margin: '10px', alignSelf: 'center', fontSize: "16px" }}
-                                    onClick={() => {navigate('/profile')}}>
+                                    onClick={() => {navigate('/profile/me')}}>
                                 Отменить
                             </Button>
                         </div>
@@ -228,8 +233,7 @@ const ProfileEditing = () => {
                                         { value: 1, label: '1 курс' },
                                         { value: 2, label: '2 курс' },
                                         { value: 3, label: '3 курс' },
-                                        { value: 4, label: '4 курс' },
-                                        { value: 5, label: '5 курс' },
+                                        { value: 4, label: '4 курс' }
                                     ]}
                                 />
                             </Form.Item>

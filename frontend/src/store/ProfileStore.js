@@ -27,6 +27,14 @@ export default class ProfileStore {
         }
     }
 
+    static async getProfileByUserId(userId) {
+        try {
+            return await ProfileService.getProfileByUserId(userId)
+        } catch (error) {
+            return await checkAccessToken(error, ProfileService.getProfileByUserId, {userId})
+        }
+    }
+
     static async setAvatar(file) {
         try {
             return await ProfileService.postAvatar(file)

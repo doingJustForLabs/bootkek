@@ -9,7 +9,7 @@ const NavLayout = ({ children }) => {
     const navigate = useNavigate();
 
     const icons = [UserOutlined, TeamOutlined];
-    const paths = ['/profile', '/profiles'];
+    const paths = ['/profile/me', '/profiles'];
 
     const items = ['Профиль', 'Люди'].map((label, index) => ({
         key: String(index), // ключ — индекс

@@ -17,12 +17,13 @@ const Login = () => {
             const accessToken = token.getAccessToken();
 
             if (accessToken) {
-                navigate('/profile');
+                navigate(`/profile/me`);
             }
         } catch (error) {
+            console.error(error);
             messageApi.open({
                 type: 'error',
-                content: error?.response?.statusText || 'Ошибка авторизации.',
+                content: error?.response?.data?.detail || 'Ошибка авторизации.',
             });
         }
     };
