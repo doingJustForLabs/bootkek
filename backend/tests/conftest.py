@@ -1,17 +1,15 @@
 import asyncio
-from typing import AsyncGenerator
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from database.db import db_helper, Base
 from main import app
-from pathlib import Path
 
 
 @pytest.fixture(scope="session")
@@ -21,49 +19,46 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="session")
-def alembic_config():
-    print(Path(__file__))
-    config = Config("alembic.ini")
-    # config.set_main_option("sqlalchemy.url", str(settings.db.url))
-    return config
-
-
 @pytest_asyncio.fixture(scope="session", autouse=True)
-async def setup_db(alembic_config):
-    """Применяем миграции перед всеми тестами и очищаем после"""
+async def setup_db(event_loop):
+    """Применяем миграции перед всеми тестами"""
     assert settings.db.mode == "TEST"
 
-    # Применяем все миграции
-    command.upgrade(alembic_config, "head")
+    config_path = Path(__file__).parent.parent / "src" / "alembic.ini"
+    config = Config(str(config_path))
+
+    # command.upgrade(config, "head")
 
     yield
 
-    # Полная очистка базы после всех тестов
-    async with db_helper.get_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
+    # command.downgrade(config, "base")
     await db_helper.dispose()
 
 
-@pytest_asyncio.fixture
-async def db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Сессия для работы с базой, автоматически откатывает изменения после теста"""
-    async with db_helper.session_getter() as session:
-        try:
-            yield session
-        finally:
-            # Откатываем транзакцию после каждого теста
-            await session.rollback()
+# @pytest_asyncio.fixture(autouse=True)
+# async def clean_db():
+#     """
+#     Очищает все таблицы после каждого теста, сохраняя схему.
+#     """
+#     config_path = Path(__file__).parent.parent / "src" / "alembic.ini"
+#     config = Config(str(config_path))
+#
+#     async with db_helper._session_factory() as session:  # type: AsyncSession
+#         # отключаем внешние ключи, чтобы не было ошибок при truncate
+#         command.downgrade(config, "base")
+#         await session.execute()  # для SQLite
+#         for table in reversed(Base.metadata.sorted_tables):
+#             await session.execute(f"DELETE FROM {table.name}")
+#         await session.commit()
+#         await session.execute("PRAGMA foreign_keys = ON")  # включаем обратно
 
 
-@pytest_asyncio.fixture
-async def client(db_session) -> AsyncGenerator[AsyncClient, None]:
-    """Тестовый клиент"""
+@pytest_asyncio.fixture(scope="package")
+async def client(event_loop):
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
-        yield ac
+        transport=ASGITransport(app=app), base_url="http://127.0.0.1:8000/api"
+    ) as client:
+        yield client
 
 
 @pytest_asyncio.fixture(scope="package")

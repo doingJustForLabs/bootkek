@@ -6,14 +6,15 @@ async def test_register_success(client):
     response = await client.post(
         url="/auth/register",
         json={
-            "email": "newuser@example.com",
+            "email": "newuser1@example.com",
             "password": "qwerty",
             "password_repeat": "qwerty",
         },
     )
+    print(response.json())
     assert response.status_code == 200
     assert response.json()["user"] is not None
-    assert response.json()["user"]["email"] == "newuser@example.com"
+    assert response.json()["user"]["email"] == "newuser1@example.com"
 
 
 @pytest.mark.asyncio

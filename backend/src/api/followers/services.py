@@ -72,6 +72,17 @@ class FollowerRepository:
 
         return
 
+    @staticmethod
+    async def is_following(
+        session: AsyncSession, follower_id: int, target_id: int
+    ) -> bool:
+        result = await session.execute(
+            select(Follower)
+            .where(Follower.follower_id == follower_id)
+            .where(Follower.target_id == target_id)
+        )
+        return result.scalars().first() is not None
+
     @classmethod
     async def _update_profile_counts(
         cls, session: AsyncSession, follower_id: int, target_id: int, increment: bool
