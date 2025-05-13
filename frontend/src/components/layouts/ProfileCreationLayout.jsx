@@ -1,4 +1,4 @@
-import "../Sandbox.css";
+import "../../../public/assets/styles/Sandbox.css";
 import StepProgress from "../ui/StepProgress.jsx";
 
 const ProfileCreationLayout = ({step = 1, children}) => {

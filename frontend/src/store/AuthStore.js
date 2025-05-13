@@ -1,5 +1,5 @@
-import AuthService from "../services/AuthService.js";
-import { setAccessToken } from "./utils/token.js";
+import AuthService from "../services/auth.service.js";
+import { setAccessToken } from "../utils/token.js";
 
 export default class AuthStore {
 

@@ -45,7 +45,7 @@ async def test_register_success(client):
                 "password": "qwerty123",
                 "password_repeat": "qwerty122",
             },
-            422,
+            400,
         ),
         # Слишком маленький пароль
         (

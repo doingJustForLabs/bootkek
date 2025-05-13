@@ -1,4 +1,4 @@
-import AuthService from "../../services/AuthService.js";
+import AuthService from "../services/auth.service.js";
 
 export function setAccessToken(token) {
     localStorage.setItem("accessToken", token);

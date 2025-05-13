@@ -1,37 +1,28 @@
 import { useNavigate } from 'react-router-dom';
-
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Flex, message } from 'antd';
-import AuthLayout from "../layouts/AuthLayout.jsx";
+import { Button, Form, Input, message } from 'antd';
 
-import AuthStore from "../../store/AuthStore.js";
-import * as token from "../../store/utils/token.js";
+import AuthLayout from '../../components/layouts/AuthLayout.jsx';
+import AuthStore from '../../store/AuthStore.js';
+import * as token from '../../utils/token.js';
 
 const Login = () => {
-
     const [form] = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage();
     const navigate = useNavigate();
 
-    const handleLogin = async (values) => {
-        const { email, password } = values;
+    const handleLogin = async ({ email, password }) => {
         try {
-            await AuthStore.login(email, password).then(async () => {
-                const accessToken = token.getAccessToken();
-                if (accessToken) {
-                    navigate("/profile");
-                }
-            });
-        } catch (error) {
-            var messageText = "";
-            switch (error.response.status) {
-                case 400: messageText = "Пользователь не зарегистирован!"; break;
-                default: messageText = `Ошибка! ${error.response.status}`; break;
-            }
+            await AuthStore.login(email, password);
+            const accessToken = token.getAccessToken();
 
+            if (accessToken) {
+                navigate('/profile');
+            }
+        } catch (error) {
             messageApi.open({
                 type: 'error',
-                content: messageText,
+                content: error?.response?.statusText || 'Ошибка авторизации.',
             });
         }
     };
@@ -55,22 +46,24 @@ const Login = () => {
                 >
                     <Input prefix={<MailOutlined />} placeholder="Логин" />
                 </Form.Item>
+
                 <Form.Item
                     name="password"
                     rules={[{ required: true, message: 'Введите пароль!' }]}
                 >
-                    <Input.Password prefix={<LockOutlined />} type="password" placeholder="Пароль" />
+                    <Input.Password
+                        prefix={<LockOutlined />}
+                        type="password"
+                        placeholder="Пароль"
+                        maxLength={30}
+                    />
                 </Form.Item>
-                <Form.Item>
-                    <Flex justify="end">
-                        {/*<a href="/reset">Забыл пароль :C</a>*/}
-                    </Flex>
-                </Form.Item>
+
                 <Form.Item>
                     <Button block type="primary" htmlType="submit">
                         Войти
                     </Button>
-                    <div className="justify-self-end mt-2">
+                    <div className="mt-2 text-right">
                         или <a href="/registration">создать профиль!</a>
                     </div>
                 </Form.Item>

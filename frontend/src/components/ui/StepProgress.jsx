@@ -1,4 +1,4 @@
-import './StepProgress.css';
+import '../../../public/assets/styles/StepProgress.css';
 
 const StepProgress = ({ currentStep }) => {
     const steps = [1, 2, 3];

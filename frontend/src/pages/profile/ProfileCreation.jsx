@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Form, Input, Button, Upload, Avatar, message, Select, DatePicker } from 'antd';
 import { UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
-import ProfileCreationLayout from '../layouts/ProfileCreationLayout.jsx';
+import ProfileCreationLayout from '../../components/layouts/ProfileCreationLayout.jsx';
 import ProfileStore from "../../store/ProfileStore.js";
-import SkillsSelector from "../ui/SkillsSelector.jsx";
+import Validator from "../../utils/validation.js";
+import SkillsSelector from "../../components/ui/SkillsSelector.jsx";
 
 const ProfileCreation = () => {
     const [formStep1] = Form.useForm();
@@ -24,36 +25,29 @@ const ProfileCreation = () => {
             return;
         }
         setAvatarFile(fileObj);
-        const reader = new FileReader();
-        reader.readAsDataURL(fileObj);
     };
 
     const handleNextStep1 = async (values) => {
         try {
             const { name, username } = values;
-            if (isProfileCreated){
-                messageApi.info("PATCH profile/me");
-                // await ProfileStore.createProfile(name, username);
-            } else {
-                messageApi.info("POST profile/me");
+            if (!isProfileCreated) {
+                await ProfileStore.createProfile(name, username);
                 setIsProfileCreated(true);
-                // await ProfileStore.updateProfile({name, username});
+            } else {
+                await ProfileStore.updateProfile({ name, username });
             }
             if (avatarFile) {
-                messageApi.info("PATCH avatar");
-                // await ProfileStore.setAvatar(avatarFile);
+                await ProfileStore.setAvatar(avatarFile);
             }
             setStep(2);
         } catch (error) {
-            if (error.response?.status === 401) navigate("/");
 
-            let messageText = "";
-            switch (error.response?.status) {
-                case 400: messageText = "Такой никнейм уже занят!"; break;
-                case 422: messageText = "Слишком короткий никнейм!"; break;
-                default: messageText = `Ошибка! ${error.response?.status}`; break;
-            }
-            messageApi.error(messageText);
+            messageApi.open({
+                type: 'error',
+                content: error?.response?.statusText || 'Ошибка регистрации.',
+            });
+
+            if (error.response?.status === 401) navigate("/");
         }
     };
 
@@ -62,9 +56,7 @@ const ProfileCreation = () => {
             const values = await formStep2.validateFields();
             const { sex } = values;
 
-            // await ProfileStore.updateProfile({
-            //     sex,
-            // });
+            await ProfileStore.updateProfile({ sex });
             setStep(3);
         } catch (error) {
             messageApi.error(`Ошибка! ${error?.response?.status || 'Неверные данные'}`);
@@ -75,22 +67,24 @@ const ProfileCreation = () => {
         try {
             const values = await formStep3.validateFields();
             const { faculty, course } = values;
+
+            if (faculty || course) {
+                await ProfileStore.updateProfile({ faculty, course });
+            }
             navigate("/profile");
         } catch (error) {
             messageApi.error(`Ошибка! ${error?.response?.status || 'Неверные данные'}`);
         }
     };
 
-    const handleSkip = () =>
-    {
+    const handleSkip = () => {
         if (step === 2) {
-            setStep(3)
+            setStep(3);
         } else {
             navigate("/profile");
         }
     };
 
-    // Следим за заполненностью второго шага
     useEffect(() => {
         const updateSkip = () => {
             const { sex, birthDate } = formStep2.getFieldsValue();
@@ -125,20 +119,22 @@ const ProfileCreation = () => {
                         </Upload>
                     </Form.Item>
 
-                    <Form.Item name="name" rules={[{ required: true, message: 'Пожалуйста, введите имя' }]}>
-                        <Input placeholder="Имя" prefix={<UserOutlined />} />
+                    <Form.Item
+                        name="name"
+                        rules={[{ required: true, message: 'Пожалуйста, введите имя', validator: Validator.validateName }]}
+                    >
+                        <Input placeholder="Имя" prefix={<UserOutlined />} maxLength={50} />
                     </Form.Item>
 
-                    <Form.Item name="username" rules={[{ required: true, message: 'Пожалуйста, введите никнейм' }]}>
-                        <Input placeholder="Никнейм" prefix="@" />
+                    <Form.Item
+                        name="username"
+                        rules={[{ required: true, message: 'Пожалуйста, введите никнейм', validator: Validator.validateUsername }]}
+                    >
+                        <Input placeholder="Никнейм" prefix="@" maxLength={50} />
                     </Form.Item>
 
                     <Form.Item>
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            style={{ transition: 'opacity 0.3s' }}
-                        >
+                        <Button type="primary" htmlType="submit" style={{ transition: 'opacity 0.3s' }}>
                             Дальше
                         </Button>
                     </Form.Item>
@@ -171,11 +167,7 @@ const ProfileCreation = () => {
 
                     <Form.Item>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                            <Button
-                                shape="square"
-                                icon={<ArrowLeftOutlined />}
-                                onClick={() => setStep(1)}
-                            />
+                            <Button shape="square" icon={<ArrowLeftOutlined />} onClick={() => setStep(1)} />
                             {showSkip ? (
                                 <Button type="primary" onClick={handleSkip}>Пропустить</Button>
                             ) : (
@@ -185,15 +177,12 @@ const ProfileCreation = () => {
                     </Form.Item>
                 </Form>
             )}
+
             {step === 3 && (
                 <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep3} onFinish={handleFinish}>
                     <Form.Item>
                         <div style={{ display: 'flex', gap: 8 }}>
-                            <Form.Item
-                                name="faculty"
-                                style={{ flex: 1 }}
-                                rules={[{ required: true, message: 'Пожалуйста, выберите факультет' }]}
-                            >
+                            <Form.Item name="faculty" style={{ flex: 1 }}>
                                 <Select
                                     style={{ width: 125 }}
                                     placeholder="Факультет"
@@ -207,11 +196,7 @@ const ProfileCreation = () => {
                                 />
                             </Form.Item>
 
-                            <Form.Item
-                                name="course"
-                                style={{ flex: 1 }}
-                                rules={[{ required: true, message: 'Пожалуйста, выберите курс' }]}
-                            >
+                            <Form.Item name="course" style={{ flex: 1 }}>
                                 <Select
                                     style={{ width: 100 }}
                                     placeholder="Курс"
@@ -224,25 +209,17 @@ const ProfileCreation = () => {
                                     ]}
                                 />
                             </Form.Item>
-
                         </div>
 
                         <Form.Item>
-                            <SkillsSelector/>
+                            <SkillsSelector />
                         </Form.Item>
-
                     </Form.Item>
 
                     <Form.Item>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                            <Button
-                                shape="square"
-                                icon={<ArrowLeftOutlined />}
-                                onClick={() => setStep(2)}
-                            />
-                            <Button type="primary" htmlType="submit">
-                                Завершить
-                            </Button>
+                            <Button shape="square" icon={<ArrowLeftOutlined />} onClick={() => setStep(2)} />
+                            <Button type="primary" htmlType="submit">Завершить</Button>
                         </div>
                     </Form.Item>
                 </Form>

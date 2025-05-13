@@ -1,4 +1,4 @@
-import API from "../http/api.js"
+import API from "./api.js"
 
 export default class AuthService {
 

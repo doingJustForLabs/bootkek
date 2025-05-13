@@ -18,7 +18,7 @@ const NavLayout = ({ children }) => {
     }));
 
     const handleMenuClick = ({ key }) => {
-        navigate(paths[Number(key)]); // навигация по ключу
+        navigate(paths[Number(key)]);
     };
 
     return (

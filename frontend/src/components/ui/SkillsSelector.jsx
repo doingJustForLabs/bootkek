@@ -34,14 +34,16 @@ const SkillSelector = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: 300 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12}}>
                 <div style={{
                     display: 'flex',
                     flexWrap: 'wrap',
                     gap: '8px',
                     minHeight: '40px',
                     padding: '4px 8px',
-                    background: '#f0f5ff',
+                    background: 'white',
+                    border: '1px solid',
+                    borderColor: 'lightgray',
                     borderRadius: '8px',
                     flex: 1,
                 }}>

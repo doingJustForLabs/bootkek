@@ -1,4 +1,4 @@
-import "../Sandbox.css";
+import "../../../public/assets/styles/Sandbox.css";
 
 const AuthLayout = ({ children }) => {
     return (

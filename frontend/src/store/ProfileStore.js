@@ -1,5 +1,5 @@
-import ProfileService from "../services/ProfileService.js";
-import { checkAccessToken } from "./utils/token.js";
+import ProfileService from "../services/profile.service.js";
+import { checkAccessToken } from "../utils/token.js";
 
 export default class ProfileStore {
 

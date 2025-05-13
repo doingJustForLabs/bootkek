@@ -1,4 +1,4 @@
-import API from "../http/api.js"
+import API from "./api.js"
 
 export default class ProfileService {
 
@@ -10,9 +10,9 @@ export default class ProfileService {
         return API.post("/profiles/me", {
             name: name,
             username: username,
-            sex: "other",
-            course: 1,
-            faculty: "other"
+            sex: null,
+            course: null,
+            faculty: null
         })
     }
 
