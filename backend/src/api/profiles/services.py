@@ -91,6 +91,17 @@ class ProfileRepository:
             raise NotFoundException("Профиль не найден")
         return profile
 
+    @classmethod
+    async def get_all_profiles(
+        cls,
+        session: AsyncSession,
+    ):
+        profiles = await session.execute(select(Profile))
+        res = profiles.scalars().all()
+        if not profiles:
+            raise NotFoundException("Профили не найдены")
+        return res
+
 
 class AvatarRepository:
     _AVATAR_DIR_PATH = settings.files.avatar_dir

@@ -11,7 +11,9 @@ from api.skills.models import UsersSkill, Skills
 
 class UserSkillsRepository:
     @staticmethod
-    async def add_skills(session: AsyncSession, user_id: int, skills: list[str]) -> bool:
+    async def add_skills(
+        session: AsyncSession, user_id: int, skills: list[str]
+    ) -> bool:
         if not skills:
             return False
 
@@ -25,8 +27,7 @@ class UserSkillsRepository:
                 return False
 
             insert_data = [
-                {"user_id": user_id, "skill_id": skill_id}
-                for skill_id in skill_ids
+                {"user_id": user_id, "skill_id": skill_id} for skill_id in skill_ids
             ]
 
             await session.execute(insert(UsersSkill), insert_data)
@@ -44,7 +45,9 @@ class UserSkillsRepository:
             return False
 
     @staticmethod
-    async def delete_skills(session: AsyncSession, user_id: int, skills: list[str]) -> bool:
+    async def delete_skills(
+        session: AsyncSession, user_id: int, skills: list[str]
+    ) -> bool:
         if not skills:
             return False
 
@@ -58,8 +61,7 @@ class UserSkillsRepository:
                 return False
 
             stmt = delete(UsersSkill).where(
-                UsersSkill.user_id == user_id,
-                UsersSkill.skill_id.in_(skill_ids)
+                UsersSkill.user_id == user_id, UsersSkill.skill_id.in_(skill_ids)
             )
             result = await session.execute(stmt)
 
@@ -75,12 +77,13 @@ class UserSkillsRepository:
             print(f"[SQLAlchemyError] Ошибка при удалении скиллов: {e}")
             return False
 
+
 async def get_filtered_profiles(
     session: AsyncSession,
     faculties: Optional[List[str]] = None,
     sexes: Optional[List[str]] = None,
     courses: Optional[List[int]] = None,
-    sort_by_subscribers: Optional[str] = "desc"  # 'asc' или 'desc'
+    sort_by_subscribers: Optional[str] = "desc",  # 'asc' или 'desc'
 ):
     query = select(Profile)
 

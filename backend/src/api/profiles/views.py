@@ -92,6 +92,24 @@ async def update_user_avatar(
     return {"basename": basename}
 
 
+# @router.get(
+#     "/{username}",
+#     response_model=ProfileDetailResponseSchema,
+# )
+# async def get_user_profile_by_username(
+#     username: str,
+#     session: DbSession,
+# ):
+#     """Получение данных о пользователе по username"""
+#     profile = await ProfileRepository.get_profile_by_username(
+#         session, username, not_found_error=True
+#     )
+#
+#     return ProfileDetailResponseSchema(
+#         profile=ProfileDetailDataSchema.model_validate(profile)
+#     )
+
+
 @router.get(
     "/{user_id}",
     response_model=ProfileDetailResponseSchema,
@@ -108,3 +126,10 @@ async def get_user_profile_by_user_id(
     return ProfileDetailResponseSchema(
         profile=ProfileDetailDataSchema.model_validate(profile)
     )
+
+
+@router.get("")
+async def get_all_users(session: DbSession):
+    """Получение данных о пользователях"""
+    profiles = await ProfileRepository.get_all_profiles(session)
+    return profiles
