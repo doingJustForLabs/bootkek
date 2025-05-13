@@ -6,7 +6,7 @@ from api.auth.views import http_bearer, AccessDependency
 from api.profiles.schemas import (
     ProfileCreateSchema,
     ProfileDetailResponseSchema,
-    ProfileDetailDataSchema,
+    ProfileDetailDataSchema, SearchUserSchema,
 )
 from api.profiles.services import ProfileRepository, AvatarRepository
 
@@ -112,9 +112,11 @@ async def update_user_avatar(
 
 @router.get(
     "/{user_id}",
-    response_model=ProfileDetailResponseSchema,
+    response_model=SearchUserSchema,
+    dependencies=[Depends(http_bearer)]
 )
 async def get_user_profile_by_user_id(
+    token: AccessDependency,
     user_id: int,
     session: DbSession,
 ):
@@ -123,8 +125,9 @@ async def get_user_profile_by_user_id(
         session, user_id, not_found_error=True
     )
 
-    return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile)
+    return SearchUserSchema(
+        profile=ProfileDetailDataSchema.model_validate(profile),
+        is_current_user=int(token.sub) == user_id
     )
 
 
