@@ -38,9 +38,9 @@ class Message(Base):
     chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     content: Mapped[str] = mapped_column(String(1000))
-    file_path: Mapped[str] = mapped_column(String, nullable=True)  # путь к файлу, если он есть
-    file_name: Mapped[str] = mapped_column(String, nullable=True)  # имя файла
-    file_type: Mapped[str] = mapped_column(String, nullable=True)  # тип файла (например, изображение, pdf)
+    # file_path: Mapped[str] = mapped_column(String, nullable=True)  # путь к файлу, если он есть
+    # file_name: Mapped[str] = mapped_column(String, nullable=True)  # имя файла
+    # file_type: Mapped[str] = mapped_column(String, nullable=True)  # тип файла (например, изображение, pdf)
     timestamp: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
 
     chat: Mapped["Chat"] = relationship("Chat", back_populates="messages")
