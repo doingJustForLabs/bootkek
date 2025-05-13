@@ -27,7 +27,6 @@ const MyProfile = () => {
 
                 if (status === 401) navigate("/");
                 else if (status === 404) navigate("/profile/create");
-                else navigate("/");
             }
         };
 

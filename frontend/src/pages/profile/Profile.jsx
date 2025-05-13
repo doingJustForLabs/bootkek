@@ -8,6 +8,7 @@ import { message } from "antd";
 const Profile = () => {
     const userId = Number(useParams().userId);
     const [profileData, setProfileData] = useState(null);
+    const [isCurrentUser, setIsCurrentUser] = useState(false);
     const [avatar, setAvatar] = useState(null);
     const [notFound, setNotFound] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
@@ -20,10 +21,15 @@ const Profile = () => {
                 const response = await ProfileStore.getProfileByUserId(userId);
                 setAvatar(response.data.profile.avatar_basename);
                 setProfileData(response.data.profile);
+                setIsCurrentUser(response.data.is_current_user)
             } catch (error) {
                 const status = error.response?.status;
 
                 if (status === 404) {
+                    if (isCurrentUser) {
+                        navigate("/profile/create");
+                        return;
+                    }
                     setNotFound(true);
                     return;
                 }
@@ -58,7 +64,7 @@ const Profile = () => {
                 contextHolder={contextHolder}
                 avatar={avatar}
                 profileData={profileData}
-                isMe={false}
+                isMe={isCurrentUser}
                 userId={userId}
             />
         </NavLayout>

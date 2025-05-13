@@ -5,6 +5,7 @@ import { Button, Form, Input, message } from 'antd';
 import AuthLayout from '../../components/layouts/AuthLayout.jsx';
 import AuthStore from '../../store/AuthStore.js';
 import * as token from '../../utils/token.js';
+import ProfileStore from "../../store/ProfileStore.js";
 
 const Login = () => {
     const [form] = Form.useForm();
@@ -17,7 +18,10 @@ const Login = () => {
             const accessToken = token.getAccessToken();
 
             if (accessToken) {
-                navigate(`/profile/me`);
+                const response = await ProfileStore.getProfile();
+                console.log(response);
+                const userId = response.data.profile.user_id;
+                navigate(`/profile/${userId}`);
             }
         } catch (error) {
             console.error(error);
