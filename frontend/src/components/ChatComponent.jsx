@@ -4,7 +4,10 @@ import { Input, Button, List, message, Modal, Spin } from 'antd';
 import API from '../services/API';
 import { useNavigate, Navigate } from 'react-router-dom';
 
+import { PlusOutlined } from '@ant-design/icons';
+
 const ChatComponent = () => {
+    
     const { user, loading: authLoading, checkAuth } = useAuth();
     const [chats, setChats] = useState([]);
     const [messages, setMessages] = useState([]);
@@ -16,6 +19,7 @@ const ChatComponent = () => {
     const [loading, setLoading] = useState(false);
     const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
+    const [newChatName, setNewChatName] = useState('');
 
     const navigate = useNavigate();
 
@@ -47,6 +51,23 @@ const ChatComponent = () => {
         // ... остальная логика компонента
     }, [user, authLoading, getUserId]);
 
+    const fetchAllUsers = async () => {
+        try {
+            const response = await API.get('/users');
+            setAllUsers(response.data || []);
+        } catch (error) {
+            console.error('Ошибка загрузки пользователей:', error);
+            message.error('Не удалось загрузить пользователей');
+        }
+    };
+
+    const showCreateChatModal = () => {
+        fetchAllUsers();
+        setIsModalVisible(true);
+        setNewChatUsers([]);
+        setNewChatName('');
+    };
+    
     // Загрузка чатов пользователя
     const fetchChats = async () => {
         if (!user?.id) {  // Добавляем проверку
@@ -151,20 +172,28 @@ const ChatComponent = () => {
     }, []);
 
     // Создание нового чата
-    // const createChat = async () => {
-    //     try {
-    //         await API.post('/chats', {
-    //             name: `Чат с ${newChatUsers.length} участниками`,
-    //             user_ids: [...newChatUsers, user.id] // Добавляем текущего пользователя
-    //         });
-    //         message.success('Чат создан!');
-    //         setIsModalVisible(false);
-    //         fetchChats();
-    //     } catch (error) {
-    //         message.error('Ошибка создания чата');
-    //         console.error('Ошибка создания чата:', error);
-    //     }
-    // };
+    const createChat = async () => {
+        if (newChatUsers.length === 0) {
+            message.warning('Выберите хотя бы одного участника');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await API.post('/chats', {
+                name: newChatName || `Чат с ${newChatUsers.length} участниками`,
+                user_ids: [...newChatUsers, user.id] // Добавляем текущего пользователя
+            });
+            message.success('Чат создан!');
+            setIsModalVisible(false);
+            await fetchChats();
+        } catch (error) {
+            message.error('Ошибка создания чата');
+            console.error('Ошибка создания чата:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (user?.id) { // Добавлена проверка на user.id
@@ -328,6 +357,15 @@ const ChatComponent = () => {
     return (
         <div className="chat-container">
             <div className="chat-sidebar">
+                <div style={{ padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0 }}>Чаты</h3>
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={showCreateChatModal}
+                        size="small"
+                    />
+                </div>
                 <Spin spinning={loading}>
                     <List
                         dataSource={chats}
@@ -447,8 +485,19 @@ const ChatComponent = () => {
             <Modal
                 title="Создать новый чат"
                 visible={isModalVisible}
+                onOk={createChat}
                 onCancel={() => setIsModalVisible(false)}
+                okText="Создать"
+                cancelText="Отмена"
+                confirmLoading={loading}
             >
+                <Input
+                    placeholder="Название чата (необязательно)"
+                    value={newChatName}
+                    onChange={(e) => setNewChatName(e.target.value)}
+                    style={{ marginBottom: 16 }}
+                />
+                <div style={{ marginBottom: 8 }}>Выберите участников:</div>
                 <List
                     dataSource={allUsers.filter(u => u.id !== user.id)}
                     renderItem={user => (
@@ -462,10 +511,15 @@ const ChatComponent = () => {
                             }}
                             style={{
                                 cursor: 'pointer',
-                                background: newChatUsers.includes(user.id) ? '#e6f7ff' : 'white'
+                                background: newChatUsers.includes(user.id) ? '#e6f7ff' : 'white',
+                                padding: '8px 12px',
+                                borderRadius: 4
                             }}
                         >
-                            {user.email}
+                            <div>
+                                <div>{user.email}</div>
+                                {user.username && <div style={{ fontSize: 12, color: '#666' }}>{user.username}</div>}
+                            </div>
                         </List.Item>
                     )}
                 />
