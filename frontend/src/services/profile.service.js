@@ -2,15 +2,19 @@ import API from "./api.js"
 
 export default class ProfileService {
 
-    static async getProfileMe (){
+    static async getProfiles (){
+        return API.get("/profiles")
+    }
+
+    static async getProfilesMe (){
         return API.get("/profiles/me")
     }
 
-    static async getProfileByUserId (userId) {
+    static async getProfilesByUserId (userId) {
         return API.get(`/profiles/${userId}`)
     }
 
-    static async postProfileMe (name, username){
+    static async postProfilesMe (name, username){
         return API.post("/profiles/me", {
             name: name,
             username: username,
@@ -20,13 +24,13 @@ export default class ProfileService {
         })
     }
 
-    static async patchProfileMe (updatedData){
+    static async patchProfilesMe (updatedData){
         return API.patch("/profiles/me", {
             ...updatedData,
         })
     }
 
-    static async postAvatar(file) {
+    static async postProfilesAvatars(file) {
         const formData = new FormData();
         formData.append("avatar", file);
 

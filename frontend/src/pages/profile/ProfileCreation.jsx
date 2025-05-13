@@ -77,7 +77,7 @@ const ProfileCreation = () => {
             if (faculty || course) {
                 await ProfileStore.updateProfile({ faculty, course });
             }
-            navigate("/profile");
+            navigate("/profile/me");
         } catch (error) {
 
             messageApi.open({
@@ -93,7 +93,7 @@ const ProfileCreation = () => {
         if (step === 2) {
             setStep(3);
         } else {
-            navigate("/profile");
+            navigate("/profile/me");
         }
     };
 
@@ -133,14 +133,14 @@ const ProfileCreation = () => {
 
                     <Form.Item
                         name="name"
-                        rules={[{ required: true, message: 'Пожалуйста, введите имя', validator: Validator.validateName }]}
+                        rules={[{ validator: Validator.validateName }]}
                     >
                         <Input placeholder="Имя" prefix={<UserOutlined />} maxLength={50} />
                     </Form.Item>
 
                     <Form.Item
                         name="username"
-                        rules={[{ required: true, message: 'Пожалуйста, введите никнейм', validator: Validator.validateUsername }]}
+                        rules={[{ validator: Validator.validateUsername }]}
                     >
                         <Input placeholder="Никнейм" prefix="@" maxLength={50} />
                     </Form.Item>

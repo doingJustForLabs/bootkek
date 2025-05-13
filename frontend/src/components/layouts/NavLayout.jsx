@@ -28,7 +28,6 @@ const NavLayout = ({ children }) => {
                 <Menu
                     theme="dark"
                     mode="inline"
-                    defaultSelectedKeys={['0']}
                     items={items}
                     onClick={handleMenuClick}
                 />

@@ -4,6 +4,8 @@ import Registration from "./pages/auth/Registration.jsx";
 import Profile from "./pages/profile/Profile.jsx";
 import ProfileCreation from "./pages/profile/ProfileCreation.jsx";
 import ProfileEditing from "./pages/profile/ProfileEditing.jsx";
+import Profiles from "./pages/profile/Profiles.jsx";
+import MyProfile from "./pages/profile/MyProfile.jsx";
 
 function App() {
 
@@ -14,8 +16,10 @@ function App() {
               <Route path="/" element={<Login />} />
               <Route path="/registration" element={<Registration />} />
               <Route path="/profile/:userId" element={<Profile />} />
+              <Route path="/profile/me" element={<MyProfile />} />
               <Route path="/profile/create" element={<ProfileCreation />} />
               <Route path="/profile/edit" element={<ProfileEditing />} />
+              <Route path="/profiles" element={<Profiles />} />
           </Routes>
       </BrowserRouter>
     </>

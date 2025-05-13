@@ -5,41 +5,49 @@ export default class ProfileStore {
 
     static async createProfile(name, username) {
         try {
-            return await ProfileService.postProfileMe(name, username)
+            return await ProfileService.postProfilesMe(name, username)
         } catch (error) {
-            return await checkAccessToken(error, ProfileService.postProfileMe, {name, username})
+            return await checkAccessToken(error, ProfileService.postProfilesMe, {name, username})
         }
     }
 
     static async updateProfile(updatedData) {
         try {
-            return await ProfileService.patchProfileMe(updatedData)
+            return await ProfileService.patchProfilesMe(updatedData)
         } catch (error) {
-            return await checkAccessToken(error, ProfileService.patchProfileMe, {updatedData})
+            return await checkAccessToken(error, ProfileService.patchProfilesMe, {updatedData})
         }
     }
 
     static async getProfile() {
         try {
-            return await ProfileService.getProfileMe()
+            return await ProfileService.getProfilesMe()
         } catch (error) {
-            return await checkAccessToken(error, ProfileService.getProfileMe, {})
+            return await checkAccessToken(error, ProfileService.getProfilesMe, {})
         }
     }
 
     static async getProfileByUserId(userId) {
         try {
-            return await ProfileService.getProfileByUserId(userId)
+            return await ProfileService.getProfilesByUserId(userId)
         } catch (error) {
-            return await checkAccessToken(error, ProfileService.getProfileByUserId, {userId})
+            return await checkAccessToken(error, ProfileService.getProfilesByUserId, {userId})
+        }
+    }
+
+    static async getAllProfiles() {
+        try {
+            return await ProfileService.getProfiles()
+        } catch (error) {
+            return await checkAccessToken(error, ProfileService.getProfiles, {})
         }
     }
 
     static async setAvatar(file) {
         try {
-            return await ProfileService.postAvatar(file)
+            return await ProfileService.postProfilesAvatars(file)
         } catch (error) {
-            return await checkAccessToken(error, ProfileService.postAvatar, {file})
+            return await checkAccessToken(error, ProfileService.postProfilesAvatars, {file})
         }
     }
 

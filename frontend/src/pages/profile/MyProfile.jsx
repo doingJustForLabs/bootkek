@@ -1,32 +1,24 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ProfileStore from "../../store/ProfileStore";
 import ProfileLayout from "../../components/layouts/ProfileLayout";
 import NavLayout from "../../components/layouts/NavLayout";
 import { message } from "antd";
 
-const Profile = () => {
-    const userId = Number(useParams().userId);
+const MyProfile = () => {
     const [profileData, setProfileData] = useState(null);
     const [avatar, setAvatar] = useState(null);
-    const [notFound, setNotFound] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchProfile = async () => {
-            setNotFound(false);
             try {
-                const response = await ProfileStore.getProfileByUserId(userId);
+                const response = await ProfileStore.getProfile();
                 setAvatar(response.data.profile.avatar_basename);
                 setProfileData(response.data.profile);
             } catch (error) {
                 const status = error.response?.status;
-
-                if (status === 404) {
-                    setNotFound(true);
-                    return;
-                }
 
                 messageApi.open({
                     type: "error",
@@ -34,23 +26,13 @@ const Profile = () => {
                 });
 
                 if (status === 401) navigate("/");
-
+                else if (status === 404) navigate("/profile/create");
+                else navigate("/");
             }
         };
 
         fetchProfile();
-    }, [userId, navigate]);
-
-    if (notFound) {
-        return (
-            <NavLayout>
-                {contextHolder}
-                <div className="flex justify-center items-center min-h-screen">
-                    <h1 className="text-2xl text-gray-600">Такого профиля не существует...</h1>
-                </div>
-            </NavLayout>
-        );
-    }
+    }, [navigate]);
 
     return (
         <NavLayout>
@@ -58,11 +40,10 @@ const Profile = () => {
                 contextHolder={contextHolder}
                 avatar={avatar}
                 profileData={profileData}
-                isMe={false}
-                userId={userId}
+                isMe={true}
             />
         </NavLayout>
     );
 };
 
-export default Profile;
+export default MyProfile;

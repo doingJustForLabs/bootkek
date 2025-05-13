@@ -74,29 +74,26 @@ const ProfileEditing = () => {
             const values = await formEditing.validateFields();
             const { name, username, sex, faculty, course } = values;
 
-            const isDataChanged = (
-                name !== profileData.name ||
-                username !== profileData.username ||
-                sex !== profileData.sex ||
-                faculty !== profileData.faculty ||
-                course !== profileData.course ||
-                isAvatarChanged
-            );
+            const updatedFields = {};
+
+            if (name !== profileData.name) updatedFields.name = name;
+            if (username !== profileData.username) updatedFields.username = username;
+            if (sex !== profileData.sex) updatedFields.sex = sex;
+            if (faculty !== profileData.faculty) updatedFields.faculty = faculty;
+            if (course !== profileData.course) updatedFields.course = course;
+
+            const isDataChanged = Object.keys(updatedFields).length > 0 || isAvatarChanged;
 
             if (!isDataChanged) {
                 messageApi.warning("Данные не были изменены!");
                 return;
             }
 
-            await ProfileStore.updateProfile({
-                name,
-                username,
-                sex,
-                faculty,
-                course
-            });
+            if (Object.keys(updatedFields).length > 0) {
+                await ProfileStore.updateProfile(updatedFields);
+            }
 
-            if (isAvatarChanged){
+            if (isAvatarChanged) {
                 await ProfileStore.setAvatar(avatarFile);
             }
 
