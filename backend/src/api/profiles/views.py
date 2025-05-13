@@ -113,8 +113,10 @@ async def update_user_avatar(
 @router.get(
     "/{user_id}",
     response_model=ProfileDetailResponseSchema,
+    dependencies=[Depends(http_bearer)]
 )
 async def get_user_profile_by_user_id(
+    token: AccessDependency,
     user_id: int,
     session: DbSession,
 ):
@@ -124,7 +126,8 @@ async def get_user_profile_by_user_id(
     )
 
     return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile)
+        profile=ProfileDetailDataSchema.model_validate(profile),
+        is_current_user=int(token.sub) == user_id
     )
 
 
