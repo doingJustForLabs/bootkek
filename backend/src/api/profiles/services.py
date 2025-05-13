@@ -61,7 +61,7 @@ class ProfileRepository:
             raise BadRequestException("Пустой запрос")
 
         for key, value in data.items():
-            if not getattr(profile, key):
+            if not hasattr(profile, key):
                 raise BadRequestException(f"Невалидный ключ для обновления: {key}")
             setattr(profile, key, value)
 
