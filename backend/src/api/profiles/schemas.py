@@ -32,6 +32,7 @@ class ProfileCreateSchema(BaseModel):
 
 
 class ProfileDetailDataSchema(BaseModel):
+    user_id: int
     name: str
     username: str
     sex: Optional[str] = None
