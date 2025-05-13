@@ -32,6 +32,7 @@ class TokenResponse(BaseModel):
 
 
 class UserDataSchema(BaseModel):
+    id: int
     email: str
     role: str
     create_date: datetime

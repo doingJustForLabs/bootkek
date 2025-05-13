@@ -5,7 +5,7 @@ from sqlalchemy.testing.suite.test_reflection import users
 from api.chat.dependencies import verify_token
 from database.db import db_helper
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.models import Message
+from api.chat.models import Message
 from api.chat.connections import manager
 from datetime import datetime
 from database.schemas.message_schemas import MessageResponse
@@ -17,11 +17,9 @@ logger = logging.getLogger(__name__)
 
 active_connections: dict = {}
 
+
 async def handle_websocket(
-        websocket: WebSocket,
-        token: str,
-        chat_id: int,
-        db: AsyncSession
+    websocket: WebSocket, token: str, chat_id: int, db: AsyncSession
 ):
     """Основной обработчик WebSocket соединения для чата"""
     user_id = 0
@@ -34,20 +32,14 @@ async def handle_websocket(
             return
 
         # 4. Подтверждаем успешное подключение
-        await websocket.send_json({
-            "type": "connection_ack",
-            "status": "authenticated",
-            "userId": user_id
-        })
+        await websocket.send_json(
+            {"type": "connection_ack", "status": "authenticated", "userId": user_id}
+        )
 
         logger.info(f"User {user_id} connected to chat {chat_id}")
 
         # Добавляем соединение в менеджер
-        await manager.connect(
-            chat_id=chat_id,
-            user_id=user_id,
-            websocket=websocket
-        )
+        await manager.connect(chat_id=chat_id, user_id=user_id, websocket=websocket)
 
         # Отправляем историю сообщений
         await send_chat_history(chat_id, websocket, db)
@@ -60,11 +52,7 @@ async def handle_websocket(
             try:
                 message_json = json.loads(message_data)
                 await process_chat_message(
-                    message_json,
-                    user_id,
-                    chat_id,
-                    db,
-                    websocket
+                    message_json, user_id, chat_id, db, websocket
                 )
             except json.JSONDecodeError:
                 logger.error("Invalid message format")
@@ -80,6 +68,7 @@ async def handle_websocket(
     finally:
         await db.close()
 
+
 async def send_chat_history(chat_id: int, websocket: WebSocket, db: AsyncSession):
     """Отправка истории сообщений чата"""
     messages = await db.execute(
@@ -91,23 +80,25 @@ async def send_chat_history(chat_id: int, websocket: WebSocket, db: AsyncSession
     messages = messages.scalars().all()
 
     for message in messages:
-        await websocket.send_json({
-            "type": "chat_message",
-            "data": {
-                "id": message.id,
-                "content": message.content,
-                "user_id": message.user_id,
-                "timestamp": message.timestamp.isoformat()
+        await websocket.send_json(
+            {
+                "type": "chat_message",
+                "data": {
+                    "id": message.id,
+                    "content": message.content,
+                    "user_id": message.user_id,
+                    "timestamp": message.timestamp.isoformat(),
+                },
             }
-        })
+        )
 
 
 async def process_chat_message(
-        message_data: dict,
-        user_id: int,
-        chat_id: int,
-        db: AsyncSession,
-        websocket: WebSocket
+    message_data: dict,
+    user_id: int,
+    chat_id: int,
+    db: AsyncSession,
+    websocket: WebSocket,
 ):
     """Обработка входящего сообщения чата"""
     if not message_data.get("content"):
@@ -119,12 +110,14 @@ async def process_chat_message(
     try:
         # Временное подтверждение
         if temp_id:
-            await websocket.send_json({
-                "type": "message_temp_ack",
-                "tempId": temp_id,
-                "status": "sending",
-                "user_id": user_id  # Добавляем отправителя
-            })
+            await websocket.send_json(
+                {
+                    "type": "message_temp_ack",
+                    "tempId": temp_id,
+                    "status": "sending",
+                    "user_id": user_id,  # Добавляем отправителя
+                }
+            )
 
         # Сохраняем сообщение в БД
         new_message = Message(
@@ -144,8 +137,8 @@ async def process_chat_message(
                 "content": new_message.content,
                 "user_id": user_id,  # Важно: используем ID из БД
                 "timestamp": new_message.timestamp.isoformat(),
-                "status": "delivered"
-            }
+                "status": "delivered",
+            },
         }
 
         # if temp_id:
@@ -153,31 +146,33 @@ async def process_chat_message(
 
         # Отправляем подтверждение отправителю
         if temp_id:
-            await websocket.send_json({
-                "type": "message_confirmation",
-                "tempId": temp_id,
-                "messageId": new_message.id,
-                "status": "delivered",
-                "user_id": user_id  # Добавляем отправителя
-            })
+            await websocket.send_json(
+                {
+                    "type": "message_confirmation",
+                    "tempId": temp_id,
+                    "messageId": new_message.id,
+                    "status": "delivered",
+                    "user_id": user_id,  # Добавляем отправителя
+                }
+            )
 
         # Рассылаем всем, кроме отправителя
         await manager.broadcast_except_sender(
-            message=response,
-            chat_id=chat_id,
-            exclude_user_id=user_id
+            message=response, chat_id=chat_id, exclude_user_id=user_id
         )
 
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")
         if temp_id:
-            await websocket.send_json({
-                "type": "message_status",
-                "tempId": temp_id,
-                "status": "failed",
-                "error": str(e),
-                "user_id": user_id
-            })
+            await websocket.send_json(
+                {
+                    "type": "message_status",
+                    "tempId": temp_id,
+                    "status": "failed",
+                    "error": str(e),
+                    "user_id": user_id,
+                }
+            )
 
     # user_id = None
     # print(f"New WebSocket connection for chat_id: {chat_id}")

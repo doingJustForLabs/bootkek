@@ -80,3 +80,9 @@ class UserRepository:
     async def logout_user(cls, response: Response) -> None:
         security.unset_refresh_cookies(response=response)
         return
+
+    @staticmethod
+    async def get_all_users(db: AsyncSession):
+        # Используем select для асинхронного получения всех пользователей
+        result = await db.execute(select(User))
+        return result.scalars().all()  # Получаем все объекты пользователей

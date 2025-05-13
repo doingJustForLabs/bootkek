@@ -1,38 +1,47 @@
-# from sqlalchemy import String, DateTime, Boolean, INT, ForeignKey
-# # from sqlalchemy.ext.asyncio import AsyncAttrs
-# from sqlalchemy.orm import Mapped, mapped_column, relationship
-# from sqlalchemy.sql import func
-# from database.models import Base  # Импорт базового класса
-# from database.models import User
-#
-# class Chat(Base):
-#     __tablename__ = "chats"
-#
-#     id: Mapped[int] = mapped_column(primary_key=True)
-#     name: Mapped[str] = mapped_column(String(100))
-#     created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
-#
-#     users: Mapped["ChatUser"] = relationship("ChatUser", back_populates="chat")
-#     messages: Mapped["Message"] = relationship("Message", back_populates="chat")
-#
-# class ChatUser(Base):
-#     __tablename__ = "chat_users"
-#
-#     chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"), primary_key=True)
-#     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-#     join_date: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
-#
-#     chat: Mapped[Chat] = relationship("Chat", back_populates="users")
-#     user: Mapped["User"] = relationship("User", back_populates="chats")
-#
-# class Message(Base):
-#     __tablename__ = "messages"
-#
-#     id: Mapped[int] = mapped_column(primary_key=True)
-#     chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"))
-#     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-#     content: Mapped[str] = mapped_column(String(1000))
-#     timestamp: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
-#
-#     chat: Mapped[Chat] = relationship("Chat", back_populates="messages")
-#     user: Mapped["User"] = relationship("User", back_populates="messages")
+from sqlalchemy import String, DateTime, Boolean, INT, ForeignKey
+
+# from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
+from database.db import Base  # Импорт базового класса
+
+
+class Chat(Base):
+    __tablename__ = "chats"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
+
+    users: Mapped[list["User"]] = relationship(
+        "User", secondary="chat_users", back_populates="chats"
+    )
+    messages: Mapped[list["Message"]] = relationship("Message", back_populates="chat")
+
+
+class ChatUser(Base):
+    __tablename__ = "chat_users"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # user_email: Mapped[str] = mapped_column(ForeignKey("users.email"), primary_key=True)  # Изменено
+    join_date: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
+
+    chat: Mapped["Chat"] = relationship(back_populates=None)
+    user: Mapped["User"] = relationship(back_populates=None)
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    content: Mapped[str] = mapped_column(String(1000))
+    file_path: Mapped[str] = mapped_column(String, nullable=True)  # путь к файлу, если он есть
+    file_name: Mapped[str] = mapped_column(String, nullable=True)  # имя файла
+    file_type: Mapped[str] = mapped_column(String, nullable=True)  # тип файла (например, изображение, pdf)
+    timestamp: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
+
+    chat: Mapped["Chat"] = relationship("Chat", back_populates="messages")
+    user: Mapped["User"] = relationship("User", back_populates="messages")

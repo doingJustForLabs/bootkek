@@ -15,12 +15,14 @@ from database.db import db_helper
 from fastapi import WebSocket, WebSocketDisconnect, Depends
 import json
 from api.chat.websocket_handler import handle_websocket
+
 # from chat.models import Chat, Message
 # from chat.connections import manager
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import HTMLResponse
 import os
 from fastapi.staticfiles import StaticFiles
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -42,10 +44,7 @@ app.include_router(main_router)
 
 # Middleware
 
-origins = ["http://localhost",
-           "http://localhost:5173",
-           "http://127.0.0.1:5173"
-           ]
+origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,13 +61,17 @@ security.handle_errors(app)
 def handle_not_found_error(request: Request, exc: AppException):
     return ORJSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
 @app.websocket("/ws/chat")
-async def websocket_chat(websocket: WebSocket, db: AsyncSession = Depends(db_helper.session_getter)):
+async def websocket_chat(
+    websocket: WebSocket, db: AsyncSession = Depends(db_helper.session_getter)
+):
     await websocket.accept()
     print("WebSocket connected")
     logging.debug("WebSocket connected")
@@ -103,6 +106,12 @@ async def websocket_chat(websocket: WebSocket, db: AsyncSession = Depends(db_hel
 @app.get("/")
 def get_root():
     return {"message": "Api is working!~!!"}
+
+
+@app.get("/debug_chats")
+async def debug_chats():
+    print("⚠️ Тестовый эндпоинт сработал!")
+    return {"debug": True}
 
 
 app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")

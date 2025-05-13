@@ -53,11 +53,9 @@ export const authService = {
         }
       });
 
-      // Извлекаем данные из response.data.detail
-      const userData = response.data.detail || response.data;
-
-      if (!userData?.id) {
-        throw new Error('ID пользователя не получен');
+      const userData = response.data.user;
+      if (!userData?.email) {
+        throw new Error('email пользователя не получен');
       }
 
       return userData;

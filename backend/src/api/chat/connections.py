@@ -1,12 +1,12 @@
 from fastapi import WebSocket
-from database.models import Message
+from api.chat.models import Message
 import json
 
 
 class ConnectionManager:
     def __init__(self):
         self.active_connections: dict = {}  # {chat_id: set(websocket1, websocket2)}
-        self.user_sessions = {}      # {websocket: {"user_id": int, "chat_id": int}}
+        self.user_sessions = {}  # {websocket: {"user_id": int, "chat_id": int}}
 
     async def connect(self, chat_id: int, user_id: int, websocket: WebSocket):
         if chat_id not in self.active_connections:
@@ -24,7 +24,9 @@ class ConnectionManager:
                     del self.active_connections[chat_id][user_id]
             del self.user_sessions[websocket]
 
-    async def broadcast_except_sender(self, message: dict, chat_id: int, exclude_user_id: int = None):
+    async def broadcast_except_sender(
+        self, message: dict, chat_id: int, exclude_user_id: int = None
+    ):
         """Гарантируем правильную рассылку"""
         if chat_id not in self.active_connections:
             return
@@ -39,6 +41,7 @@ class ConnectionManager:
                 await connection.send_text(json.dumps(user_message))
             except Exception as e:
                 self.disconnect(chat_id, connection)
+
 
 # class ConnectionManager:
 #     def __init__(self):

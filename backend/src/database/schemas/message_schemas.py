@@ -2,6 +2,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+
 class MessageResponse(BaseModel):
     id: int
     chat_id: int
@@ -10,4 +11,6 @@ class MessageResponse(BaseModel):
     timestamp: datetime
 
     class Config:
-        from_attributes = True  # Это позволяет использовать SQLAlchemy объекты для сериализации
+        from_attributes = (
+            True  # Это позволяет использовать SQLAlchemy объекты для сериализации
+        )

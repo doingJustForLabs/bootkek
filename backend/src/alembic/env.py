@@ -7,11 +7,21 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
+import sys
+from pathlib import Path
+
+# Добавляем корень проекта в PYTHONPATH
+project_root = Path(__file__).resolve().parent.parent.parent  # Путь до backend/
+sys.path.insert(0, str(project_root))
+print(f"Project root: {project_root}")
+print(f"Python path: {sys.path}")
+
 from core.config import settings
 from database.db import Base
 from api.auth.models import User
 from api.profiles.models import Profile
 from api.followers.models import Follower
+from api.chat.models import Chat, ChatUser, Message
 
 
 config = context.config

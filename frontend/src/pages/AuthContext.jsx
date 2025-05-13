@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
                 return;
             }
             const userData = await authService.getMe();
-            if (!userData?.id) {
+            if (!userData?.email) {
                 throw new Error("Invalid user data");
             }
             setUser(userData);
@@ -39,11 +39,13 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const loginResponse = await authService.login(email, password);
+            const { access_token } = await authService.login(email, password);
+            localStorage.setItem('access_token', access_token);
+
             const userData = await authService.getMe();
 
-            if (!userData?.id) {
-                throw new Error("User ID not received");
+            if (!userData?.email) {
+                throw new Error("Email not received");
             }
 
             setUser(userData); // Важно: сохраняем полный объект пользователя
@@ -56,20 +58,20 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = async () => {
-        try {
-            await authService.logout();
-            setUser(null);
-            navigate("/");
-        } catch (error) {
-            console.error("Logout error:", error);
-        }
-    };
+    // const logout = async () => {
+    //     try {
+    //         await authService.logout();
+    //         setUser(null);
+    //         navigate("/");
+    //     } catch (error) {
+    //         console.error("Logout error:", error);
+    //     }
+    // };
 //     const [accessToken, setAccessToken] = useState(null);
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
-//         <AuthContext.Provider value={{ accessToken, setAccessToken }}>
+        <AuthContext.Provider value={{ user, loading, login, checkAuth }}>
+{/* //         <AuthContext.Provider value={{ accessToken, setAccessToken }}> */}
             {children}
         </AuthContext.Provider>
     );

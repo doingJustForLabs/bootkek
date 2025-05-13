@@ -9,6 +9,7 @@
 # from database.models import User, UserSession
 # from sqlalchemy.sql import text
 #
+#
 # class UserAuthRepository:
 #     @staticmethod
 #     async def start_user(session: AsyncSession, email: EmailStr, password: str):
@@ -84,9 +85,9 @@
 #         stmt = delete(UserSession).where(UserSession.user_id == user_id)
 #         await session.execute(stmt)
 #         await session.commit()
-
-    # @staticmethod
-    # async def get_all_users(db: AsyncSession):
-    #     # Используем select для асинхронного получения всех пользователей
-    #     result = await db.execute(select(User))
-    #     return result.scalars().all()  # Получаем все объекты пользователей
+#
+#     @staticmethod
+#     async def get_all_users(db: AsyncSession):
+#         # Используем select для асинхронного получения всех пользователей
+#         result = await db.execute(select(User))
+#         return result.scalars().all()  # Получаем все объекты пользователей
