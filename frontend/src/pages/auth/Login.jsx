@@ -19,16 +19,19 @@ const Login = () => {
 
             if (accessToken) {
                 const response = await ProfileStore.getProfile();
-                console.log(response);
                 const userId = response.data.profile.user_id;
                 navigate(`/profile/${userId}`);
             }
         } catch (error) {
-            console.error(error);
+
+            const status = error.response?.status;
+
             messageApi.open({
                 type: 'error',
                 content: error?.response?.data?.detail || 'Ошибка авторизации.',
             });
+
+            if (status === 404) navigate("/profile/create");
         }
     };
 

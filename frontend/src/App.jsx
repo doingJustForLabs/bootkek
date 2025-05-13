@@ -5,7 +5,6 @@ import Profile from "./pages/profile/Profile.jsx";
 import ProfileCreation from "./pages/profile/ProfileCreation.jsx";
 import ProfileEditing from "./pages/profile/ProfileEditing.jsx";
 import Profiles from "./pages/profile/Profiles.jsx";
-import MyProfile from "./pages/profile/MyProfile.jsx";
 
 function App() {
 

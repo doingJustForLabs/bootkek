@@ -55,6 +55,7 @@ const ProfileCreation = () => {
         try {
             const values = await formStep2.validateFields();
             const { sex } = values;
+            console.log(sex)
 
             await ProfileStore.updateProfile({ sex });
             setStep(3);
