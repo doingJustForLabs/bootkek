@@ -24,3 +24,7 @@ class Skills(str, Enum):
     maths = "Математика"
     cpp = "C++"
     cs = "C#"
+    chem = "Химия"
+    physics = "Физика"
+    eng = "Инженерная графика"
+    plo = "ООП (база)"

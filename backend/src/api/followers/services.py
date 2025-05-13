@@ -18,7 +18,7 @@ class FollowerRepository:
     ) -> Follower:
 
         if follower_id == target_id:
-            raise BadRequestException("You can't subscribe to yourself")
+            raise BadRequestException("Вы не можете подписаться на самого себя")
 
         existing = await session.scalar(
             select(Follower).where(
@@ -29,7 +29,7 @@ class FollowerRepository:
         )
 
         if existing:
-            raise BadRequestException("Subscription already exists")
+            raise BadRequestException("Подписка уже существует")
 
         try:
             new_follow = Follower(
@@ -46,7 +46,7 @@ class FollowerRepository:
 
         except IntegrityError:
             await session.rollback()
-            raise NotFoundException("Profile not found")
+            raise NotFoundException("Профиль не найден")
 
     @classmethod
     async def unsubscribe(
@@ -62,7 +62,7 @@ class FollowerRepository:
         )
 
         if not follow:
-            raise NotFoundException("Follow not found")
+            raise NotFoundException("Подписка не найдена")
 
         await session.delete(follow)
         await cls._update_profile_counts(
@@ -91,63 +91,58 @@ class FollowerRepository:
 
     @classmethod
     async def get_user_followers(cls, session: AsyncSession, user_id: int):
-        """
-        Вывести список пользователей с полями (user_id, name, username, avatar_basename) на которых
-        подписан текущий пользователь (по user_id). Если пользователя нет, бросать NotFoundException("Profile not found")
+        try:
+            query = (
+                select(
+                    Profile.user_id,
+                    Profile.name,
+                    Profile.username,
+                    Profile.avatar_basename,
+                )
+                .distinct()
+                .where(Follower.target_id == user_id, Profile.user_id != user_id)
+                .order_by(Profile.user_id)
+            )
 
-        Примерный ответ:
-        [
-            {
-                "user_id": 5
-                "name": "name"
-                "username": "biba"
-                "avatar_basename": "qwerty123"
-            },
-            {
-                "user_id": 7
-                "name": "name"
-                "username": "boba"
-                "avatar_basename": "super_avatar"
-            }
-        ]
-        """
+            res = await session.execute(query)
+            return [
+                {
+                    "user_id": row.user_id,
+                    "name": row.name,
+                    "username": row.username,
+                    "avatar_basename": row.avatar_basename,
+                }
+                for row in res
+            ]
 
-        query = (
-            select(Profile)
-            .where(Follower.follower_id == user_id, Profile.user_id != user_id)
-            .order_by(Profile.user_id)
-        )
-
-        res = await session.execute(query)
-        return res.scalars().unique().all()
+        except NotFoundException as e:
+            return e
 
     @classmethod
     async def get_user_follows(cls, session: AsyncSession, user_id: int):
-        """
-        Вывести список пользователей с полями (user_id, name, username, avatar_basename) на которые
-        подписаны на текущего пользователя (по его user_id)
+        try:
+            query = (
+                select(
+                    Profile.user_id,
+                    Profile.name,
+                    Profile.username,
+                    Profile.avatar_basename,
+                )
+                .distinct()
+                .where(Follower.follower_id == user_id, Profile.user_id != user_id)
+                .order_by(Profile.user_id)
+            )
 
-        Примерный ответ:
-        [
-            {
-                "user_id": 5
-                "name": "name"
-                "username": "biba"
-                "avatar_basename": "qwerty123"
-            },
-            {
-                "user_id": 7
-                "name": "name"
-                "username": "boba"
-                "avatar_basename": "super_avatar"
-            }
-        ]
-        """
-        query = (
-            select(Profile)
-            .where(Follower.target_id == user_id)
-            .order_by(Profile.user_id)
-        )
+            res = await session.execute(query)
+            return [
+                {
+                    "user_id": row.user_id,
+                    "name": row.name,
+                    "username": row.username,
+                    "avatar_basename": row.avatar_basename,
+                }
+                for row in res
+            ]
 
-        res = await session.execute(query)
-        return res.scalars().unique().all()
+        except NotFoundException as e:
+            return e

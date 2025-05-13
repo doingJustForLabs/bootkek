@@ -21,7 +21,7 @@ class SearchRepository:
         filters: FiltersSchema,
     ) -> List[Profile]:
         """
-        SELECT (name, username, avatar_basename)
+        SELECT (p.user_id, p.name, p.username, p.avatar_basename, skills)
         FROM profiles
         WHERE ... LIKE "%:keyword%"
         LIMIT :limit
@@ -34,7 +34,7 @@ class SearchRepository:
         #         Profile.name,
         #         Profile.username,
         #         Profile.avatar_basename,
-        #     )
+        #     )x`
         #     .options(selectinload(Profile.skills))
         #     .where()
         #     .limit(pagination.limit)

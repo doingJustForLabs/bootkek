@@ -24,9 +24,7 @@ class Profile(Base):
     sex: Mapped[str | None]
     faculty: Mapped[str | None]
 
-    avatar_basename: Mapped[str] = mapped_column(
-        String, default="static/avatars/default-avatar.jpg"
-    )
+    avatar_basename: Mapped[str] = mapped_column(String, default=None, nullable=True)
 
     subscribers_count: Mapped[int] = mapped_column(Integer, default=0)
     subscriptions_count: Mapped[int] = mapped_column(Integer, default=0)
