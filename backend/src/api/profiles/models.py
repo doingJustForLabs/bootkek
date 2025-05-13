@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.functions import func
 
 from api.followers.models import Follower
+from api.skills.models import UsersSkill
 from database.db import Base
 
 if TYPE_CHECKING:
@@ -34,3 +35,6 @@ class Profile(Base):
     update_date: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()
     )
+
+    skills: Mapped[list["UsersSkill"]] = relationship(back_populates="profile")
+
