@@ -1,58 +1,109 @@
-from typing import List, Annotated
+from math import ceil
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter
 
+from api.dependencies import (
+    AccessDependency,
+    BearerDependency,
+    PaginationDependency,
+    DbSession,
+)
+from api.followers.schemas import FollowsResponseSchema
 from api.followers.services import FollowerRepository
-from api.profiles.schemas import ProfileSummaryDataSchema, PaginationSchema
-from database.db import DbSession
-from api.auth.views import AccessDependency, http_bearer
+from api.profiles.services import ProfileRepository
+from api.search.schemas import SearchResponseSchema
 
-router = APIRouter(tags=["Фолловеры🫂"])
+router = APIRouter(prefix="/follows", tags=["Фолловеры🫂"])
 
 
-@router.get("/profiles/{user_id}/followers")
+@router.get("/{user_id}/followers", response_model=SearchResponseSchema)
 async def get_user_followers(
     session: DbSession,
     user_id: int,
-    pagination: Annotated[PaginationSchema, Depends(PaginationSchema)],
+    pagination: PaginationDependency,
 ):
-    followers = await FollowerRepository.get_user_followers(session, user_id)
-    return followers
+    """Получение подписчиков пользователя"""
+    await ProfileRepository.get_profile_by_user_id(
+        session, user_id, not_found_error=True
+    )
+
+    followers = await FollowerRepository.get_user_followers(
+        session, user_id, pagination
+    )
+
+    count = await FollowerRepository.get_count_user_followers(session, user_id)
+
+    return SearchResponseSchema(
+        profiles=followers,
+        pagination=pagination,
+        total_pages=ceil(count / pagination.limit),
+        total_profiles=count,
+    )
 
 
-@router.get("/profiles/{user_id}/following")
+@router.get("/{user_id}/followings", response_model=SearchResponseSchema)
 async def get_user_follows(
     session: DbSession,
     user_id: int,
-    pagination: Annotated[PaginationSchema, Depends(PaginationSchema)],
+    pagination: PaginationDependency,
 ):
-    follows = await FollowerRepository.get_user_follows(session, user_id)
-    return follows
+    """Получение подписок пользователя"""
+    await ProfileRepository.get_profile_by_user_id(
+        session, user_id, not_found_error=True
+    )
+
+    follows = await FollowerRepository.get_user_follows(session, user_id, pagination)
+    count = await FollowerRepository.get_count_user_follows(session, user_id)
+
+    return SearchResponseSchema(
+        profiles=follows,
+        pagination=pagination,
+        total_pages=ceil(count / pagination.limit),
+        total_profiles=count,
+    )
 
 
-@router.post("/profiles/{target_id}", dependencies=[Depends(http_bearer)])
+@router.post(
+    "/{target_id}",
+    dependencies=[BearerDependency],
+    response_model=FollowsResponseSchema,
+)
 async def follow_user(
     session: DbSession,
     token: AccessDependency,
     target_id: int,
 ):
-    follower = await FollowerRepository.subscribe(
+    """Подписка на пользователя"""
+    await ProfileRepository.get_profile_by_user_id(
+        session, target_id, not_found_error=True
+    )
+
+    await FollowerRepository.subscribe(
         session, follower_id=int(token.sub), target_id=target_id
     )
-    return {"follower": follower}
+    target_user = await ProfileRepository.get_profile_by_user_id(session, target_id)
+
+    return FollowsResponseSchema(detail=f"Вы подписались на {target_user.username}")
 
 
 @router.delete(
-    "/profiles/{target_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(http_bearer)],
+    "/{target_id}",
+    dependencies=[BearerDependency],
+    response_model=FollowsResponseSchema,
 )
 async def unfollow_user(
     session: DbSession,
     token: AccessDependency,
     target_id: int,
 ):
+    """Отписка от пользователя"""
+    await ProfileRepository.get_profile_by_user_id(
+        session, target_id, not_found_error=True
+    )
+
     await FollowerRepository.unsubscribe(
         session, follower_id=int(token.sub), target_id=target_id
     )
-    return
+    target_user = await ProfileRepository.get_profile_by_user_id(session, target_id)
+
+    return FollowsResponseSchema(detail=f"Вы отписались от {target_user.username}")
