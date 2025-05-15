@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
+from api.search.schemas import PaginationSchema
 from core.config import settings
 
 
@@ -95,18 +96,25 @@ class ProfileRepository:
     async def get_all_profiles(
         cls,
         session: AsyncSession,
-    ):
-        profiles = await session.execute(select(Profile))
+        pagination: PaginationSchema,
+    ) -> list[Profile]:
+        query = (
+            select(Profile)
+            .order_by(Profile.user_id)
+            .limit(pagination.limit)
+            .offset(pagination.limit * pagination.page)
+        )
+        profiles = await session.execute(query)
         res = profiles.scalars().all()
         if not profiles:
             raise NotFoundException("Профили не найдены")
-        return res
+        return list(res)
 
 
 class AvatarRepository:
     _AVATAR_DIR_PATH = settings.files.avatar_dir
     _ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
-    _FILE_MAX_SIZE = 5 * 1024 * 1024 * 8
+    _FILE_MAX_SIZE = 200 * 1024 * 8
     _FILE_SIZES = [64, 128, 256]
 
     @classmethod

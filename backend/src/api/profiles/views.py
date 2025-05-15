@@ -1,27 +1,28 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, UploadFile, File
 
-from fastapi import APIRouter, Depends, UploadFile, File
-
-from api.auth.views import http_bearer, AccessDependency
+from api.dependencies import (
+    AccessDependency,
+    DbSession,
+    BearerDependency,
+    PaginationDependency,
+)
 from api.followers.services import FollowerRepository
 from api.profiles.schemas import (
     ProfileCreateSchema,
-    ProfileDetailResponseSchema,
-    ProfileDetailDataSchema,
-    SearchUserSchema,
+    ProfileReadDetailSchema,
+    ProfileResponseSchema,
+    AvatarResponseSchema,
+    ProfileResponseSearchSchema,
 )
 from api.profiles.services import ProfileRepository, AvatarRepository
-
-# from api.search.service import SearchService, get_search_service
-from database.db import DbSession
 
 router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
 
 @router.post(
     "/me",
-    response_model=ProfileDetailResponseSchema,
-    dependencies=[Depends(http_bearer)],
+    response_model=ProfileResponseSchema,
+    dependencies=[BearerDependency],
 )
 async def setup_user_profile(
     session: DbSession,
@@ -33,15 +34,15 @@ async def setup_user_profile(
         session, int(token.sub), profile_data
     )
 
-    return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile)
+    return ProfileResponseSchema(
+        profile=ProfileReadDetailSchema.model_validate(profile)
     )
 
 
 @router.patch(
     "/me",
-    response_model=ProfileDetailResponseSchema,
-    dependencies=[Depends(http_bearer)],
+    response_model=ProfileResponseSchema,
+    dependencies=[BearerDependency],
 )
 async def update_user_profile(
     session: DbSession,
@@ -53,15 +54,15 @@ async def update_user_profile(
         session, int(token.sub), update_data
     )
 
-    return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile)
+    return ProfileResponseSchema(
+        profile=ProfileReadDetailSchema.model_validate(profile)
     )
 
 
 @router.get(
     "/me",
-    response_model=ProfileDetailResponseSchema,
-    dependencies=[Depends(http_bearer)],
+    response_model=ProfileResponseSchema,
+    dependencies=[BearerDependency],
 )
 async def get_user_profile(
     token: AccessDependency,
@@ -72,12 +73,14 @@ async def get_user_profile(
         session, int(token.sub), not_found_error=True
     )
 
-    return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile)
+    return ProfileResponseSchema(
+        profile=ProfileReadDetailSchema.model_validate(profile)
     )
 
 
-@router.post("/avatars", dependencies=[Depends(http_bearer)])
+@router.post(
+    "/avatars", dependencies=[BearerDependency], response_model=AvatarResponseSchema
+)
 async def update_user_avatar(
     token: AccessDependency,
     session: DbSession,
@@ -91,29 +94,13 @@ async def update_user_avatar(
     basename = await AvatarRepository.update_profile_avatar(
         session, int(token.sub), avatar
     )
-    return {"basename": basename}
-
-
-# @router.get(
-#     "/{username}",
-#     response_model=ProfileDetailResponseSchema,
-# )
-# async def get_user_profile_by_username(
-#     username: str,
-#     session: DbSession,
-# ):
-#     """Получение данных о пользователе по username"""
-#     profile = await ProfileRepository.get_profile_by_username(
-#         session, username, not_found_error=True
-#     )
-#
-#     return ProfileDetailResponseSchema(
-#         profile=ProfileDetailDataSchema.model_validate(profile)
-#     )
+    return AvatarResponseSchema(basename=basename)
 
 
 @router.get(
-    "/{user_id}", response_model=SearchUserSchema, dependencies=[Depends(http_bearer)]
+    "/{user_id}",
+    response_model=ProfileResponseSearchSchema,
+    dependencies=[BearerDependency],
 )
 async def get_user_profile_by_user_id(
     token: AccessDependency,
@@ -129,15 +116,15 @@ async def get_user_profile_by_user_id(
         session, int(token.sub), user_id
     )
 
-    return SearchUserSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile),
+    return ProfileResponseSearchSchema(
+        profile=ProfileReadDetailSchema.model_validate(profile),
         is_current_user=int(token.sub) == user_id,
         is_following=is_following,
     )
 
 
-@router.get("")
-async def get_all_users(session: DbSession):
+@router.get("", response_model=list[ProfileReadDetailSchema])
+async def get_all_users(session: DbSession, pagination: PaginationDependency):
     """Получение данных о пользователях"""
-    profiles = await ProfileRepository.get_all_profiles(session)
+    profiles = await ProfileRepository.get_all_profiles(session, pagination)
     return profiles
