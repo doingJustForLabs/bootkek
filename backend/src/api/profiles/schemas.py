@@ -43,6 +43,15 @@ class ProfileReadDetailSchema(ProfileCreateSchema):
     update_date: datetime
 
 
+class ProfileReadSummarySchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int
+    name: Optional[str] = Field(None, min_length=2, max_length=32)
+    username: Optional[str] = Field(None, min_length=5, max_length=32)
+    avatar_basename: Optional[str] = None
+
+
 class ProfileResponseSchema(BaseModel):
     profile: ProfileReadDetailSchema
 

@@ -1,9 +1,11 @@
 import uuid
+from typing import Optional, Iterable, Sequence
 
 from PIL import Image
 from fastapi import UploadFile
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import func
 
 from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import Profile
@@ -42,7 +44,7 @@ class ProfileRepository:
         cls, session: AsyncSession, user_id: int, update_data: ProfileCreateSchema
     ) -> Profile:
 
-        profile: Profile = await session.scalar(
+        profile = await session.scalar(
             select(Profile).where(Profile.user_id == user_id)
         )
 
@@ -74,12 +76,12 @@ class ProfileRepository:
     async def get_profile_by_username(
         cls, session: AsyncSession, username: str, not_found_error: bool = False
     ) -> Profile:
-        profile = await session.scalar(
-            select(Profile).where(Profile.username == username)
-        )
-        if not profile and not_found_error:
+        query = select(Profile).where(Profile.username == username)
+        res = await session.execute(query)
+
+        if not res.scalar() and not_found_error:
             raise NotFoundException("Профиль не найден")
-        return profile
+        return res.scalar_one()
 
     @classmethod
     async def get_profile_by_user_id(
@@ -97,18 +99,26 @@ class ProfileRepository:
         cls,
         session: AsyncSession,
         pagination: PaginationSchema,
-    ) -> list[Profile]:
+    ):
         query = (
             select(Profile)
             .order_by(Profile.user_id)
+            .offset(pagination.limit * (pagination.page - 1))
             .limit(pagination.limit)
-            .offset(pagination.limit * pagination.page)
         )
-        profiles = await session.execute(query)
-        res = profiles.scalars().all()
+
+        profiles = await session.scalars(query)
+
         if not profiles:
             raise NotFoundException("Профили не найдены")
-        return list(res)
+
+        return profiles.all()
+
+    @classmethod
+    async def get_count_profiles(cls, session: AsyncSession) -> int:
+        query = select(func.count()).select_from(Profile)
+        res = await session.execute(query)
+        return res.scalar_one()
 
 
 class AvatarRepository:
@@ -169,7 +179,7 @@ class AvatarRepository:
             raise BadRequestException(
                 "Невалидный тип данных. Используйте 'png' или 'jpeg'"
             )
-        if avatar.size > cls._FILE_MAX_SIZE:
+        if avatar.size and avatar.size > cls._FILE_MAX_SIZE:
             raise BadRequestException("Превышен размер файла (5Мб)")
         return avatar
 

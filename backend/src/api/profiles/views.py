@@ -1,3 +1,5 @@
+from math import ceil
+
 from fastapi import APIRouter, UploadFile, File
 
 from api.dependencies import (
@@ -15,6 +17,7 @@ from api.profiles.schemas import (
     ProfileResponseSearchSchema,
 )
 from api.profiles.services import ProfileRepository, AvatarRepository
+from api.search.schemas import SearchResponseSchema
 
 router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
@@ -123,8 +126,15 @@ async def get_user_profile_by_user_id(
     )
 
 
-@router.get("", response_model=list[ProfileReadDetailSchema])
+@router.get("", response_model=SearchResponseSchema)
 async def get_all_users(session: DbSession, pagination: PaginationDependency):
     """Получение данных о пользователях"""
+    count = await ProfileRepository.get_count_profiles(session)
     profiles = await ProfileRepository.get_all_profiles(session, pagination)
-    return profiles
+
+    return SearchResponseSchema(
+        profiles=profiles,
+        pagination=pagination,
+        total_profiles=count,
+        total_pages=ceil(count / pagination.limit),
+    )
