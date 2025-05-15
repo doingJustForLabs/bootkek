@@ -36,7 +36,7 @@ async def login_user(
 ):
     """Аутентификация пользователя и выдача Access токена"""
     token = await UserRepository.authenticate_user(session, creds, response)
-    return token
+    return TokenResponseSchema(access_token=token)
 
 
 @router.get("/refresh", response_model=TokenResponseSchema)
@@ -44,8 +44,8 @@ async def refresh_new_access_token(
     token: RefreshDependency,
 ):
     """Обновление Access токена с помощью Refresh токена"""
-    token = await UserRepository.refresh_expired_token(token)
-    return token
+    new_token = await UserRepository.refresh_expired_token(token)
+    return TokenResponseSchema(access_token=new_token)
 
 
 @router.get("/me", dependencies=[BearerDependency], response_model=UserResponseSchema)
@@ -63,6 +63,7 @@ async def get_protected(
     dependencies=[BearerDependency],
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def logout_user(response: Response):
+async def logout_user(token: AccessDependency, response: Response):
     """Пользователь разлогинивается"""
     await UserRepository.logout_user(response)
+    return
