@@ -1,9 +1,8 @@
 import uuid
-from typing import Optional, Iterable, Sequence
 
 from PIL import Image
 from fastapi import UploadFile
-from sqlalchemy import select, insert
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import func
 
@@ -19,6 +18,7 @@ class ProfileRepository:
     async def create_profile(
         cls, session: AsyncSession, user_id: int, profile_data: ProfileCreateSchema
     ) -> Profile:
+        print(profile_data)
 
         if not (profile_data.username and profile_data.name):
             raise BadRequestException("Поля 'name' и 'username' обязательные")
@@ -31,7 +31,14 @@ class ProfileRepository:
         ):
             raise BadRequestException("Данный юзернейм уже существует")
 
-        data = {"user_id": user_id, **profile_data.model_dump()}
+        data = {
+            "user_id": user_id,
+            "course": profile_data.course if profile_data.course else None,
+            "faculty": profile_data.faculty if profile_data.faculty else None,
+            "sex": profile_data.sex if profile_data.sex else None,
+            **profile_data.model_dump(exclude={"course", "faculty", "sex"}),
+        }
+
         profile = Profile(**data)
 
         session.add(profile)
@@ -77,11 +84,11 @@ class ProfileRepository:
         cls, session: AsyncSession, username: str, not_found_error: bool = False
     ) -> Profile:
         query = select(Profile).where(Profile.username == username)
-        res = await session.execute(query)
+        profile = await session.scalar(query)
 
-        if not res.scalar() and not_found_error:
+        if not profile and not_found_error:
             raise NotFoundException("Профиль не найден")
-        return res.scalar_one()
+        return profile
 
     @classmethod
     async def get_profile_by_user_id(

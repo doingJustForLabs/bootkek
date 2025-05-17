@@ -64,5 +64,6 @@ def downgrade() -> None:
         "profiles",
         "avatar_basename",
         existing_type=sa.VARCHAR(),
+        server_default="static/",
         nullable=False,
     )

@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from api.enums import Sex, MuctrFaculties
+from api.enums import Sex, MuctrFaculties, Courses
 from api.exceptions import BadRequestException
 
 alf = [chr(i) for i in range(ord("a"), ord("z") + 1)]
@@ -16,7 +16,7 @@ class ProfileCreateSchema(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=32)
     username: Optional[str] = Field(None, min_length=5, max_length=32)
 
-    course: Optional[int] = Field(None, ge=1, le=4)
+    course: Optional[Courses] = None
     sex: Optional[Sex] = None
     faculty: Optional[MuctrFaculties] = None
 
