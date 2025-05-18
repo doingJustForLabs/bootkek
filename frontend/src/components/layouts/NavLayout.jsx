@@ -1,24 +1,43 @@
 import React from 'react';
-import { UserOutlined, TeamOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, LeftCircleOutlined } from '@ant-design/icons';
 import { Layout, Menu } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import AuthStore from "store/AuthStore.js";
+import {goTo} from "utils/navigator.js";
+import {observer} from "mobx-react-lite";
 
 const { Content, Sider } = Layout;
 
-const NavLayout = ({ children, userId }) => {
-    const navigate = useNavigate();
 
-    const icons = [UserOutlined, TeamOutlined];
-    const paths = [`/profile/${userId}`, '/profiles'];
+const NavLayout = observer(({ children }) => {
 
-    const items = ['Профиль', 'Люди'].map((label, index) => ({
-        key: String(index), // ключ — индекс
-        icon: React.createElement(icons[index]),
-        label: label,
-    }));
+    const menuItems = [
+        {
+            key: "profile",
+            icon: <UserOutlined />,
+            label: "Профиль"
+        },
+        {
+            key: "users",
+            icon: <TeamOutlined />,
+            label: "Люди"
+        },
+        {
+            key: "logout",
+            icon: <LeftCircleOutlined />,
+            label: "Выйти",
+            danger: true
+        }
+    ]
 
     const handleMenuClick = ({ key }) => {
-        navigate(paths[Number(key)]);
+        switch (key){
+            case "profile":
+                goTo(`/profile/${AuthStore.currentId}`); break;
+            case "users":
+                goTo(`/search/profiles`); break;
+            case "logout":
+                goTo(`/`); break;
+        }
     };
 
     return (
@@ -28,7 +47,7 @@ const NavLayout = ({ children, userId }) => {
                 <Menu
                     theme="dark"
                     mode="inline"
-                    items={items}
+                    items={menuItems}
                     onClick={handleMenuClick}
                 />
             </Sider>
@@ -39,6 +58,6 @@ const NavLayout = ({ children, userId }) => {
             </Layout>
         </Layout>
     );
-};
+});
 
 export default NavLayout;

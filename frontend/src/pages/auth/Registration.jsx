@@ -1,38 +1,33 @@
-import { useNavigate } from 'react-router-dom';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { Button, Form, Input, message } from 'antd';
+import { Button, Form, Input } from 'antd';
 
-import AuthLayout from '../../components/layouts/AuthLayout.jsx';
-import AuthStore from '../../store/AuthStore.js';
-import Validator from '../../utils/validation.js';
+import Message from "utils/messages.js"
+import {goTo} from "utils/navigator.js"
 
-const Registration = () => {
+import CardLayout from 'components/layouts/CardLayout.jsx';
+import AuthStore from 'store/AuthStore.js';
+import Validator from 'utils/validation.js';
+import {wrapHandleError} from "utils/errors.js";
+import {observer} from "mobx-react-lite";
+import InputPassword from "components/ui/inputs/InputPassword.jsx";
+import InputEmail from "components/ui/inputs/InputEmail.jsx";
+
+const Registration = observer(() => {
     const [form] = Form.useForm();
-    const [messageApi, contextHolder] = message.useMessage();
-    const navigate = useNavigate();
 
     const handleRegister = async ({ email, password, passwordRepeat }) => {
         if (password !== passwordRepeat) {
-            messageApi.open({
-                type: 'error',
-                content: 'Пароли не совпадают!',
-            });
+            Message.error('Пароли не совпадают!');
             return;
         }
-
-        try {
+        await wrapHandleError(async () => {
             await AuthStore.register(email, password, passwordRepeat);
-            navigate('/');
-        } catch (error) {
-            messageApi.open({
-                type: 'error',
-                content: error?.response?.data?.detail || 'Ошибка регистрации.',
-            });
-        }
+            goTo('/');
+        })();
     };
 
     return (
-        <AuthLayout>
+        <CardLayout title="Granite">
             <div className="flex flex-col items-center justify-center py-8 px-4">
                 <h2 className="text-2xl font-semibold text-muctr mb-6">РЕГИСТРАЦИЯ</h2>
 
@@ -47,11 +42,7 @@ const Registration = () => {
                         name="email"
                         rules={[{ required: true, message: 'Введите адрес электронной почты!' }]}
                     >
-                        <Input
-                            placeholder="Почта"
-                            prefix={<MailOutlined />}
-                            className="py-2"
-                        />
+                        <InputEmail/>
                     </Form.Item>
 
                     <Form.Item
@@ -61,28 +52,17 @@ const Registration = () => {
                             { validator: Validator.validatePassword },
                         ]}
                     >
-                        <Input.Password
-                            placeholder="Пароль"
-                            prefix={<LockOutlined />}
-                            maxLength={30}
-                            className="py-2"
-                        />
+                        <InputPassword/>
                     </Form.Item>
 
                     <Form.Item
                         name="passwordRepeat"
                         rules={[{ required: true, message: 'Повторите пароль!' }]}
                     >
-                        <Input.Password
-                            placeholder="Повторите пароль"
-                            prefix={<LockOutlined />}
-                            maxLength={30}
-                            className="py-2"
-                        />
+                        <InputPassword placeholder="Повторите пароль"/>
                     </Form.Item>
 
                     <Form.Item className="mb-0">
-                        {contextHolder}
                         <Button
                             block
                             type="primary"
@@ -97,8 +77,8 @@ const Registration = () => {
                     </Form.Item>
                 </Form>
             </div>
-        </AuthLayout>
+        </CardLayout>
     );
-};
+});
 
 export default Registration;

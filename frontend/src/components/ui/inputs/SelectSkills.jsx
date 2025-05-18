@@ -1,9 +1,10 @@
 import { Select, Button, Tag } from 'antd';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { useState } from 'react';
+import {SKILLS_OPTIONS} from "configs/enum.skills.js";
 
 const SkillSelector = () => {
-    const allSkills = ['C++', 'Python', 'JavaScript', 'React', 'SQL', 'Git', 'Docker', 'Java', 'C#', 'C'];
+    const allSkills = SKILLS_OPTIONS;
     const [skills, setSkills] = useState([]);
     const [input, setInput] = useState('');
     const [filteredOptions, setFilteredOptions] = useState(allSkills);
@@ -76,7 +77,7 @@ const SkillSelector = () => {
                     onSearch={handleSearch}
                     onSelect={handleSelect}
                     onChange={setInput}
-                    placeholder="Добавьте навык"
+                    placeholder="Выберите и добавьте навык"
                     style={{ minWidth: 200 }}
                     options={filteredOptions.map(s => ({ value: s, label: s }))}
                     filterOption={false}

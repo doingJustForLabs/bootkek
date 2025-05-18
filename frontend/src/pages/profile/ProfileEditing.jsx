@@ -1,12 +1,19 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
-import ProfileStore from "../../store/ProfileStore.js";
-import { Avatar, Button, DatePicker, Form, Input, message, Select, Upload } from "antd";
+import {useState, useEffect} from 'react';
+import ProfileStore from "store/ProfileStore.js";
+import { Avatar, Button, Form, Upload } from "antd";
 import { UserOutlined, SaveOutlined } from "@ant-design/icons";
-import NavLayout from "../../components/layouts/NavLayout.jsx";
-import SkillsSelector from "../../components/ui/SkillsSelector.jsx";
-import Validator from "../../utils/validation.js";
+import NavLayout from "components/layouts/NavLayout.jsx";
+import SkillsSelector from "components/ui/inputs/SelectSkills.jsx";
+import Validator from "utils/validation.js";
 import { useWatch } from "antd/es/form/Form.js";
+import Message from "utils/messages.js";
+import {goTo} from "utils/navigator.js";
+import {wrapHandleError} from "utils/errors.js";
+import InputName from "components/ui/inputs/InputName.jsx";
+import InputUsername from "components/ui/inputs/InputUsername.jsx";
+import SelectGender from "components/ui/inputs/SelectGender.jsx";
+import SelectFaculty from "components/ui/inputs/SelectFaculty.jsx";
+import SelectCourse from "components/ui/inputs/SelectCourse.jsx";
 
 const ProfileEditing = () => {
     const [profileData, setProfileData] = useState(null);
@@ -15,9 +22,7 @@ const ProfileEditing = () => {
     const [avatarBase, setAvatarBase] = useState(null);
     const [isAvatarChanged, setIsAvatarChanged] = useState(false);
 
-    const [messageApi, contextHolder] = message.useMessage();
     const [formEditing] = Form.useForm();
-    const navigate = useNavigate();
 
     const name = useWatch('name', formEditing);
     const username = useWatch('username', formEditing);
@@ -25,44 +30,36 @@ const ProfileEditing = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await ProfileStore.getProfile();
-                const profile = response.data.profile;
+                await wrapHandleError( async () => {
+                    const response = await ProfileStore.getProfile();
+                    const profile = response.data.profile;
 
-                setAvatarBase(profile.avatar_basename);
-                setProfileData(profile);
+                    setAvatarBase(profile.avatar_basename);
+                    setProfileData(profile);
 
-                formEditing.setFieldsValue({
-                    name: profile.name,
-                    username: profile.username,
-                    sex: profile.sex,
-                    faculty: profile.faculty,
-                    course: profile.course,
-                    // birthdate: profile.birthdate ? dayjs(profile.birthdate) : null,
-                    // skills: profile.skills || [],
-                });
-
+                    formEditing.setFieldsValue({
+                        name: profile.name,
+                        username: profile.username,
+                        sex: profile.sex,
+                        faculty: profile.faculty,
+                        course: profile.course,
+                        // birthdate: profile.birthdate ? dayjs(profile.birthdate) : null,
+                        // skills: profile.skills || [],
+                    });
+                })();
             } catch (error) {
-
-                messageApi.open({
-                    type: 'error',
-                    content: error?.response?.statusText || 'Ошибка загрузки профиля.',
-                });
-
-                switch (error.response?.status) {
-                    case 401: navigate("/"); break;
-                    case 404: navigate("/newprofile"); break;
-                    default: navigate("/"); break;
-                }
+                const status = error.response?.status;
+                if (status === 404) goTo("/profile/create");
             }
         };
 
         fetchProfile();
-    }, [navigate, formEditing]);
+    }, [formEditing]);
 
     const handleAvatarChange = (info) => {
         const fileObj = info?.file;
         if (!fileObj) {
-            messageApi.error('Ошибка при чтении файла!');
+            Message.error('Ошибка при чтении файла!');
             return;
         }
         setAvatarFile(fileObj);
@@ -70,9 +67,9 @@ const ProfileEditing = () => {
     };
 
     const handleSave = async () => {
-        try {
+        await wrapHandleError( async () => {
             const values = await formEditing.validateFields();
-            const { name, username, sex, faculty, course } = values;
+            const {name, username, sex, faculty, course} = values;
 
             const updatedFields = {};
 
@@ -85,12 +82,11 @@ const ProfileEditing = () => {
             const isDataChanged = Object.keys(updatedFields).length > 0 || isAvatarChanged;
 
             if (!isDataChanged) {
-                messageApi.warning("Данные не были изменены!");
+                Message.warning("Данные не были изменены!");
                 return;
             }
 
             if (Object.keys(updatedFields).length > 0) {
-                console.log(updatedFields);
                 await ProfileStore.updateProfile(updatedFields);
             }
 
@@ -98,20 +94,14 @@ const ProfileEditing = () => {
                 await ProfileStore.setAvatar(avatarFile);
             }
 
-            messageApi.success("Профиль успешно обновлен!");
-            navigate(`/profile/${profileData.user_id}`);
-        } catch (error) {
-            messageApi.open({
-                type: 'error',
-                content: error?.response?.data?.detail || 'Ошибка обновления профиля.',
-            });
-        }
+            Message.success("Профиль успешно обновлен!");
+            goTo(`/profile/${profileData.user_id}`);
+        })();
     };
 
 
     return (
         <NavLayout>
-            {contextHolder}
             <div className="flex justify-center min-h-screen">
                 <div style={{
                     width: "100%",
@@ -160,7 +150,7 @@ const ProfileEditing = () => {
                                 Сохранить
                             </Button>
                             <Button style={{ margin: '10px', alignSelf: 'center', fontSize: "16px" }}
-                                    onClick={() => {navigate(`/profile/${profileData.user_id}`)}}>
+                                    onClick={() => {goTo(`/profile/${profileData.user_id}`)}}>
                                 Отменить
                             </Button>
                         </div>
@@ -179,7 +169,7 @@ const ProfileEditing = () => {
                                 label="Имя"
                                 rules={[{ validator: Validator.validateName }]}
                             >
-                                <Input maxLength={50} />
+                                <InputName/>
                             </Form.Item>
 
                             <Form.Item
@@ -188,7 +178,7 @@ const ProfileEditing = () => {
                                 rules={[{ validator: Validator.validateUsername }]}
                                 style={{ flex: 1 }}
                             >
-                                <Input prefix="@" maxLength={50}/>
+                                <InputUsername/>
                             </Form.Item>
 
                             <Form.Item
@@ -196,12 +186,7 @@ const ProfileEditing = () => {
                                 label="Пол"
                                 style={{  flex: 1 }}
                             >
-                                <Select
-                                    options={[
-                                        { value: 'male', label: 'Мужской' },
-                                        { value: 'female', label: 'Женский' },
-                                    ]}
-                                />
+                                <SelectGender/>
                             </Form.Item>
 
 
@@ -210,15 +195,7 @@ const ProfileEditing = () => {
                                 label="Факультет"
                                 style={{ flex: 1 }}
                             >
-                                <Select
-                                    options={[
-                                        { value: 'ЦиТХИн', label: 'ЦиТХИн' },
-                                        { value: 'НПМ', label: 'НПМ' },
-                                        { value: 'ХФТ', label: 'ХФТ' },
-                                        { value: 'ИПУР', label: 'ИПУР' },
-                                        { value: 'ФЕН', label: 'ФЕН' },
-                                    ]}
-                                />
+                                <SelectFaculty/>
                             </Form.Item>
 
                             <Form.Item
@@ -226,14 +203,7 @@ const ProfileEditing = () => {
                                 label="Курс"
                                 style={{ flex: 1 }}
                             >
-                                <Select
-                                    options={[
-                                        { value: 1, label: '1 курс' },
-                                        { value: 2, label: '2 курс' },
-                                        { value: 3, label: '3 курс' },
-                                        { value: 4, label: '4 курс' }
-                                    ]}
-                                />
+                                <SelectCourse/>
                             </Form.Item>
 
 

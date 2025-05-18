@@ -1,0 +1,1 @@
+export const SKILLS_OPTIONS = ['C++', 'Python', 'JavaScript', 'React', 'SQL', 'Git', 'Docker', 'Java', 'C#', 'C'];

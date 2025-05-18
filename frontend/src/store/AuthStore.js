@@ -1,17 +1,34 @@
 import AuthService from "../services/auth.service.js";
 import { setAccessToken } from "../utils/token.js";
+import {makeAutoObservable} from "mobx";
 
-export default class AuthStore {
+class AuthStore {
 
-    static async login(email, password) {
+    currentId = null;
+
+    constructor() {
+        makeAutoObservable(this);
+    }
+
+    setCurrentId(id) {
+        this.currentId = id;
+    }
+
+    async login(email, password) {
         const response = await AuthService.login(email, password);
         setAccessToken(response.data.access_token);
         return response;
     }
 
-    static async register(email, password, passwordRepeat) {
+    async logout () {
+        return await AuthService.logout();
+    }
+
+    async register(email, password, passwordRepeat) {
         const response = await AuthService.register(email, password, passwordRepeat);
         setAccessToken(response.data.access_token);
         return response;
     }
 }
+
+export default new AuthStore();

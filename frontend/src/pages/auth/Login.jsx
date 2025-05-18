@@ -1,43 +1,44 @@
-import { useNavigate } from 'react-router-dom';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { Button, Form, Input, message } from 'antd';
+import { Button, Form, Input} from 'antd';
 
-import AuthLayout from '../../components/layouts/AuthLayout.jsx';
-import AuthStore from '../../store/AuthStore.js';
-import * as token from '../../utils/token.js';
-import ProfileStore from "../../store/ProfileStore.js";
+import CardLayout from 'components/layouts/CardLayout.jsx';
+import AuthStore from 'store/AuthStore.js';
+import * as token from 'utils/token.js';
+import ProfileStore from "store/ProfileStore.js";
+import {goTo} from "utils/navigator.js";
+import {wrapHandleError} from "utils/errors.js";
+import {observer} from "mobx-react-lite";
+import InputPassword from "components/ui/inputs/InputPassword.jsx";
+import InputEmail from "components/ui/inputs/InputEmail.jsx";
 
-const Login = () => {
+
+const Login = observer(() => {
     const [form] = Form.useForm();
-    const [messageApi, contextHolder] = message.useMessage();
-    const navigate = useNavigate();
 
     const handleLogin = async ({ email, password }) => {
         try {
-            await AuthStore.login(email, password);
-            const accessToken = token.getAccessToken();
+            await wrapHandleError(async () => {
+                await AuthStore.login(email, password);
+                const accessToken = token.getAccessToken();
 
-            if (accessToken) {
-                const response = await ProfileStore.getProfile();
-                const userId = response.data.profile.user_id;
-                navigate(`/profile/${userId}`);
-            }
+                if (accessToken) {
+                    await ProfileStore.getProfile().then((response) => {
+                        const userId = response.data?.profile?.user_id;
+                        if (userId !== undefined) {
+                            console.log(userId);
+                            AuthStore.setCurrentId(response.data?.profile?.user_id);
+                            goTo(`/profile/${AuthStore.currentId}`);
+                        }
+                    });
+                }})()
         } catch (error) {
-
             const status = error.response?.status;
-
-            messageApi.open({
-                type: 'error',
-                content: error?.response?.data?.detail || 'Ошибка авторизации.',
-            });
-
-            if (status === 404) navigate("/profile/create");
+            if (status === 404) goTo("/profile/create");
         }
     };
 
     return (
-        <AuthLayout>
-            {contextHolder}
+        <CardLayout title={"Granite"}>
             <div className="m-5">
                 <h2 className="text-muctr text-2xl">АВТОРИЗАЦИЯ</h2>
             </div>
@@ -52,19 +53,14 @@ const Login = () => {
                     name="email"
                     rules={[{ required: true, message: 'Введите адрес электронной почты!' }]}
                 >
-                    <Input prefix={<MailOutlined />} placeholder="Логин" />
+                    <InputEmail/>
                 </Form.Item>
 
                 <Form.Item
                     name="password"
                     rules={[{ required: true, message: 'Введите пароль!' }]}
                 >
-                    <Input.Password
-                        prefix={<LockOutlined />}
-                        type="password"
-                        placeholder="Пароль"
-                        maxLength={30}
-                    />
+                    <InputPassword/>
                 </Form.Item>
 
                 <Form.Item>
@@ -76,8 +72,8 @@ const Login = () => {
                     </div>
                 </Form.Item>
             </Form>
-        </AuthLayout>
+        </CardLayout>
     );
-};
+});
 
 export default Login;
