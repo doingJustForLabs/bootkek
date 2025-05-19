@@ -16,6 +16,7 @@ class Message {
     }
 
     error(msg) {
+        if (msg === "Missing cookie 'refresh_token_cookie'.") msg = "Время сессии истекло."
         this.messageApi?.error({ content: msg });
     }
 
