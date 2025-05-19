@@ -96,7 +96,7 @@ const ProfileCreation = observer(() => {
     }, [formStep2]);
 
     return (
-        <CardLayout title={"Создание профиля"}>
+        <CardLayout title="Создание профиля">
             <StepProgress currentStep={step} />
             {step === 1 && (
                 <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep1} onFinish={handleNextStep1}>

@@ -21,10 +21,14 @@ const Profile = () => {
         const fetchProfile = async () => {
             try {
                 await wrapHandleError(async () => {
-                    const response = await ProfileStore.getProfileByUserId(userId);
-                    setAvatar(response.data.profile.avatar_basename);
-                    setProfileData(response.data.profile);
-                    setIsCurrentUser(response.data.is_current_user)
+                    if (userId) {
+                        const response = await ProfileStore.getProfileByUserId(userId);
+                        setAvatar(response.data.profile.avatar_basename);
+                        setProfileData(response.data.profile);
+                        setIsCurrentUser(response.data.is_current_user)
+                    } else {
+                        goTo('/');
+                    }
                 })()
             } catch (error) {
                 const status = error.response?.status;
