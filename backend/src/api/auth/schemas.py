@@ -22,7 +22,7 @@ class UserRegisterSchema(BaseModel):
     @model_validator(mode="after")
     def check_password_match(self):
         if self.password != self.password_repeat:
-            raise BadRequestException("Passwords don't match")
+            raise BadRequestException("Пароли не совпадают")
         return self
 
 

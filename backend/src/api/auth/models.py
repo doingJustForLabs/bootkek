@@ -6,8 +6,6 @@ from sqlalchemy.sql.functions import func
 
 from database.db import Base
 
-# from database.repository import SQLAlchemyRepository
-
 
 class User(Base):
     __tablename__ = "users"

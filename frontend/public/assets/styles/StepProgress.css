@@ -1,0 +1,56 @@
+.step-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.step-container {
+    display: flex;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.step-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.step-line {
+    width: 40px;
+    height: 2px;
+    margin: 0 8px;
+    transition: background-color 0.3s ease;
+}
+
+.completed {
+    background-color: #1677ff;
+    color: white;
+}
+
+.current {
+    background-color: white;
+    border-color: #1677ff;
+    color: #1677ff;
+}
+
+.upcoming {
+    background-color: #ccc;
+    color: white;
+}
+
+.step-line.completed {
+    background-color: #1677ff;
+}
+
+.step-line.upcoming {
+    background-color: #ccc;
+}

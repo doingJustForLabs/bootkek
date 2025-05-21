@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 
 
-# @pytest.fixture(scope="session", autouse=True)
+# @pytest.fixture(scope="package")
 # async def register_user(client):
 #     response = await client.post(
 #         url="/auth/register",
@@ -17,7 +17,7 @@ import pytest_asyncio
 #     assert response.json()["user"]["email"] == "test@example.com"
 #
 #
-# @pytest_asyncio.fixture(scope="session", autouse=True)
+# @pytest_asyncio.fixture(scope="package")
 # async def login_user(client, register_user):
 #     response = await client.post(
 #         url="/auth/login",
@@ -38,14 +38,14 @@ import pytest_asyncio
 #     }
 
 
-@pytest_asyncio.fixture(scope="function")
-async def refresh_token(client, login_user):
-    response = await client.get(
-        "/auth/refresh", cookies={"refresh_token_cookie": login_user["refresh_token"]}
-    )
-
-    assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert response.json()["token_type"] == "Bearer"
-
-    return {"access_token": response.json()["access_token"]}
+# @pytest_asyncio.fixture(scope="function")
+# async def refresh_token(client, login_user):
+#     response = await client.get(
+#         "/auth/refresh", cookies={"refresh_token_cookie": login_user["refresh_token"]}
+#     )
+#
+#     assert response.status_code == 200
+#     assert "access_token" in response.json()
+#     assert response.json()["token_type"] == "Bearer"
+#
+#     return {"access_token": response.json()["access_token"]}

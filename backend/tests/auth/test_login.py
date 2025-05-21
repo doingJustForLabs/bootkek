@@ -28,7 +28,7 @@ async def test_login_user_success(client, register_user):
                 "password": "qwerty122",
             },
             400,
-            {"detail": "Incorrect password"},
+            {"detail": "Неправильный пароль"},
         ),
         # Проверка на случай незарегистрированной почты
         (
@@ -37,7 +37,7 @@ async def test_login_user_success(client, register_user):
                 "password": "qwerty123",
             },
             400,
-            {"detail": "Email doesn't registered"},
+            {"detail": "Такая почта не зарегистрирована"},
         ),
     ],
 )
@@ -48,5 +48,6 @@ async def test_login_user(
         url="/auth/login",
         json=json,
     )
+    print(response.json())
     assert response.status_code == expected_status
     assert response.json() == expected_response

@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from './pages/AuthContext.jsx';
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
-import ResetPwd from "./pages/ResetPwd";
-import Profile from "./pages/Profile";
+import {BrowserRouter, Routes, Route, useNavigate} from "react-router-dom";
+import { message } from "antd";
+import Message from "./utils/messages.js";
+
+import Login from "./pages/auth/Login.jsx";
+import Registration from "./pages/auth/Registration.jsx";
+import Profile from "./pages/profile/Profile.jsx";
+import ProfileCreation from "./pages/profile/ProfileCreation.jsx";
+import ProfileEditing from "./pages/profile/ProfileEditing.jsx";
+import Profiles from "./pages/profile/Profiles.jsx";
 import ChatPage from "./pages/ChatPage";
-
-const PrivateRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) return <div>Загрузка...</div>;
-  return user ? children : <Navigate to="/" replace />;
-};
+import {setNavigator} from "./utils/navigator.js";
+import React from "react";
 
 function App() {
-  return (
-    <>
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/reset" element={<ResetPwd />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/chat" element={<ChatPage  />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </>
-  )
+    const [messageApi, contextHolder] = message.useMessage();
+    Message.setApi(messageApi);
+
+    return (
+        <>
+            {contextHolder}
+            <BrowserRouter>
+                <AppContent />
+            </BrowserRouter>
+        </>
+    );
 }
 
-export default App
+function AppContent() {
+    const navigate = useNavigate();
+    setNavigator(navigate);
+
+    return (
+        <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/registration" element={<Registration />} />
+            <Route path="/profile/:userId" element={<Profile />} />
+            <Route path="/profile/create" element={<ProfileCreation />} />
+            <Route path="/profile/edit" element={<ProfileEditing />} />
+            <Route path="/search/profiles" element={<Profiles />} />
+            <Route path="/chat" element={<ChatPage  />} />
+        </Routes>
+    );
+}
+
+export default App;

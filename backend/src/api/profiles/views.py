@@ -3,10 +3,12 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from fastapi import APIRouter, Depends, UploadFile, File
 
 from api.auth.views import http_bearer, AccessDependency
+from api.followers.services import FollowerRepository
 from api.profiles.schemas import (
     ProfileCreateSchema,
     ProfileDetailResponseSchema,
     ProfileDetailDataSchema,
+    SearchUserSchema,
 )
 from api.profiles.services import ProfileRepository, AvatarRepository
 
@@ -111,10 +113,10 @@ async def update_user_avatar(
 
 
 @router.get(
-    "/{user_id}",
-    response_model=ProfileDetailResponseSchema,
+    "/{user_id}", response_model=SearchUserSchema, dependencies=[Depends(http_bearer)]
 )
 async def get_user_profile_by_user_id(
+    token: AccessDependency,
     user_id: int,
     session: DbSession,
 ):
@@ -123,8 +125,14 @@ async def get_user_profile_by_user_id(
         session, user_id, not_found_error=True
     )
 
-    return ProfileDetailResponseSchema(
-        profile=ProfileDetailDataSchema.model_validate(profile)
+    is_following = await FollowerRepository.is_following(
+        session, int(token.sub), user_id
+    )
+
+    return SearchUserSchema(
+        profile=ProfileDetailDataSchema.model_validate(profile),
+        is_current_user=int(token.sub) == user_id,
+        is_following=is_following,
     )
 
 

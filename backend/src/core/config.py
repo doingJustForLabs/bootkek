@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing import Optional
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -21,7 +20,7 @@ class DBConfig(BaseModel):
 
 
 class JWTAccessToken(BaseModel):
-    expires: timedelta = timedelta(minutes=15)
+    expires: timedelta = timedelta(minutes=30)
     expires_int: int = int(expires.total_seconds())
 
 

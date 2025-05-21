@@ -6,14 +6,15 @@ async def test_register_success(client):
     response = await client.post(
         url="/auth/register",
         json={
-            "email": "newuser@example.com",
+            "email": "newuser1@example.com",
             "password": "qwerty",
             "password_repeat": "qwerty",
         },
     )
+    print(response.json())
     assert response.status_code == 200
     assert response.json()["user"] is not None
-    assert response.json()["user"]["email"] == "newuser@example.com"
+    assert response.json()["user"]["email"] == "newuser1@example.com"
 
 
 @pytest.mark.asyncio
@@ -45,7 +46,7 @@ async def test_register_success(client):
                 "password": "qwerty123",
                 "password_repeat": "qwerty122",
             },
-            422,
+            400,
         ),
         # Слишком маленький пароль
         (

@@ -24,12 +24,15 @@ class ProfileCreateSchema(BaseModel):
     def validate_username(self):
         if self.username:
             if any(let not in "".join(alf + nums) for let in self.username.lower()):
-                raise BadRequestException("Invalid username. Use (0-9) and (a-z, A-Z)")
+                raise BadRequestException(
+                    "Невалидный юзернейм. Use (0-9) and (a-z, A-Z)"
+                )
             return self
         return self
 
 
 class ProfileDetailDataSchema(BaseModel):
+    user_id: int
     name: str
     username: str
     sex: Optional[str] = None
@@ -56,6 +59,14 @@ class ProfileSummaryDataSchema(BaseModel):
 
 class ProfileDetailResponseSchema(BaseModel):
     profile: ProfileDetailDataSchema
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SearchUserSchema(BaseModel):
+    profile: ProfileDetailDataSchema
+    is_current_user: bool
+    is_following: bool
 
     model_config = ConfigDict(from_attributes=True)
 
