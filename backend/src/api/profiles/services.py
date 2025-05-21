@@ -18,15 +18,15 @@ class ProfileRepository:
     ) -> Profile:
 
         if not (profile_data.username and profile_data.name):
-            raise BadRequestException("Fields 'username', 'name' are required")
+            raise BadRequestException("Поля 'name' и 'username' обязательные")
 
         if await cls.get_profile_by_user_id(session, user_id, not_found_error=False):
-            raise BadRequestException("Profile already exists")
+            raise BadRequestException("Профиль уже существует")
 
         if await cls.get_profile_by_username(
             session, profile_data.username, not_found_error=False
         ):
-            raise BadRequestException("Username already used")
+            raise BadRequestException("Данный юзернейм уже существует")
 
         data = {"user_id": user_id, **profile_data.model_dump()}
         profile = Profile(**data)
@@ -46,23 +46,23 @@ class ProfileRepository:
         )
 
         if not profile:
-            raise NotFoundException("Profile not found")
+            raise NotFoundException("Профиль не найден")
 
         profile_by_username = await session.scalar(
             select(Profile).where(Profile.username == update_data.username)
         )
 
         if profile_by_username and profile.username != update_data.username:
-            raise BadRequestException("Username already used")
+            raise BadRequestException("Данный юзернейм уже существует")
 
         data = update_data.model_dump(exclude_none=True)
 
         if not data:
-            raise BadRequestException("Empty data")
+            raise BadRequestException("Пустой запрос")
 
         for key, value in data.items():
             if not getattr(profile, key):
-                raise BadRequestException(f"Invalid key for update: {key}")
+                raise BadRequestException(f"Невалидный ключ для обновления: {key}")
             setattr(profile, key, value)
 
         await session.commit()
@@ -77,7 +77,7 @@ class ProfileRepository:
             select(Profile).where(Profile.username == username)
         )
         if not profile and not_found_error:
-            raise NotFoundException("Profile not found")
+            raise NotFoundException("Профиль не найден")
         return profile
 
     @classmethod
@@ -88,8 +88,19 @@ class ProfileRepository:
             select(Profile).where(Profile.user_id == user_id)
         )
         if not profile and not_found_error:
-            raise NotFoundException("Profile not found")
+            raise NotFoundException("Профиль не найден")
         return profile
+
+    @classmethod
+    async def get_all_profiles(
+        cls,
+        session: AsyncSession,
+    ):
+        profiles = await session.execute(select(Profile))
+        res = profiles.scalars().all()
+        if not profiles:
+            raise NotFoundException("Профили не найдены")
+        return res
 
 
 class AvatarRepository:
@@ -147,9 +158,11 @@ class AvatarRepository:
     @classmethod
     def _validate_photo(cls, avatar: UploadFile) -> UploadFile:
         if avatar.content_type not in cls._ALLOWED_AVATAR_TYPES:
-            raise BadRequestException("Invalid file type. Use 'png' or 'jpeg'")
+            raise BadRequestException(
+                "Невалидный тип данных. Используйте 'png' или 'jpeg'"
+            )
         if avatar.size > cls._FILE_MAX_SIZE:
-            raise BadRequestException("File exceeds maximum size (5Mb)")
+            raise BadRequestException("Превышен размер файла (5Мб)")
         return avatar
 
     @classmethod

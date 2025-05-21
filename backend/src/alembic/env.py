@@ -7,20 +7,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-import sys
-from pathlib import Path
-
-# Добавляем корень проекта в PYTHONPATH
-project_root = Path(__file__).resolve().parent.parent.parent  # Путь до backend/
-sys.path.insert(0, str(project_root))
-print(f"Project root: {project_root}")
-print(f"Python path: {sys.path}")
-
 from core.config import settings
 from database.db import Base
 from api.auth.models import User
 from api.profiles.models import Profile
 from api.followers.models import Follower
+from api.skills.models import Skills
 from api.chat.models import Chat, ChatUser, Message
 
 
@@ -29,23 +21,12 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
-
 config.set_main_option("sqlalchemy.url", str(settings.db.url))
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
+    """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -66,15 +47,13 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
+    """Used in online mode when called explicitly from code."""
 
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section) or {},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        future=True,
     )
 
     async with connectable.connect() as connection:
@@ -84,9 +63,15 @@ async def run_async_migrations() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-
-    asyncio.run(run_async_migrations())
+    """Default entry point if not called from test code."""
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        # Already running loop (e.g. from pytest) — just return (let user call async fn)
+        raise RuntimeError(
+            "run_migrations_online cannot be called from a running event loop."
+        )
+    else:
+        asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():

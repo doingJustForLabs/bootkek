@@ -20,7 +20,7 @@ class UserRepository:
         user = await session.scalar(query)
 
         if user:
-            raise BadRequestException("Email is already used")
+            raise BadRequestException("Данная почта уже используется")
 
         data = {
             "email": creds.email,
@@ -42,12 +42,10 @@ class UserRepository:
         user = await session.scalar(query)
 
         if not user:
-            raise BadRequestException(
-                "Email doesn't registered",
-            )
+            raise BadRequestException("Такая почта не зарегистрирована")
 
         if not verify_password(creds.password, user.password):
-            raise BadRequestException("Incorrect password")
+            raise BadRequestException("Неправильный пароль")
 
         access_token = security.create_access_token(
             uid=str(user.id), expiry=settings.jwt.access_token.expires, fresh=True
