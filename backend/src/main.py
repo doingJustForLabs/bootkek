@@ -10,7 +10,7 @@ from api import main_router
 from api.exceptions import AppException
 from core.config import settings
 from core.security import security
-from database.db import db_helper
+from database.db import db_helper, admin
 
 
 @asynccontextmanager
@@ -30,6 +30,8 @@ app = FastAPI(
 )
 
 app.include_router(main_router)
+
+admin.mount_to(app)
 
 # Middleware
 

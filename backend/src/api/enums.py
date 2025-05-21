@@ -37,4 +37,4 @@ class Skills(str, Enum):
     chem = "Химия"
     physics = "Физика"
     eng = "Инженерная графика"
-    plo = "ООП (база)"
+    plo = "ООП"

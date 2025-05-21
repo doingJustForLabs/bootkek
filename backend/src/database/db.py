@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from starlette_admin.contrib.sqla import Admin
 
 from core.config import settings
 
@@ -17,7 +18,9 @@ from core.config import settings
 class Base(AsyncAttrs, DeclarativeBase):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
-    create_date: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    create_date: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), server_default=func.now()
+    )
 
 
 class DatabaseHelper:
@@ -42,3 +45,5 @@ class DatabaseHelper:
 # App DB
 db_helper = DatabaseHelper(url=str(settings.db.url), echo=int(settings.db.echo))
 DbSession = Annotated[AsyncSession, Depends(db_helper.session_getter)]
+
+admin = Admin(engine=db_helper.get_engine, title="База данных")

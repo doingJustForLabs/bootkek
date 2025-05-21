@@ -10,6 +10,8 @@ from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
 from api.search.schemas import PaginationSchema
+from api.skills.models import UsersSkill, Skills
+from api.skills.services import UserSkillsRepository
 from core.config import settings
 
 
@@ -18,7 +20,6 @@ class ProfileRepository:
     async def create_profile(
         cls, session: AsyncSession, user_id: int, profile_data: ProfileCreateSchema
     ) -> Profile:
-        print(profile_data)
 
         if not (profile_data.username and profile_data.name):
             raise BadRequestException("Поля 'name' и 'username' обязательные")
@@ -36,12 +37,16 @@ class ProfileRepository:
             "course": profile_data.course if profile_data.course else None,
             "faculty": profile_data.faculty if profile_data.faculty else None,
             "sex": profile_data.sex if profile_data.sex else None,
-            **profile_data.model_dump(exclude={"course", "faculty", "sex"}),
+            **profile_data.model_dump(exclude={"course", "faculty", "sex", "skills"}),
         }
 
         profile = Profile(**data)
-
         session.add(profile)
+
+        if profile_data.skills:
+            await UserSkillsRepository.add_skills(session, user_id, profile_data.skills)
+
+        await session.refresh(profile)
         await session.commit()
 
         return profile
@@ -65,7 +70,7 @@ class ProfileRepository:
         if profile_by_username and profile.username != update_data.username:
             raise BadRequestException("Данный юзернейм уже существует")
 
-        data = update_data.model_dump(exclude_none=True)
+        data = update_data.model_dump(exclude_none=True, exclude={"skills"})
 
         if not data:
             raise BadRequestException("Пустой запрос")
@@ -75,8 +80,14 @@ class ProfileRepository:
                 raise BadRequestException(f"Невалидный ключ для обновления: {key}")
             setattr(profile, key, value)
 
-        await session.commit()
         await session.refresh(profile)
+
+        if update_data.skills:
+            await UserSkillsRepository.update_skills(
+                session, user_id, update_data.skills
+            )
+
+        await session.commit()
         return profile
 
     @classmethod

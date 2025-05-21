@@ -3,9 +3,10 @@ from datetime import datetime
 from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.functions import func
+from starlette_admin.contrib.sqla import ModelView
 
 from api.enums import Sex, MuctrFaculties, Courses
-from database.db import Base
+from database.db import Base, admin
 
 
 class Profile(Base):
@@ -28,3 +29,6 @@ class Profile(Base):
     update_date: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()
     )
+
+
+admin.add_view(ModelView(Profile))

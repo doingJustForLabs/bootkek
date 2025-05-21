@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from api.enums import Sex, MuctrFaculties, Courses
+from api.enums import Sex, MuctrFaculties, Courses, Skills
 from api.exceptions import BadRequestException
 
 alf = [chr(i) for i in range(ord("a"), ord("z") + 1)]
@@ -19,6 +19,7 @@ class ProfileCreateSchema(BaseModel):
     course: Optional[Courses] = None
     sex: Optional[Sex] = None
     faculty: Optional[MuctrFaculties] = None
+    skills: Optional[List[Skills]] = None
 
     @model_validator(mode="after")
     def validate_username(self):
