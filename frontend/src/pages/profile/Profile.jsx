@@ -6,7 +6,8 @@ import Message from "../../utils/messages.js";
 import FollowsStore from "store/FollowsStore.js";
 import {wrapHandleError} from "utils/errors.js";
 import {goTo} from "utils/navigator.js";
-import ProfileHeader from "pages/profile/ProfileHeader.jsx";
+import ProfileHeader from "components/ui/ProfileHeader.jsx";
+import SkillsList from "components/ui/SkillsList.jsx";
 
 const Profile = () => {
     const userId = Number(useParams().userId);
@@ -19,8 +20,9 @@ const Profile = () => {
                 await wrapHandleError(async () => {
                     if (userId) {
                         const response = await ProfileStore.getProfileByUserId(userId);
-                        setProfileData(response.data.profile);
-                        console.log(response.data.profile);
+                        setProfileData({...response.data.profile,
+                                            is_current_user: response.data.is_current_user,
+                                            is_following: response.data.is_following});
                     } else {
                         goTo('/');
                     }
@@ -69,12 +71,6 @@ const Profile = () => {
 
     return (
         <NavLayout>
-            <div style={{
-                display: "flex",
-                minHeight: "100vh",
-                justifyContent: "center",
-                backgroundColor: "#3b488c"
-            }}>
                 <div
                     style={{
                         width: "80%",
@@ -83,12 +79,14 @@ const Profile = () => {
                         backgroundColor: "#3b488c",
                     }}
                 >
-                        <ProfileHeader
-                            context={profileData.is_current_user ? "ME" : null}
-                            profileData={profileData}
-                            handlerFunc = {profileData.is_current_user ? null : handleFollow}
-                        />
-                    </div>
+                    <ProfileHeader
+                        context={profileData.is_current_user ? "ME" : null}
+                        profileData={profileData}
+                        handlerFunc = {profileData.is_current_user ? null : handleFollow}
+                    />
+
+                    <SkillsList skills={['C++', 'Python', 'JavaScript', 'React', 'SQL', 'Git', 'Docker', 'Java', 'C#', 'C']}></SkillsList>
+
                 </div>
         </NavLayout>
     );

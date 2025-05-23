@@ -10,6 +10,7 @@ import {goTo} from "utils/navigator.js";
 const ProfileHeader = ({context = null, profileData, handlerFunc}) => {
 
     const renderButtons = () => {
+        console.log(profileData);
         switch (context) {
             case "ME":
                 return (
@@ -44,7 +45,8 @@ const ProfileHeader = ({context = null, profileData, handlerFunc}) => {
                 return (
                     <Button
                         style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
-                        color={profileData.is_following ? "danger" : "primary"}
+                        type={profileData.is_following ? "default" : "primary"}
+                        danger={profileData.is_following}
                         onClick={handlerFunc}
                     >
                         {profileData.is_following ? "Отписаться" : "Подписаться"}

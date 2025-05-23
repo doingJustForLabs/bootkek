@@ -88,7 +88,14 @@ const NavLayout = observer(({ children }) => {
             </Sider>
             <Layout>
                 <Content>
-                    {children}
+                    <div style={{
+                        display: "flex",
+                        minHeight: "100vh",
+                        justifyContent: "center",
+                        backgroundColor: "#3b488c"
+                    }}>
+                        {children}
+                    </div>
                 </Content>
             </Layout>
         </Layout>

@@ -13,7 +13,7 @@ const Profiles = () => {
             try {
                 await wrapHandleError(async () => {
                     const response = await ProfileStore.getAllProfiles();
-                    setProfiles(response.data);
+                    setProfiles(response.data.profiles);
                 })();
             } catch (error) {
                 const status = error.response?.status;
