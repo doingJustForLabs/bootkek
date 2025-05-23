@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from api.enums import Sex, MuctrFaculties
+from api.enums import Sex, MuctrFaculties, Courses, Skills
 from api.exceptions import BadRequestException
 
 alf = [chr(i) for i in range(ord("a"), ord("z") + 1)]
@@ -11,14 +11,15 @@ nums = [str(i) for i in range(10)]
 
 
 class ProfileCreateSchema(BaseModel):
-    name: Optional[str] = None
-    username: Optional[str] = Field(None, min_length=5, max_length=25)
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
-    course: Optional[int] = Field(None, ge=1, le=4)
+    name: Optional[str] = Field(None, min_length=2, max_length=32)
+    username: Optional[str] = Field(None, min_length=5, max_length=32)
+
+    course: Optional[Courses] = None
     sex: Optional[Sex] = None
     faculty: Optional[MuctrFaculties] = None
-
-    model_config = ConfigDict(extra="forbid", use_enum_values=True)
+    skills: Optional[List[Skills]] = None
 
     @model_validator(mode="after")
     def validate_username(self):
@@ -31,63 +32,36 @@ class ProfileCreateSchema(BaseModel):
         return self
 
 
-class ProfileDetailDataSchema(BaseModel):
-    user_id: int
-    name: str
-    username: str
-    sex: Optional[str] = None
-    faculty: Optional[str] = None
-    course: Optional[int] = None
-    avatar_basename: Optional[str] = None
+class ProfileReadDetailSchema(ProfileCreateSchema):
+    model_config = ConfigDict(from_attributes=True)
 
+    user_id: int
+    avatar_basename: Optional[str] = None
     subscribers_count: int
     subscriptions_count: int
 
+    create_date: datetime
     update_date: datetime
 
+
+class ProfileReadSummarySchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-
-class ProfileSummaryDataSchema(BaseModel):
     user_id: int
-    name: str
-    username: str
-    avatar_basename: str
-
-    model_config = ConfigDict(from_attributes=True)
+    name: Optional[str] = Field(None, min_length=2, max_length=32)
+    username: Optional[str] = Field(None, min_length=5, max_length=32)
+    avatar_basename: Optional[str] = None
 
 
-class ProfileDetailResponseSchema(BaseModel):
-    profile: ProfileDetailDataSchema
-
-    model_config = ConfigDict(from_attributes=True)
+class ProfileResponseSchema(BaseModel):
+    profile: ProfileReadDetailSchema
 
 
-class SearchUserSchema(BaseModel):
-    profile: ProfileDetailDataSchema
+class ProfileResponseSearchSchema(BaseModel):
+    profile: ProfileReadDetailSchema
     is_current_user: bool
     is_following: bool
 
-    model_config = ConfigDict(from_attributes=True)
 
-
-class PaginationSchema(BaseModel):
-    page: int = Field(0, ge=0)
-    limit: int = Field(10, le=100, gt=0)
-
-
-class SearchParams(BaseModel):
-    q: str = ""
-    order_by: str = "id"
-    desc: bool = False
-
-
-class SearchResponseSchema(BaseModel):
-    profiles: List[ProfileSummaryDataSchema]
-    filters: SearchParams
-    pagination: PaginationSchema
-
-
-class SearchFilters(BaseModel):
-    q: Optional[str] = None
-    skill: Optional[str] = None
+class AvatarResponseSchema(BaseModel):
+    basename: str

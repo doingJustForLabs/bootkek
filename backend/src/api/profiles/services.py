@@ -2,12 +2,16 @@ import uuid
 
 from PIL import Image
 from fastapi import UploadFile
-from sqlalchemy import select, insert
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import func
 
 from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
+from api.search.schemas import PaginationSchema
+from api.skills.models import UsersSkill, Skills
+from api.skills.services import UserSkillsRepository
 from core.config import settings
 
 
@@ -28,10 +32,21 @@ class ProfileRepository:
         ):
             raise BadRequestException("Данный юзернейм уже существует")
 
-        data = {"user_id": user_id, **profile_data.model_dump()}
-        profile = Profile(**data)
+        data = {
+            "user_id": user_id,
+            "course": profile_data.course if profile_data.course else None,
+            "faculty": profile_data.faculty if profile_data.faculty else None,
+            "sex": profile_data.sex if profile_data.sex else None,
+            **profile_data.model_dump(exclude={"course", "faculty", "sex", "skills"}),
+        }
 
+        profile = Profile(**data)
         session.add(profile)
+
+        if profile_data.skills:
+            await UserSkillsRepository.add_skills(session, user_id, profile_data.skills)
+
+        await session.refresh(profile)
         await session.commit()
 
         return profile
@@ -41,7 +56,7 @@ class ProfileRepository:
         cls, session: AsyncSession, user_id: int, update_data: ProfileCreateSchema
     ) -> Profile:
 
-        profile: Profile = await session.scalar(
+        profile = await session.scalar(
             select(Profile).where(Profile.user_id == user_id)
         )
 
@@ -55,7 +70,7 @@ class ProfileRepository:
         if profile_by_username and profile.username != update_data.username:
             raise BadRequestException("Данный юзернейм уже существует")
 
-        data = update_data.model_dump(exclude_none=True)
+        data = update_data.model_dump(exclude_none=True, exclude={"skills"})
 
         if not data:
             raise BadRequestException("Пустой запрос")
@@ -65,17 +80,23 @@ class ProfileRepository:
                 raise BadRequestException(f"Невалидный ключ для обновления: {key}")
             setattr(profile, key, value)
 
-        await session.commit()
         await session.refresh(profile)
+
+        if update_data.skills:
+            await UserSkillsRepository.update_skills(
+                session, user_id, update_data.skills
+            )
+
+        await session.commit()
         return profile
 
     @classmethod
     async def get_profile_by_username(
         cls, session: AsyncSession, username: str, not_found_error: bool = False
     ) -> Profile:
-        profile = await session.scalar(
-            select(Profile).where(Profile.username == username)
-        )
+        query = select(Profile).where(Profile.username == username)
+        profile = await session.scalar(query)
+
         if not profile and not_found_error:
             raise NotFoundException("Профиль не найден")
         return profile
@@ -95,18 +116,33 @@ class ProfileRepository:
     async def get_all_profiles(
         cls,
         session: AsyncSession,
+        pagination: PaginationSchema,
     ):
-        profiles = await session.execute(select(Profile))
-        res = profiles.scalars().all()
+        query = (
+            select(Profile)
+            .order_by(Profile.user_id)
+            .offset(pagination.limit * (pagination.page - 1))
+            .limit(pagination.limit)
+        )
+
+        profiles = await session.scalars(query)
+
         if not profiles:
             raise NotFoundException("Профили не найдены")
-        return res
+
+        return profiles.all()
+
+    @classmethod
+    async def get_count_profiles(cls, session: AsyncSession) -> int:
+        query = select(func.count()).select_from(Profile)
+        res = await session.execute(query)
+        return res.scalar_one()
 
 
 class AvatarRepository:
     _AVATAR_DIR_PATH = settings.files.avatar_dir
     _ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png"}
-    _FILE_MAX_SIZE = 5 * 1024 * 1024 * 8
+    _FILE_MAX_SIZE = 200 * 1024 * 8
     _FILE_SIZES = [64, 128, 256]
 
     @classmethod
@@ -161,7 +197,7 @@ class AvatarRepository:
             raise BadRequestException(
                 "Невалидный тип данных. Используйте 'png' или 'jpeg'"
             )
-        if avatar.size > cls._FILE_MAX_SIZE:
+        if avatar.size and avatar.size > cls._FILE_MAX_SIZE:
             raise BadRequestException("Превышен размер файла (5Мб)")
         return avatar
 

@@ -24,8 +24,8 @@ async def setup_db(event_loop):
     """Применяем миграции перед всеми тестами"""
     assert settings.db.mode == "TEST"
 
-    config_path = Path(__file__).parent.parent / "src" / "alembic.ini"
-    config = Config(str(config_path))
+    # config_path = Path(__file__).parent.parent / "src" / "alembic.ini"
+    # config = Config(str(config_path))
 
     # command.upgrade(config, "head")
 
@@ -33,24 +33,6 @@ async def setup_db(event_loop):
 
     # command.downgrade(config, "base")
     await db_helper.dispose()
-
-
-# @pytest_asyncio.fixture(autouse=True)
-# async def clean_db():
-#     """
-#     Очищает все таблицы после каждого теста, сохраняя схему.
-#     """
-#     config_path = Path(__file__).parent.parent / "src" / "alembic.ini"
-#     config = Config(str(config_path))
-#
-#     async with db_helper._session_factory() as session:  # type: AsyncSession
-#         # отключаем внешние ключи, чтобы не было ошибок при truncate
-#         command.downgrade(config, "base")
-#         await session.execute()  # для SQLite
-#         for table in reversed(Base.metadata.sorted_tables):
-#             await session.execute(f"DELETE FROM {table.name}")
-#         await session.commit()
-#         await session.execute("PRAGMA foreign_keys = ON")  # включаем обратно
 
 
 @pytest_asyncio.fixture(scope="package")

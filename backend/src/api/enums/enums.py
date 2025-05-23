@@ -12,6 +12,16 @@ class Sex(str, Enum):
     female = "female"
 
 
+class Courses(str, Enum):
+    course1 = "1"
+    course2 = "2"
+    course3 = "3"
+    course4 = "4"
+    course5 = "5"
+    mag1 = "M1"
+    mag2 = "M2"
+
+
 class MuctrFaculties(str, Enum):
     cithin = "ЦиТХИн"
     npm = "НПМ"
@@ -27,4 +37,4 @@ class Skills(str, Enum):
     chem = "Химия"
     physics = "Физика"
     eng = "Инженерная графика"
-    plo = "ООП (база)"
+    plo = "ООП"

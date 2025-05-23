@@ -1,15 +1,12 @@
-from datetime import datetime
-
-from sqlalchemy import Integer, String, ForeignKey, func, DateTime
+from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
-
 from database.db import Base
 
 
 class Skills(Base):
     __tablename__ = "skills"
 
-    skill_name: Mapped[str] = mapped_column(String(30))
+    skill_name: Mapped[str] = mapped_column(String(128))
 
 
 class UsersSkill(Base):
