@@ -18,7 +18,10 @@ async def get_skills_enums():
 
 @router.get("/faculties", response_model=EnumResponseModel)
 async def get_faculties_enums():
-    return EnumResponseModel(type="faculties", enums=[faculty.value for faculty in MuctrFaculties])
+    return EnumResponseModel(
+        type="faculties", enums=[faculty.value for faculty in MuctrFaculties]
+    )
+
 
 @router.get("/sex", response_model=EnumResponseModel)
 async def get_sex_enums():

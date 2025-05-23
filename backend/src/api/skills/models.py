@@ -15,7 +15,3 @@ class UsersSkill(Base):
 
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("profiles.user_id"))
     skill_id: Mapped[int] = mapped_column(Integer, ForeignKey("skills.id"))
-
-
-admin.add_view(ModelView(UsersSkill))
-admin.add_view(ModelView(Skills))

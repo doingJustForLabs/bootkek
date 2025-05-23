@@ -11,6 +11,3 @@ class Follower(Base):
 
     follower_id: Mapped[int] = mapped_column(Integer, ForeignKey("profiles.user_id"))
     target_id: Mapped[int] = mapped_column(Integer, ForeignKey("profiles.user_id"))
-
-
-admin.add_view(ModelView(Follower))

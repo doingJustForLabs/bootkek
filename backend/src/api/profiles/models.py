@@ -29,6 +29,3 @@ class Profile(Base):
     update_date: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()
     )
-
-
-admin.add_view(ModelView(Profile))
