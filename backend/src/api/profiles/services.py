@@ -2,7 +2,7 @@ import uuid
 
 from PIL import Image
 from fastapi import UploadFile
-from sqlalchemy import select
+from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import func
 
@@ -10,7 +10,6 @@ from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
 from api.search.schemas import PaginationSchema
-from api.skills.models import UsersSkill, Skills
 from api.skills.services import UserSkillsRepository
 from core.config import settings
 
@@ -40,13 +39,12 @@ class ProfileRepository:
             **profile_data.model_dump(exclude={"course", "faculty", "sex", "skills"}),
         }
 
-        profile = Profile(**data)
-        session.add(profile)
+        profile = await session.scalar(insert(Profile).values(**data).returning(Profile))
+        await session.refresh(profile)
 
         if profile_data.skills:
             await UserSkillsRepository.add_skills(session, user_id, profile_data.skills)
 
-        await session.refresh(profile)
         await session.commit()
 
         return profile
@@ -56,7 +54,7 @@ class ProfileRepository:
         cls, session: AsyncSession, user_id: int, update_data: ProfileCreateSchema
     ) -> Profile:
 
-        profile = await session.scalar(
+        profile: Profile = await session.scalar(
             select(Profile).where(Profile.user_id == user_id)
         )
 
@@ -80,14 +78,13 @@ class ProfileRepository:
                 raise BadRequestException(f"Невалидный ключ для обновления: {key}")
             setattr(profile, key, value)
 
-        await session.refresh(profile)
-
         if update_data.skills:
             await UserSkillsRepository.update_skills(
                 session, user_id, update_data.skills
             )
 
         await session.commit()
+        await session.refresh(profile)
         return profile
 
     @classmethod
