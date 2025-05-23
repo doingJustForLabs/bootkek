@@ -10,7 +10,7 @@ class AuthStore {
         makeAutoObservable(this);
     }
 
-    setCurrentId(id) {
+    async setCurrentId(id) {
         this.currentId = id;
     }
 

@@ -48,6 +48,7 @@ const ProfileCreation = observer(() => {
                 await ProfileStore.updateProfile({ name, username });
             }
             if (avatarFile) {
+                console.log(avatarFile);
                 await ProfileStore.setAvatar(avatarFile);
             }
             setStep(2);

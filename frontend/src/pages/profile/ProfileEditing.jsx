@@ -102,9 +102,14 @@ const ProfileEditing = () => {
 
     return (
         <NavLayout>
-            <div className="flex justify-center min-h-screen">
+            <div style={{
+                display: "flex",
+                minHeight: "100vh",
+                justifyContent: "center",
+                backgroundColor: "#3b488c"
+            }}>
                 <div style={{
-                    width: "100%",
+                    width: "80%",
                     display: "flex",
                     flexDirection: "column",
                     backgroundColor: '#3b488c'
