@@ -10,7 +10,7 @@ from api import main_router
 from api.exceptions import AppException
 from core.config import settings
 from core.security import security
-from database.db import db_helper, admin
+from database.db import db_helper
 
 
 @asynccontextmanager

@@ -1,7 +1,6 @@
 from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
-from starlette_admin.contrib.sqla import ModelView
-from database.db import Base, admin
+from database.db import Base
 
 
 class Skills(Base):

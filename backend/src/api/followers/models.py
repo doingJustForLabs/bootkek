@@ -1,9 +1,8 @@
 from sqlalchemy import Integer, ForeignKey
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm.attributes import Mapped
-from starlette_admin.contrib.sqla import ModelView
 
-from database.db import Base, admin
+from database.db import Base
 
 
 class Follower(Base):

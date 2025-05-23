@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from starlette_admin.contrib.sqla import Admin
 
 from core.config import settings
 
@@ -45,5 +44,3 @@ class DatabaseHelper:
 # App DB
 db_helper = DatabaseHelper(url=str(settings.db.url), echo=int(settings.db.echo))
 DbSession = Annotated[AsyncSession, Depends(db_helper.session_getter)]
-
-admin = Admin(engine=db_helper.get_engine, title="База данных")
