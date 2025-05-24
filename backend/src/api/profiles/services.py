@@ -39,7 +39,9 @@ class ProfileRepository:
             **profile_data.model_dump(exclude={"course", "faculty", "sex", "skills"}),
         }
 
-        profile = await session.scalar(insert(Profile).values(**data).returning(Profile))
+        profile = await session.scalar(
+            insert(Profile).values(**data).returning(Profile)
+        )
         await session.refresh(profile)
 
         if profile_data.skills:

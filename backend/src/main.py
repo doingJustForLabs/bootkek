@@ -31,6 +31,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Granite",
+    version="0.10.0",
     lifespan=lifespan,
     default_response_class=ORJSONResponse,
 )
@@ -60,6 +61,7 @@ def handle_not_found_error(request: Request, exc: AppException):
 @app.get("/")
 def get_root():
     return {"message": "Api is working!~!!"}
+
 
 @app.get("/health-check")
 async def get_database_version(session: DbSession):
