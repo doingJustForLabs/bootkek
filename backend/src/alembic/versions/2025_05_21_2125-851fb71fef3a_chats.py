@@ -1,8 +1,8 @@
-"""remove_id_from_chat_users
+"""chats
 
-Revision ID: 787e880c46c6
-Revises: bf8dd19fe260
-Create Date: 2025-05-13 05:03:22.942150
+Revision ID: 851fb71fef3a
+Revises: 271c2b3c8a9d
+Create Date: 2025-05-21 21:25:10.854151
 
 """
 
@@ -13,8 +13,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "787e880c46c6"
-down_revision: Union[str, None] = "bf8dd19fe260"
+revision: str = "851fb71fef3a"
+down_revision: Union[str, None] = "271c2b3c8a9d"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -32,7 +32,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "chat_users",
-        sa.Column("id", sa.Integer(), primary_key=True, server_default=sa.Identity()),
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("chat_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("join_date", sa.DateTime(), nullable=False),
@@ -45,6 +45,7 @@ def upgrade() -> None:
             ["user_id"],
             ["users.id"],
         ),
+        sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
         "messages",

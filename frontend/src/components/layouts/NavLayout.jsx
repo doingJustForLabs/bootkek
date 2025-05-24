@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserOutlined, TeamOutlined, LeftCircleOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, LeftCircleOutlined, MessageOutlined } from '@ant-design/icons';
 import { Layout, Menu } from 'antd';
 import AuthStore from "store/AuthStore.js";
 import {goTo} from "utils/navigator.js";
@@ -22,6 +22,11 @@ const NavLayout = observer(({ children }) => {
             label: "Люди"
         },
         {
+            key: "chats",
+            icon: <MessageOutlined />,
+            label: "Чаты"
+        },
+        {
             key: "logout",
             icon: <LeftCircleOutlined />,
             label: "Выйти",
@@ -35,6 +40,8 @@ const NavLayout = observer(({ children }) => {
                 goTo(`/profile/${AuthStore.currentId}`); break;
             case "users":
                 goTo(`/search/profiles`); break;
+            case "chats":
+                goTo(`/chat`); break;
             case "logout":
                 goTo(`/`); break;
         }

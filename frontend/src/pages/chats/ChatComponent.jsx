@@ -1,14 +1,16 @@
 import {useState, useEffect, useRef, useCallback} from 'react';
-import { useAuth } from '../pages/AuthContext';
+// import { useAuth } from '../pages/AuthContext';
 import { Input, Button, List, message, Modal, Spin } from 'antd';
-import API from '../services/API';
+import API from '../../services/API.js';
 import { useNavigate, Navigate } from 'react-router-dom';
-
+import AuthStore from "store/AuthStore";
+import ProfileService from "../../services/profile.service.js";
+// import { observer } from 'mobx-react-lite';
 import { PlusOutlined } from '@ant-design/icons';
 
 const ChatComponent = () => {
     
-    const { user, loading: authLoading, checkAuth } = useAuth();
+    const { currentId, isAuthenticated, loading: authLoading } = AuthStore;
     const [chats, setChats] = useState([]);
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
@@ -24,45 +26,57 @@ const ChatComponent = () => {
     const navigate = useNavigate();
 
     // Гарантированное получение user.id
-    const getUserId = useCallback(() => {
-        if (!user?.id) {
-            console.error("User ID is missing!", user);
-            // Попытка перепроверить аутентификацию
-            checkAuth().then(() => {
-                if (!user?.id) {
-                    throw new Error("User not authenticated");
-                }
-            });
+    const getUserId = () => {
+        if (!currentId) {
+            console.error("User ID is missing!");
+            throw new Error("User not authenticated");
         }
-        return user.id;
-    }, [user, checkAuth]);
+        return currentId;
+    };
 
     useEffect(() => {
         if (authLoading) return;
 
-        if (!user) {
+        if (!currentId) {
             message.error("Требуется авторизация");
             return;
         }
 
         // Теперь getUserId() всегда вернет корректный ID
-        console.log("Current user ID:", getUserId());
+        console.log("Current user ID:", currentId);
+        if (currentId) {
+            fetchChats();
+        }
+    }, [currentId, authLoading, isAuthenticated]);
 
-        // ... остальная логика компонента
-    }, [user, authLoading, getUserId]);
+    // const fetchAllUsers = async () => {
+    //     try {
+    //         const response = await API.get('/users');
+    //         setAllUsers(response.data || []);
+    //     } catch (error) {
+    //         console.error('Ошибка загрузки пользователей:', error);
+    //         message.error('Не удалось загрузить пользователей');
+    //     }
+    // };
 
     const fetchAllUsers = async () => {
         try {
-            const response = await API.get('/users');
+            const response = await ProfileService.getProfiles(); // Используйте ProfileService
             setAllUsers(response.data || []);
         } catch (error) {
-            console.error('Ошибка загрузки пользователей:', error);
-            message.error('Не удалось загрузить пользователей');
+            console.error('Ошибка загрузки профилей:', error);
+            message.error('Не удалось загрузить профили пользователей');
         }
     };
 
+    useEffect(() => {
+        if (currentId) {
+            fetchAllUsers();
+        }
+    }, [currentId]);
+
     const showCreateChatModal = () => {
-        fetchAllUsers();
+        // fetchAllUsers();
         setIsModalVisible(true);
         setNewChatUsers([]);
         setNewChatName('');
@@ -70,14 +84,14 @@ const ChatComponent = () => {
     
     // Загрузка чатов пользователя
     const fetchChats = async () => {
-        if (!user?.id) {  // Добавляем проверку
+        if (!currentId) {  // Добавляем проверку
             console.error('User ID is undefined');
             return;
         }
 
         setLoading(true);
         try {
-            const response = await API.get(`/chats/${user.id}`);
+            const response = await API.get(`/chats/${currentId}`);
             console.log('Chats data:', response.data); // Логируем данные
 
             // Проверяем и преобразуем данные при необходимости
@@ -92,7 +106,7 @@ const ChatComponent = () => {
             // Если ошибка 401 и refresh токен не помог - разлогиниваем
             if (error.response?.status === 401) {
                 message.error('Сессия истекла. Пожалуйста, войдите снова');
-                localStorage.removeItem("access_token");
+                localStorage.removeItem("accessToken");
                 navigate("/login");
             } else {
                 message.error('Ошибка загрузки чатов');
@@ -155,21 +169,21 @@ const ChatComponent = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchChats = async () => {
-            try {
-                if (!user?.id) {  // Добавляем проверку
-                    console.error('User ID is undefined');
-                    return;
-                }
-                const response = await API.get(`/chats/${user.id}`);
-                console.log('Ответ от сервера:', response.data); // Проверьте данные в консоли
-            } catch (error) {
-                console.error('Ошибка загрузки чатов:', error);
-            }
-        };
-        fetchChats();
-    }, []);
+    // useEffect(() => {
+    //     const fetchChats = async () => {
+    //         try {
+    //             if (!currentId) {  // Добавляем проверку
+    //                 console.error('User ID is undefined');
+    //                 return;
+    //             }
+    //             const response = await API.get(`/chats/${currentId}`);
+    //             console.log('Ответ от сервера:', response.data); // Проверьте данные в консоли
+    //         } catch (error) {
+    //             console.error('Ошибка загрузки чатов:', error);
+    //         }
+    //     };
+    //     fetchChats();
+    // }, []);
 
     // Создание нового чата
     const createChat = async () => {
@@ -182,7 +196,7 @@ const ChatComponent = () => {
             setLoading(true);
             await API.post('/chats', {
                 name: newChatName || `Чат с ${newChatUsers.length} участниками`,
-                user_ids: [...newChatUsers, user.id] // Добавляем текущего пользователя
+                user_ids: [...newChatUsers, currentId] // Добавляем текущего пользователя
             });
             message.success('Чат создан!');
             setIsModalVisible(false);
@@ -195,11 +209,11 @@ const ChatComponent = () => {
         }
     };
 
-    useEffect(() => {
-        if (user?.id) { // Добавлена проверка на user.id
-            fetchChats();
-        }
-    }, [user?.id]); // Зависимость от user.id вместо user
+    // useEffect(() => {
+    //     if (currentId) { // Добавлена проверка на user.id
+    //         fetchChats();
+    //     }
+    // }, [currentId]); // Зависимость от user.id вместо user
 
 
     useEffect(() => {
@@ -207,7 +221,7 @@ const ChatComponent = () => {
     
         const connectWebSocket = async () => {
             try {
-                const token = localStorage.getItem('access_token');
+                const token = localStorage.getItem('accessToken');
                 if (!token) {
                     throw new Error('No access token found');
                 }
@@ -343,14 +357,14 @@ const ChatComponent = () => {
         return <Spin tip="Проверка авторизации..." />;
     }
 
-    if (!user) {
-        alert("Пожалуйста, войдите в систему");
-        return <Navigate to="/" replace />;
-    }
+    // if (!isAuthenticated) {
+    //     alert("Пожалуйста, войдите в систему");
+    //     return <Navigate to="/" replace />;
+    // }
 
     console.log('Current user in ChatComponent:', {
-        user,
-        hasId: !!user?.id,
+        currentId,
+        hasId: !!currentId,
         loading: authLoading
     });
 
@@ -399,7 +413,7 @@ const ChatComponent = () => {
                                     <List.Item
                                         key={msg.id || msg.tempId}
                                         style={{ padding: '8px 0' }}
-                                        className={`message ${msg.user_id === user.id ? 'sent' : 'received'}`}
+                                        className={`message ${msg.user_id === currentId ? 'sent' : 'received'}`}
                                     >
                                         <div
                                             className={`message-bubble ${msg.status || ''}`}
@@ -407,9 +421,9 @@ const ChatComponent = () => {
                                                 maxWidth: '70%',
                                                 padding: '8px 12px',
                                                 borderRadius: '12px',
-                                                background: msg.user_id === user.id ? '#1890ff' : '#f0f0f0',
-                                                color: msg.user_id === user.id ? '#fff' : '#000',
-                                                marginLeft: msg.user_id === user.id ? 'auto' : '0',
+                                                background: msg.user_id === currentId ? '#1890ff' : '#f0f0f0',
+                                                color: msg.user_id === currentId ? '#fff' : '#000',
+                                                marginLeft: msg.user_id === currentId ? 'auto' : '0',
                                                 opacity: msg.isPending ? 0.7 : 1,
                                                 transition: 'opacity 0.3s ease'
                                             }}
@@ -499,26 +513,26 @@ const ChatComponent = () => {
                 />
                 <div style={{ marginBottom: 8 }}>Выберите участников:</div>
                 <List
-                    dataSource={allUsers.filter(u => u.id !== user.id)}
-                    renderItem={user => (
+                    dataSource={allUsers.filter(u => u.user_id  !== currentId)}
+                    renderItem={profile => (
                         <List.Item
                             onClick={() => {
                                 setNewChatUsers(prev =>
-                                    prev.includes(user.id)
-                                        ? prev.filter(id => id !== user.id)
-                                        : [...prev, user.id]
+                                    prev.includes(profile.user_id)
+                                        ? prev.filter(id => id !== profile.user_id)
+                                        : [...prev, profile.user_id]
                                 );
                             }}
                             style={{
                                 cursor: 'pointer',
-                                background: newChatUsers.includes(user.id) ? '#e6f7ff' : 'white',
+                                background: newChatUsers.includes(profile.id) ? '#e6f7ff' : 'white',
                                 padding: '8px 12px',
                                 borderRadius: 4
                             }}
                         >
                             <div>
-                                <div>{user.email}</div>
-                                {user.username && <div style={{ fontSize: 12, color: '#666' }}>{user.username}</div>}
+                                <div>{profile.name || 'Без имени'}</div>
+                                {profile.username && <div style={{ fontSize: 12, color: '#666' }}>{profile.username}</div>}
                             </div>
                         </List.Item>
                     )}

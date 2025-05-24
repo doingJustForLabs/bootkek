@@ -4,6 +4,7 @@ from .auth.views import router as auth_router
 from .profiles.views import router as profile_router
 from .search.views import router as search_router
 from .followers.views import router as follower_router
+from .chat.views import router as chat_router
 
 main_router = APIRouter(prefix="/api")
 
