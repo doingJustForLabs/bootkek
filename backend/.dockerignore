@@ -1,12 +1,10 @@
-.venv/
 .idea/
-.*env
-*.pyc
 __pycache__
-.git
-docker-compose*.yml
 
-tests/
-pytest.ini
+.venv/
+**/.env
+**/.test.env
+
+docker-compose*.yml
 
 README.md

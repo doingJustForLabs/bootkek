@@ -26,8 +26,8 @@ class SearchResponseSchema(BaseModel):
     total_profiles: int
     total_pages: int
 
-    @model_validator(mode="after")
-    def validate_page(self):
-        if not 1 <= self.pagination.page <= self.total_pages:
-            raise BadRequestException("Такой страницы не существует")
-        return self
+    # @model_validator(mode="after")
+    # def validate_page(self):
+    #     if not 1 <= self.pagination.page <= self.total_pages:
+    #         raise BadRequestException("Такой страницы не существует")
+    #     return self

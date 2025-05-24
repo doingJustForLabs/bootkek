@@ -1,22 +1,22 @@
 services:
   backend:
-    build: .
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: granite_backend
     ports:
       - "8000:8000"
     environment:
-      - PYTHONPATH=/app/src
-      - PYTHONUNBUFFERED=1
-    volumes:
-      - .:/app
+      - DB__URL=postgresql+asyncpg://user:password@db:5432/granite
+    env_file: ./backend/src/.env
     develop:
       watch:
         - action: sync
-          path: .
+          path: ./src
           target: /app
-    env_file: ./src/.env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres
@@ -30,6 +30,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
 
 volumes:
   pgdata:
