@@ -1,17 +1,35 @@
-version: '3.8'
-
 services:
-  postgres:
-    image: postgres:16  # Вы можете выбрать нужную версию PostgreSQL
-    container_name: postgres_container
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+  backend:
+    build: .
+    container_name: granite_backend
     ports:
-      - "5433:5432"
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - .:/app
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+    env_file: ./src/.env
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    container_name: granite_db
+    environment:
+      POSTGRES_DB: granite
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
 volumes:
-  pg_data:
+  pgdata:

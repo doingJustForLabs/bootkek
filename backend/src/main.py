@@ -1,13 +1,19 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
+import os
+import sys
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+
+sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
 from api import main_router
 from api.exceptions import AppException
+from api.dependencies import DbSession
 from core.config import settings
 from core.security import security
 from database.db import db_helper
@@ -54,6 +60,11 @@ def handle_not_found_error(request: Request, exc: AppException):
 @app.get("/")
 def get_root():
     return {"message": "Api is working!~!!"}
+
+@app.get("/health-check")
+async def get_database_version(session: DbSession):
+    res = await session.execute(text("SELECT VERSION()"))
+    return {"version": res.scalar()}
 
 
 app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")

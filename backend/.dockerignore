@@ -1,0 +1,12 @@
+.venv/
+.idea/
+.*env
+*.pyc
+__pycache__
+.git
+docker-compose*.yml
+
+tests/
+pytest.ini
+
+README.md
