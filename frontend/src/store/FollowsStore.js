@@ -3,12 +3,12 @@ import { withTokenRetry } from "../utils/token.js";
 
 export default class ProfileStore {
 
-    static async getFollowersByUserId(userId) {
-        return await withTokenRetry(FollowsService.getProfilesFollowers, userId);
+    static async getFollowersByUserId(userId, limit = 5, page = 1) {
+        return await withTokenRetry(FollowsService.getProfilesFollowers, userId, limit, page);
     }
 
-    static async getFollowingByUserId(userId) {
-        return await withTokenRetry(FollowsService.getProfilesFollowing, userId);
+    static async getFollowingByUserId(userId, limit = 5, page = 1) {
+        return await withTokenRetry(FollowsService.getProfilesFollowing, userId, limit, page);
     }
 
     static async followByUserId(userId) {

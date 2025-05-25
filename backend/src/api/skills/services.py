@@ -1,21 +1,20 @@
 from typing import Optional, List
 
 
-from sqlalchemy import select, insert, where, delete, asc, desc
+from sqlalchemy import select, insert, delete, asc, desc
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.exceptions import BadRequestException
 from api.profiles.models import Profile
 from api.skills.models import UsersSkill, Skills
 
 
 class UserSkillsRepository:
-    @staticmethod
+    @classmethod
     async def add_skills(
-        session: AsyncSession, user_id: int, skills: list[str]
-    ) -> bool:
-        if not skills:
-            return False
+        cls, session: AsyncSession, user_id: int, skills: list[str]
+    ) -> None:
 
         try:
             result = await session.execute(
@@ -24,7 +23,7 @@ class UserSkillsRepository:
             skill_ids = [row[0] for row in result.all()]
 
             if not skill_ids:
-                return False
+                raise BadRequestException(f"Таких предметов нет {skill_ids}")
 
             insert_data = [
                 {"user_id": user_id, "skill_id": skill_id} for skill_id in skill_ids
@@ -32,17 +31,83 @@ class UserSkillsRepository:
 
             await session.execute(insert(UsersSkill), insert_data)
             await session.commit()
-            return True
 
         except IntegrityError as e:
             await session.rollback()
             print(f"[IntegrityError] Ошибка при добавлении скиллов: {e}")
-            return False
 
         except SQLAlchemyError as e:
             await session.rollback()
             print(f"[SQLAlchemyError] Общая ошибка SQLAlchemy: {e}")
-            return False
+
+    @classmethod
+    async def update_skills(
+        cls, session: AsyncSession, user_id: int, skills: list[str]
+    ):
+        # Получаем нужные ID скиллов
+        result = await session.execute(
+            select(Skills.id).where(Skills.skill_name.in_(skills))
+        )
+        skill_ids = {row[0] for row in result.all()}
+
+        if not skill_ids and skills:  # Если user передал названия, но таких скиллов нет
+            # Можно уточнить, какие именно скиллы не найдены для более детального сообщения
+            found_names = {
+                row[0]
+                for row in await session.execute(
+                    select(Skills.skill_name).where(Skills.id.in_(list(skill_ids)))
+                )
+            }
+            not_found_names = set(skills) - found_names
+            if not_found_names:
+                raise BadRequestException(
+                    f"Следующие предметы не найдены в базе данных: {', '.join(not_found_names)}"
+                )
+            # Если incoming_skill_ids пуст, но skills тоже пуст, это может быть целью удалить все скиллы
+            # Обработка пустого списка skills: удаляем все навыки пользователя.
+            if not skills:
+                # Ничего не делаем, если список входящих навыков пуст и user хочет удалить все навыки.
+                # Следующий шаг (удаление) позаботится об этом.
+                pass
+            else:  # Если skills не пуст, но incoming_skill_ids пуст (нет совпадений)
+                raise BadRequestException(
+                    f"Ни один из указанных предметов не найден в базе данных."
+                )
+
+            # 2. Получаем текущие навыки пользователя
+        stmt_get_user_skills = select(UsersSkill.skill_id).where(
+            UsersSkill.user_id == user_id
+        )
+        current_user_skill_ids_result = await session.execute(stmt_get_user_skills)
+        current_user_skill_ids = {row[0] for row in current_user_skill_ids_result.all()}
+
+        # 3. Определяем, что нужно добавить и что удалить
+
+        # Скиллы, которые нужно добавить (есть в incoming, но нет в current)
+        skills_to_add_ids = skill_ids - current_user_skill_ids
+
+        # Скиллы, которые нужно удалить (есть в current, но нет в incoming)
+        skills_to_remove_ids = current_user_skill_ids - skill_ids
+
+        # 4. Выполняем операции вставки и удаления
+
+        # Вставка новых навыков
+        if skills_to_add_ids:
+            insert_data = [
+                {"user_id": user_id, "skill_id": skill_id}
+                for skill_id in skills_to_add_ids
+            ]
+            await session.execute(insert(UsersSkill), insert_data)
+
+        # Удаление неактуальных навыков
+        if skills_to_remove_ids:
+            delete_stmt = delete(UsersSkill).where(
+                UsersSkill.user_id == user_id,
+                UsersSkill.skill_id.in_(list(skills_to_remove_ids)),
+            )
+            await session.execute(delete_stmt)
+
+        await session.commit()
 
     @staticmethod
     async def delete_skills(

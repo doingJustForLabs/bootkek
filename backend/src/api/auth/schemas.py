@@ -6,18 +6,16 @@ from api.exceptions import BadRequestException
 
 
 class UserLoginSchema(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=6, max_length=30)
-
     model_config = ConfigDict(extra="forbid")
 
-
-class UserRegisterSchema(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6, max_length=30)
+
+
+class UserRegisterSchema(UserLoginSchema):
+    model_config = ConfigDict(extra="forbid")
+
     password_repeat: str
-
-    model_config = ConfigDict(extra="forbid")
 
     @model_validator(mode="after")
     def check_password_match(self):
@@ -26,22 +24,19 @@ class UserRegisterSchema(BaseModel):
         return self
 
 
-class TokenResponse(BaseModel):
+class TokenResponseSchema(BaseModel):
     access_token: str
     token_type: str = "Bearer"
 
 
-class UserDataSchema(BaseModel):
-    id: int
+class UserReadSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     email: str
     role: str
     create_date: datetime
     update_date: datetime
 
-    model_config = ConfigDict(from_attributes=True)
-
 
 class UserResponseSchema(BaseModel):
-    user: UserDataSchema
-
-    model_config = ConfigDict(from_attributes=True)
+    user: UserReadSchema

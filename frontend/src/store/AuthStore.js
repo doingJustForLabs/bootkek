@@ -1,6 +1,6 @@
 import AuthService from "../services/auth.service.js";
 import { setAccessToken } from "../utils/token.js";
-import {makeAutoObservable} from "mobx";
+import {action, makeAutoObservable} from "mobx";
 
 class AuthStore {
 
@@ -28,6 +28,9 @@ class AuthStore {
         localStorage.setItem('isAuthenticated', this.isAuthenticated);
     }
 
+    setCurrentId = action((id) => {
+        this.currentId = id;
+    });
     loadAuthFromStorage() {
         const storedId = localStorage.getItem('currentId');
         const storedAuth = localStorage.getItem('isAuthenticated');

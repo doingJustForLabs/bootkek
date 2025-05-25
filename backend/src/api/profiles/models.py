@@ -1,15 +1,11 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from sqlalchemy import Integer, String, ForeignKey, DateTime
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.functions import func
 
-from api.followers.models import Follower
+from api.enums import Sex, MuctrFaculties, Courses
 from database.db import Base
-
-if TYPE_CHECKING:
-    from api.followers.models import Follower
 
 
 class Profile(Base):
@@ -20,9 +16,9 @@ class Profile(Base):
     username: Mapped[str] = mapped_column(String, unique=True)
     name: Mapped[str]
 
-    course: Mapped[int | None]
-    sex: Mapped[str | None]
-    faculty: Mapped[str | None]
+    course: Mapped[Courses | None]
+    sex: Mapped[Sex | None]
+    faculty: Mapped[MuctrFaculties | None]
 
     avatar_basename: Mapped[str] = mapped_column(String, default=None, nullable=True)
 

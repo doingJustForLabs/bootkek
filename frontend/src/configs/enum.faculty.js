@@ -1,7 +1,3 @@
-export const FACULTY_OPTIONS = [
-    { value: 'ЦиТХИн', label: 'ЦиТХИн' },
-    { value: 'НПМ', label: 'НПМ' },
-    { value: 'ХФТ', label: 'ХФТ' },
-    { value: 'ИПУР', label: 'ИПУР' },
-    { value: 'ФЕН', label: 'ФЕН' },
-];
+import EnumsService from "services/enums.service.js";
+
+export const FACULTY_OPTIONS = EnumsService.getEnumsFaculties().then(response => response.data.enums);

@@ -4,7 +4,10 @@ from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.models import User
-from api.auth.schemas import UserRegisterSchema, UserLoginSchema, TokenResponse
+from api.auth.schemas import (
+    UserRegisterSchema,
+    UserLoginSchema,
+)
 from api.exceptions import BadRequestException
 from core.config import settings
 from core.security import security
@@ -37,7 +40,7 @@ class UserRepository:
     @classmethod
     async def authenticate_user(
         cls, session: AsyncSession, creds: UserLoginSchema, response: Response
-    ) -> TokenResponse:
+    ) -> str:
         query = select(User).where(User.email == str(creds.email))
         user = await session.scalar(query)
 
@@ -61,7 +64,7 @@ class UserRepository:
             max_age=settings.jwt.refresh_token.expires_int,
         )
 
-        return TokenResponse(access_token=access_token)
+        return access_token
 
     @classmethod
     async def get_user_by_user_id(cls, session: AsyncSession, user_id: int) -> User:
