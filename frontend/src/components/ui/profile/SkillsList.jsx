@@ -1,8 +1,17 @@
 import React from 'react';
 import {Tag} from "antd";
+import NavLayout from "components/layouts/NavLayout.jsx";
 
 const SkillsList = ({ skills, style }) => {
     const skillsToRender = Array.isArray(skills) ? skills : [];
+
+    if (skillsToRender.length === 0){
+        return (
+            <div className="flex">
+                <h1 className="text-2xl text-gray-600">Нет скиллов</h1>
+            </div>
+        );
+    }
 
     return (
         <div style={{
@@ -11,9 +20,7 @@ const SkillsList = ({ skills, style }) => {
             gap: '8px',
             minHeight: '40px',
             padding: '4px 8px',
-            backgroundColor: 'white',
             borderRadius: '8px',
-            flex: 1,
             ...style
         }}>
             {skillsToRender.map(skill => (
