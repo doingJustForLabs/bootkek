@@ -85,13 +85,13 @@ const ProfileHeader = ({context = null, profileData, handlerFunc}) => {
             >
                 {renderAvatar()}
                 <h2 style={{ alignSelf: "center", margin: "0px 20px" }}>
-        <span style={{ fontSize: "28px", fontWeight: "bold" }}>
-          {profileData?.name || "Имя"}
-        </span>
-                    <br />
-                    <span style={{ color: "gray" }}>
-          @{profileData?.username || "username"}
-        </span>
+                    <span style={{ fontSize: "28px", fontWeight: "bold" }}>
+                      {profileData?.name || "Имя"}
+                    </span>
+                                <br />
+                    <span style={{ fontSize: "18px", color: "gray" }}>
+                      @{profileData?.username || "username"}
+                    </span>
                 </h2>
 
                 <div style={{ flex: "1", display: "flex", flexDirection: "row-reverse" }}>

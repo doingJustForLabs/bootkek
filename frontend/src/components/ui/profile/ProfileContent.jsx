@@ -1,6 +1,8 @@
 import React from "react";
 import SkillsList from "./SkillsList";
 import FollowersListPreview from "components/ui/profile/FollowersListPreview.jsx";
+import InfoCard from "components/ui/InfoCard.jsx";
+import Post from "components/Post.jsx";
 // import FollowersList from "./FollowersList";
 // import PostFeed from "./PostFeed";
 
@@ -34,7 +36,13 @@ const ProfileContent = ({ profileData, followersData }) => {
                     }}
                 >
                     {/* <PostFeed /> */}
-                    Ффффффффффффффффффффффф
+                    <Post></Post>
+                    <Post></Post>
+                    <Post></Post>
+                    <Post></Post>
+                    <Post></Post>
+                    <Post></Post>
+                    <Post></Post>
                 </div>
 
                 <div
@@ -45,22 +53,25 @@ const ProfileContent = ({ profileData, followersData }) => {
                 >
                     <div
                         style={{
-                            position: "sticky",
                             top: "24px",
+                            height: "100%"
+                        }}
+                    >
+
+                        <div style={{
+                            position: "sticky",
+                            top: "16px",
                             display: "flex",
                             flexDirection: "column",
                             gap: "16px",
-                            minHeight: "100%"
-                        }}
-                    >
-                        <div>
-                            <h2 style={{fontSize: "20px"}}>Навыки <span style={{fontSize: "16px", color: "gray"}}>{profileData.skills.length}</span></h2>
-                            <SkillsList skills={profileData.skills} style={{minHeight: "50%", backgroundColor: "green"}}/>
-                        </div>
+                        }}>
+                            <InfoCard title={"Навыки"} statistics={profileData?.skills?.length}>
+                                <SkillsList skills={profileData.skills}/>
+                            </InfoCard>
 
-                        <div>
-                            <h2 style={{fontSize: "20px"}}>Подписчики <span style={{fontSize: "16px", color: "gray"}}>{followersData.total_profiles}</span></h2>
-                            <FollowersListPreview followers={followersData.profiles}></FollowersListPreview>
+                            <InfoCard title={"Подписчики"} statistics={profileData?.subscribers_count}>
+                                <FollowersListPreview followers={followersData.profiles}/>
+                            </InfoCard>
                         </div>
 
                     </div>

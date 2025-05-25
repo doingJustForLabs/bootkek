@@ -26,7 +26,6 @@ const Profile = () => {
                             is_following: responseProfile.data.is_following});
 
                         const responseFollowers = await FollowsStore.getFollowersByUserId(userId, 100, 1);
-                        console.log(responseFollowers.data);
                         setFollowersData(responseFollowers.data);
                     } else {
                         goTo('/');
@@ -92,7 +91,7 @@ const Profile = () => {
                 />
 
                 <ProfileContent
-                    profileData={{...profileData, skills: ['C++', 'Python', 'JavaScript', 'React', 'SQL', 'Git', 'Docker', 'Java', 'C#', 'C']}}
+                    profileData={profileData}
                     followersData={followersData} />
 
             </div>

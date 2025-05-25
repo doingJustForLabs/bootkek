@@ -6,8 +6,16 @@ const SkillsList = ({ skills, style }) => {
 
     if (skillsToRender.length === 0){
         return (
-            <div className="flex">
-                <h1 className="text-2xl text-gray-600">Нет скиллов</h1>
+            <div style={{
+                ...style,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "10px",
+                height: "100%",
+                textAlign: "center"
+            }}>
+                <span style={{ color: "#888", fontSize: "18px" }}>Нет навыков</span>
             </div>
         );
     }
