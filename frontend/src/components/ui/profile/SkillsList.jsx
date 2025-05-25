@@ -1,6 +1,5 @@
 import React from 'react';
 import {Tag} from "antd";
-import NavLayout from "components/layouts/NavLayout.jsx";
 
 const SkillsList = ({ skills, style }) => {
     const skillsToRender = Array.isArray(skills) ? skills : [];
@@ -18,7 +17,6 @@ const SkillsList = ({ skills, style }) => {
             display: 'flex',
             flexWrap: 'wrap',
             gap: '8px',
-            minHeight: '40px',
             padding: '4px 8px',
             borderRadius: '8px',
             ...style

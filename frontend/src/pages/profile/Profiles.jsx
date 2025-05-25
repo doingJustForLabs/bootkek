@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react';
 import ProfileStore from "store/ProfileStore.js";
 import NavLayout from "components/layouts/NavLayout.jsx";
-import ProfilePreview from "components/ui/ProfilePreview.jsx";
+import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
 import {wrapHandleError} from "utils/errors.js";
 
 const Profiles = () => {

@@ -25,7 +25,8 @@ const Login = observer(() => {
                     await ProfileStore.getProfile().then((response) => {
                         const userId = response.data?.profile?.user_id;
                         if (userId !== undefined) {
-                            AuthStore.setCurrentId(response.data?.profile?.user_id).then(() => {goTo(`/profile/${AuthStore.currentId}`);});
+                            AuthStore.setCurrentId(response.data?.profile?.user_id)
+                            goTo(`/profile/${AuthStore.currentId}`);
                         }
                     });
                 }})()

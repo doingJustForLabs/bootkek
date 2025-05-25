@@ -6,7 +6,7 @@ import Validator from "utils/validation.js";
 import Message from "utils/messages.js";
 import SkillsSelector from "components/ui/inputs/SelectSkills.jsx";
 import CardLayout from "components/layouts/CardLayout.jsx";
-import StepProgress from "components/ui/StepProgress.jsx";
+import StepProgress from "components/ui/profile/StepProgress.jsx";
 import {goTo} from "utils/navigator.js";
 import AuthStore from "store/AuthStore.js";
 import {wrapHandleError} from "utils/errors.js";

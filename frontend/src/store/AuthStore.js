@@ -1,6 +1,6 @@
 import AuthService from "../services/auth.service.js";
 import { setAccessToken } from "../utils/token.js";
-import {makeAutoObservable} from "mobx";
+import {action, makeAutoObservable} from "mobx";
 
 class AuthStore {
 
@@ -10,9 +10,9 @@ class AuthStore {
         makeAutoObservable(this);
     }
 
-    async setCurrentId(id) {
+    setCurrentId = action((id) => {
         this.currentId = id;
-    }
+    });
 
     async login(email, password) {
         const response = await AuthService.login(email, password);

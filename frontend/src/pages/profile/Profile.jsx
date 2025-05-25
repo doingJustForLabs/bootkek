@@ -6,12 +6,13 @@ import Message from "../../utils/messages.js";
 import FollowsStore from "store/FollowsStore.js";
 import {wrapHandleError} from "utils/errors.js";
 import {goTo} from "utils/navigator.js";
-import ProfileHeader from "components/ui/ProfileHeader.jsx";
-import SkillsList from "components/ui/SkillsList.jsx";
+import ProfileHeader from "components/ui/profile/ProfileHeader.jsx";
+import ProfileContent from "components/ui/profile/ProfileContent.jsx"; // Убедитесь, что SkillsList работает корректно
 
 const Profile = () => {
     const userId = Number(useParams().userId);
     const [profileData, setProfileData] = useState(null);
+    const [followersData, setFollowersData] = useState(null);
     const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
@@ -19,10 +20,14 @@ const Profile = () => {
             try {
                 await wrapHandleError(async () => {
                     if (userId) {
-                        const response = await ProfileStore.getProfileByUserId(userId);
-                        setProfileData({...response.data.profile,
-                                            is_current_user: response.data.is_current_user,
-                                            is_following: response.data.is_following});
+                        const responseProfile = await ProfileStore.getProfileByUserId(userId);
+                        setProfileData({...responseProfile.data.profile,
+                            is_current_user: responseProfile.data.is_current_user,
+                            is_following: responseProfile.data.is_following});
+
+                        const responseFollowers = await FollowsStore.getFollowersByUserId(userId, 100, 1);
+                        console.log(responseFollowers.data);
+                        setFollowersData(responseFollowers.data);
                     } else {
                         goTo('/');
                     }
@@ -59,7 +64,7 @@ const Profile = () => {
         );
     }
 
-    if (!profileData) {
+    if (!(profileData && followersData)) {
         return (
             <NavLayout>
                 <div className="flex justify-center items-center min-h-screen">
@@ -71,23 +76,26 @@ const Profile = () => {
 
     return (
         <NavLayout>
-                <div
-                    style={{
-                        width: "80%",
-                        display: "flex",
-                        flexDirection: "column",
-                        backgroundColor: "#3b488c",
-                    }}
-                >
-                    <ProfileHeader
-                        context={profileData.is_current_user ? "ME" : null}
-                        profileData={profileData}
-                        handlerFunc = {profileData.is_current_user ? null : handleFollow}
-                    />
+            <div
+                style={{
+                    width: "80%",
+                    display: "flex",
+                    flexDirection: "column",
+                    backgroundColor: "#3b488c",
+                    margin: '0 auto',
+                }}
+            >
+                <ProfileHeader
+                    context={profileData.is_current_user ? "ME" : null}
+                    profileData={profileData}
+                    handlerFunc={profileData.is_current_user ? null : handleFollow}
+                />
 
-                    <SkillsList skills={['C++', 'Python', 'JavaScript', 'React', 'SQL', 'Git', 'Docker', 'Java', 'C#', 'C']}></SkillsList>
+                <ProfileContent
+                    profileData={{...profileData, skills: ['C++', 'Python', 'JavaScript', 'React', 'SQL', 'Git', 'Docker', 'Java', 'C#', 'C']}}
+                    followersData={followersData} />
 
-                </div>
+            </div>
         </NavLayout>
     );
 };

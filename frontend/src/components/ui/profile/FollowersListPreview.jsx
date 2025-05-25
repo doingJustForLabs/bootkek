@@ -1,45 +1,53 @@
-import React from 'react';
-import {Avatar} from "antd";
-import {UserOutlined} from "@ant-design/icons";
+import React from "react";
+import { Avatar, Tooltip } from "antd";
+import { UserOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
-const SkillsList = ({ followers, style }) => {
-    const skillsToRender = Array.isArray(skills) ? skills : [];
+const FollowersListPreview = ({ followers, style }) => {
+    const navigate = useNavigate();
 
-    const handleClick = () => {
-        if (profileData?.user_id) {
-            navigate(`/profile/${profileData.user_id}`);
-        }
-    };
-
-    if (skillsToRender.length === 0){
+    if (!followers || !Array.isArray(followers) || followers.length === 0) {
         return (
-            <div className="flex">
-                <h1 className="text-2xl text-gray-600">Нет скиллов</h1>
+            <div style={{ ...style, padding: "10px", textAlign: "center" }}>
+                <span style={{ color: "#888" }}>Нет подписчиков</span>
             </div>
         );
     }
 
+    const shuffled = [...followers].sort(() => 0.5 - Math.random());
+    const limitedFollowers = shuffled.slice(0, 6);
+
     return (
         <div
-            onClick={handleClick}
             style={{
-                cursor: 'pointer',
-                height: '100px',
-                padding: '10px',
-                borderRadius: '25px',
-                backgroundColor: '#f4f4f4',
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                gap: "12px",
+                padding: "8px",
+                borderRadius: "12px",
+                backgroundColor: "#f9f9f9",
+                ...style,
             }}
         >
-            <Avatar
-                size={64}
-                src={avatar ? `http://127.0.0.1:8000/${avatar}_128.jpg` : undefined}
-                icon={!avatar && <UserOutlined />}
-                style={{ backgroundColor: '#76777c' }}
-            />
+            {limitedFollowers.map((profile) => (
+                <Tooltip key={profile.user_id} title={profile.username}>
+                    <Avatar
+                        size={48}
+                        src={
+                            profile.avatar_basename
+                                ? `http://127.0.0.1:8000/${profile.avatar_basename}_128.jpg`
+                                : undefined
+                        }
+                        icon={!profile.avatar_basename && <UserOutlined />}
+                        style={{
+                            cursor: "pointer",
+                            backgroundColor: "#ccc",
+                        }}
+                        onClick={() => navigate(`/profile/${profile.user_id}`)}
+                    />
+                </Tooltip>
+            ))}
         </div>
     );
 };
 
-export default SkillsList;
+export default FollowersListPreview;

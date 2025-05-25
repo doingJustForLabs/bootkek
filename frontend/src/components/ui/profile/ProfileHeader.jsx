@@ -75,7 +75,7 @@ const ProfileHeader = ({context = null, profileData, handlerFunc}) => {
             <div style={{height: "15vh"}}></div>
             <div
                 style={{
-                    height: "100px",
+                    height: "15vh",
                     padding: "0px 50px",
                     borderRadius: "30px 30px 0 0",
                     backgroundColor: "#f4f4f4",

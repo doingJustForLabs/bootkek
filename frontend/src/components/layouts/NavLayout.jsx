@@ -68,8 +68,16 @@ const NavLayout = observer(({ children }) => {
     };
 
     return (
+
         <Layout>
-            <Sider breakpoint="lg" collapsedWidth="0" style={{display: "flex", flexDirection: "column", height: "100vh",}}>
+            <Sider style={{
+                overflow: 'auto',
+                height: '100vh',
+                position: 'sticky',
+                insetInlineStart: 0,
+                top: 0,
+                bottom: 0,
+            }}>
                 <h1 className="pl-6 pt-2 pb-3 text-white text-4xl">Granite</h1>
                 <Menu
                     theme="dark"
@@ -87,15 +95,8 @@ const NavLayout = observer(({ children }) => {
                 />
             </Sider>
             <Layout>
-                <Content>
-                    <div style={{
-                        display: "flex",
-                        minHeight: "100vh",
-                        justifyContent: "center",
-                        backgroundColor: "#3b488c"
-                    }}>
-                        {children}
-                    </div>
+                <Content style={{ overflow: 'initial', backgroundColor: '#3b488c' }}>
+                    {children}
                 </Content>
             </Layout>
         </Layout>
