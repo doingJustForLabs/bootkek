@@ -1,8 +1,4 @@
-from typing import Annotated
-
-from authx import TokenPayload
-from fastapi import APIRouter, Depends, Response, HTTPException, status, Request
-from fastapi.security import HTTPBearer
+from fastapi import APIRouter, Response, status
 
 from api.auth.schemas import (
     UserLoginSchema,
