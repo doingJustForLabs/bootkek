@@ -57,7 +57,7 @@ const NavLayout = observer(({ children }) => {
             case "feed":
                 goTo(`/feed`); break;
             case "chats":
-                goTo(`/chat`); break;
+                goTo(`/chats`); break;
             case "events":
                 goTo(`/search/events`); break;
             case "users":

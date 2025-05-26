@@ -39,7 +39,7 @@ function AppContent() {
             <Route path="/profile/create" element={<ProfileCreation />} />
             <Route path="/profile/edit" element={<ProfileEditing />} />
             <Route path="/search/profiles" element={<Profiles />} />
-            <Route path="/chat" element={<ChatPage  />} />
+            <Route path="/chats" element={<ChatPage  />} />
         </Routes>
     );
 }

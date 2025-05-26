@@ -62,7 +62,7 @@ const ChatComponent = () => {
     const fetchAllUsers = async () => {
         try {
             const response = await ProfileService.getProfiles(); // Используйте ProfileService
-            setAllUsers(response.data || []);
+            setAllUsers(response.data.profiles || []);
         } catch (error) {
             console.error('Ошибка загрузки профилей:', error);
             message.error('Не удалось загрузить профили пользователей');
