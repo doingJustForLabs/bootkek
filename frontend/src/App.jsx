@@ -40,6 +40,7 @@ function AppContent() {
             <Route path="/profile/edit" element={<ProfileEditing />} />
             <Route path="/search/profiles" element={<Profiles />} />
             <Route path="/chats" element={<ChatPage  />} />
+            <Route path="/chats/:chatId" element={<ChatPage />} />
         </Routes>
     );
 }
