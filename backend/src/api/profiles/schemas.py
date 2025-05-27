@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator, field_serializer
 
 from api.enums import Sex, MuctrFaculties, Courses, Skills
 from api.exceptions import BadRequestException
+from api.skills.models import UsersSkill
 
 alf = [chr(i) for i in range(ord("a"), ord("z") + 1)]
 nums = [str(i) for i in range(10)]
@@ -32,16 +33,27 @@ class ProfileCreateSchema(BaseModel):
         return self
 
 
-class ProfileReadDetailSchema(ProfileCreateSchema):
+class ProfileReadDetailSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     user_id: int
+    name: Optional[str] = Field(None, min_length=2, max_length=32)
+    username: Optional[str] = Field(None, min_length=5, max_length=32)
+
+    course: Optional[Courses] = None
+    sex: Optional[Sex] = None
+    faculty: Optional[MuctrFaculties] = None
     avatar_basename: Optional[str] = None
     subscribers_count: int
     subscriptions_count: int
+    skills: list = []
 
     create_date: datetime
     update_date: datetime
+
+    @field_serializer("skills", when_used="always")
+    def serialize_skills(self, skills: list["UsersSkill"]) -> list:
+        return [s.skill_name.skill_name for s in skills]
 
 
 class ProfileReadSummarySchema(BaseModel):

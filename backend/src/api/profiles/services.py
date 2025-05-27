@@ -4,6 +4,7 @@ from PIL import Image
 from fastapi import UploadFile
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.functions import func
 
 from api.exceptions import NotFoundException, BadRequestException
@@ -11,6 +12,7 @@ from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
 from api.search.schemas import PaginationSchema
 from api.skills.services import UserSkillsRepository
+from api.skills.models import UsersSkill
 from core.config import settings
 
 
@@ -105,8 +107,14 @@ class ProfileRepository:
         cls, session: AsyncSession, user_id: int, not_found_error: bool = False
     ) -> Profile:
         profile = await session.scalar(
-            select(Profile).where(Profile.user_id == user_id)
+            select(Profile)
+            .where(Profile.user_id == user_id)
+            .options(
+                selectinload(Profile.skills)
+                .selectinload(UsersSkill.skill_name),
+            )
         )
+
         if not profile and not_found_error:
             raise NotFoundException("Профиль не найден")
         return profile

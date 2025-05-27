@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from sqlalchemy import Integer, String, ForeignKey, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.functions import func
 
 from api.enums import Sex, MuctrFaculties, Courses
+from api.skills.models import UsersSkill
 from database.db import Base
 
 
@@ -19,6 +20,8 @@ class Profile(Base):
     course: Mapped[Courses | None]
     sex: Mapped[Sex | None]
     faculty: Mapped[MuctrFaculties | None]
+
+    skills: Mapped[list["UsersSkill"]] = relationship(back_populates="profile")
 
     avatar_basename: Mapped[str] = mapped_column(String, default=None, nullable=True)
 

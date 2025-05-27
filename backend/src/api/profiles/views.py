@@ -24,7 +24,6 @@ router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profil
 
 @router.post(
     "/me",
-    response_model=ProfileResponseSchema,
     dependencies=[BearerDependency],
 )
 async def setup_user_profile(
@@ -36,10 +35,13 @@ async def setup_user_profile(
     profile = await ProfileRepository.create_profile(
         session, int(token.sub), profile_data
     )
+    print(profile)
 
-    return ProfileResponseSchema(
-        profile=ProfileReadDetailSchema.model_validate(profile)
-    )
+    return profile
+
+    # return ProfileResponseSchema(
+    #     profile=ProfileReadDetailSchema.model_validate(profile)
+    # )
 
 
 @router.patch(
@@ -102,7 +104,6 @@ async def update_user_avatar(
 
 @router.get(
     "/{user_id}",
-    response_model=ProfileResponseSearchSchema,
     dependencies=[BearerDependency],
 )
 async def get_user_profile_by_user_id(
@@ -115,15 +116,17 @@ async def get_user_profile_by_user_id(
         session, user_id, not_found_error=True
     )
 
+    return profile
+
     is_following = await FollowerRepository.is_following(
         session, int(token.sub), user_id
     )
 
-    return ProfileResponseSearchSchema(
-        profile=ProfileReadDetailSchema.model_validate(profile),
-        is_current_user=int(token.sub) == user_id,
-        is_following=is_following,
-    )
+    # return ProfileResponseSearchSchema(
+    #     profile=ProfileReadDetailSchema.model_validate(profile),
+    #     is_current_user=int(token.sub) == user_id,
+    #     is_following=is_following,
+    # )
 
 
 @router.get("", response_model=SearchResponseSchema)
