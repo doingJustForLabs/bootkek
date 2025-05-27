@@ -1,114 +1,77 @@
-# Bootkek (Granite?)
+# Granite
+
+Версия: 0.10.0
+
+## Описание 
+
+**Granite** — это платформа для поиска надёжных напарников по учёбе, получения поддержки и взаимной помощи. 
+Мы помогаем студентам объединяться, делиться знаниями, преодолевать сложности и развиваться вместе. Granite создаёт 
+среду, где легко найти тех, кто на твоей волне — будь то для подготовки к экзамену, работы над проектом или просто 
+для мотивации.
+
+## Технический стек
+
+### 🧠 Backend
+
+- **Фреймворк:** FastAPI - быстрый и асинхронный Python-фреймворк с автогенерацией OpenAPI-документации
+- **Валидация данных:** Pydantic -  валидация и сериализация DTO-объектов
+- **ORM:** SQLAlchemy 2.0 (async) — декларативные модели и асинхронные запросы к баз
+- **Аутентификация:** AuthX — JWT аутентификация
+
+### 🖥️ Frontend
+
+- **Фреймворк**: React 17 + Vite + JavaScript
+
+...
+
+### База данных
+
+- **СУБД:** PostgreSQL 16 — надёжное хранилище с поддержкой транзакций
+
+### 🐳 Инфраструктура
+
+- **Контейнеризация:** Docker + Docker Compose — разворачиваем всё локально и в облаке одинаково
+- **Миграции:** Alembic — контроль схемы БД, откат и применение миграций
 
 ## Запуск серверов
 
-### Backend
+### С помощью `Docker-compose`
 
-#### Установка зависимостей
+Для запуска контейнеров необходимо иметь: [Docker](https://www.docker.com/)
 
-```shell
-git clone https://github.com/doingJustForLabs/bootkek.git
-cd backend/
+#### Базовые команды Docker сompose
 
-# Создание виртуального окружения и установка зависимостей
-python -m venv venv
-venv/Scripts/activate
-pip install -r requirements.txt
-```
+1. Подтягивание образов
 
-> **Важно!** Установите папку `src` как [Root-папку](https://www.google.com/search?q=%D0%BA%D0%B0%D0%BA+%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%82%D1%8C+%D0%BF%D0%B0%D0%BF%D0%BA%D1%83+%D0%BA%D0%B0%D0%BA+root+%D0%B2+pycharm&sca_esv=e1158a711e1314a4&sxsrf=AHTn8zqYP_yIgsYfz-8yX9JlVqeSTfZgSQ%3A1741775319828&ei=12HRZ_ykMoT1i-gPzJCMiAQ&ved=0ahUKEwi87N3ZqoSMAxWE-gIHHUwIA0EQ4dUDCBA&uact=5&oq=%D0%BA%D0%B0%D0%BA+%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%82%D1%8C+%D0%BF%D0%B0%D0%BF%D0%BA%D1%83+%D0%BA%D0%B0%D0%BA+root+%D0%B2+pycharm&gs_lp=Egxnd3Mtd2l6LXNlcnAiPdC60LDQuiDRg9GB0YLQsNC90L7QstC40YLRjCDQv9Cw0L_QutGDINC60LDQuiByb290INCyIHB5Y2hhcm0yBRAhGJ8FMgUQIRifBTIFECEYnwUyBRAhGJ8FMgUQIRifBTIFECEYnwUyBRAhGJ8FMgUQIRifBTIFECEYnwUyBRAhGJ8FSLMoUDBYlCRwBXgAkAEAmAGeAaAB4g6qAQQxLjE0uAEDyAEA-AEBmAIToALADsICChAAGLADGNYEGEfCAgUQIRigAcICCRAhGKABGAoYKsICBxAhGKABGArCAggQABiiBBiJBcICBRAAGO8FwgIIEAAYgAQYogSYAwCIBgGQBgiSBwQ1LjE0oAeGZA&sclient=gws-wiz-serp), чтобы корректно работали импорты.
+    ```shell
+    docker compose pull
+    ```
 
-#### Запуск сервера
+2. Сборка образа (для `backend`, и в дальнейшем для `frontend`)
 
-```shell
-python main.py
-```
+    ```shell
+    docker compose build <название сервиса> # например db или backend
+    ```
 
-Если запуск происходит через **PyCharm**, импорты будут работать корректно
+3. Поднятие контейнеров
 
-#### Тестирование с pytest
+    ```shell
+    docker compose up              # Поднимает все контейнеры и выводит логи
+    docker compose up db           # Поднимает только базу и выводит логи
+    docker compose up -d           # Поднимает все контейнеры в фоновом режиме
+    docker compose up --build      # Build'ит образы и поднимает контейнеры с логами
+    docker compose up --build -d   # Build'ит образы и фоново поднимает контейнеры
+    ```
 
-Для запуска тестирования в консоль необходимо ввести команду
+4. Чтение логов
 
-```shell
-# Для обычного вывода
-pytest
-# Для красивого вывода
-pytest -v
-```
+   ```shell
+   docker compose logs <название сервиса>     # Выводит текущие логи (без обновления)
+   docker compose logs -f <название сервиса>  # Выводит текущие логи (c обновлением)
+   ```
+   
+5. Остановка контейнеров
 
-После запуска `pytest` сам найдет все тесты и выведет в консоль результаты
-
-#### Доступ к документации API
-
-После запуска сервера можно открыть Swagger-документацию: [Swagger UI](http://127.0.0.1:8000/docs)
-
-
-### Frontend
-
-#### Установка зависимостей
-
-```shell
-cd frontend/
-
-# Установка зависимостей
-npm install
-```
-
-#### Запуск сервера
-```shell
-npm run dev
-```
-
-## Конфигурация
-
-### Файл переменных окружения
-
-Создайте файл `.env`, ориентируясь на `.env.example`.
-
-С развитием проекта могут добавляться новые переменные, поэтому рекомендуется регулярно проверять этот файл.
-
-### Файл переменных окружения (для тестов)
-
-Аналогично предыдущему блоку создать файл `.test.env` ориентируясь теперь на `.test.env.example`
-Также необходимо создать новую базу данных для тестирования 
-
-### БД (PostgreSQL)
-
-Для подключения к базе данных необходимо создать сервер в **pgAdmin** и использовать соответствующие параметры в `.env`.
-
-> В будущем планируется добавить поддержку `docker-compose.yml`.
-
-#### Пример конфигурации `.env`
-
-```text
-# DSN для подключения к PostgreSQL
-DB__URL = postgresql+asyncpg://{user}:{pass}@{host}:{port}/{name}
-
-# Включение/выключение логирования SQL-запросов (0 - выключено, 1 - включено)
-DB__ECHO = 0
-```
-
-#### Пример конфигурации `.test.env`
-
-```text
-# DSN для подключения к PostgreSQL
-DB__URL = postgresql+asyncpg://{user}:{pass}@{host}:{port}/{test-name}
-
-# Включение/выключение логирования SQL-запросов (0 - выключено, 1 - включено)
-DB__ECHO = 0
-
-# Тип базы данных (обязательно TEST)
-DB__MODE = TEST
-```
-
-### JWT
-
-Для корректной работы JWT-токенов в `.env` необходимо указать секретный ключ:
-
-```text
-JWT__SECRET_KEY=SECRET_KEY
-```
-
-Сгенерировать секретный ключ можно с помощью функции `generate_secret_key()` в файле `utils.py`.
-
+   ```shell
+   docker compose stop
+   ```

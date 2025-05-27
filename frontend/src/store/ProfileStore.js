@@ -1,55 +1,30 @@
 import ProfileService from "../services/profile.service.js";
-import { checkAccessToken } from "../utils/token.js";
+import { withTokenRetry } from "../utils/token.js";
 
 export default class ProfileStore {
 
     static async createProfile(name, username) {
-        try {
-            return await ProfileService.postProfilesMe(name, username)
-        } catch (error) {
-            return await checkAccessToken(error, ProfileService.postProfilesMe, {name, username})
-        }
+        return await withTokenRetry(ProfileService.postProfilesMe, name, username);
     }
 
     static async updateProfile(updatedData) {
-        try {
-            return await ProfileService.patchProfilesMe(updatedData)
-        } catch (error) {
-            return await checkAccessToken(error, ProfileService.patchProfilesMe, {updatedData})
-        }
+        return await withTokenRetry(ProfileService.patchProfilesMe, updatedData);
     }
 
     static async getProfile() {
-        try {
-            return await ProfileService.getProfilesMe()
-        } catch (error) {
-            return await checkAccessToken(error, ProfileService.getProfilesMe, {})
-        }
+        return await withTokenRetry(ProfileService.getProfilesMe);
     }
 
     static async getProfileByUserId(userId) {
-        try {
-            return await ProfileService.getProfilesByUserId(userId)
-        } catch (error) {
-            return await checkAccessToken(error, ProfileService.getProfilesByUserId, {userId})
-        }
+        return await withTokenRetry(ProfileService.getProfilesByUserId, userId);
     }
 
     static async getAllProfiles() {
-        try {
-            return await ProfileService.getProfiles()
-        } catch (error) {
-            return await checkAccessToken(error, ProfileService.getProfiles, {})
-        }
+        return await withTokenRetry(ProfileService.getProfiles);
     }
 
     static async setAvatar(file) {
-        try {
-            return await ProfileService.postProfilesAvatars(file)
-        } catch (error) {
-            return await checkAccessToken(error, ProfileService.postProfilesAvatars, {file})
-        }
+        return await withTokenRetry(ProfileService.postProfilesAvatars, file);
     }
 
 }
-

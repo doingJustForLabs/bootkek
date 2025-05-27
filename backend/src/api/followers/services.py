@@ -1,21 +1,20 @@
-from typing import List
+from typing import Optional
 
 from sqlalchemy import select, and_, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-from sqlalchemy.orm import aliased
+from sqlalchemy.sql.functions import func
 
 from api.exceptions import BadRequestException, NotFoundException
-from api.profiles.models import Profile
 from api.followers.models import Follower
+from api.profiles.models import Profile
+from api.search.schemas import PaginationSchema
 
 
 class FollowerRepository:
     @classmethod
     async def subscribe(
         cls, session: AsyncSession, follower_id: int, target_id: int
-    ) -> Follower:
+    ) -> None:
 
         if follower_id == target_id:
             raise BadRequestException("Вы не можете подписаться на самого себя")
@@ -31,27 +30,24 @@ class FollowerRepository:
         if existing:
             raise BadRequestException("Подписка уже существует")
 
-        try:
-            new_follow = Follower(
-                follower_id=follower_id,
-                target_id=target_id,
-            )
-            session.add(new_follow)
+        new_follow = Follower(
+            follower_id=follower_id,
+            target_id=target_id,
+        )
+        session.add(new_follow)
 
-            await cls._update_profile_counts(
-                session, follower_id, target_id, increment=True
-            )
-            await session.commit()
-            return new_follow
-
-        except IntegrityError:
-            await session.rollback()
-            raise NotFoundException("Профиль не найден")
+        await cls._update_profile_counts(
+            session, follower_id, target_id, increment=True
+        )
+        await session.commit()
+        return
 
     @classmethod
     async def unsubscribe(
         cls, session: AsyncSession, follower_id: int, target_id: int
     ) -> None:
+        if follower_id == target_id:
+            raise BadRequestException("Вы не можете отписаться от себя")
 
         follow = await session.scalar(
             select(Follower).where(
@@ -69,7 +65,6 @@ class FollowerRepository:
             session, follower_id, target_id, increment=False
         )
         await session.commit()
-
         return
 
     @staticmethod
@@ -101,59 +96,69 @@ class FollowerRepository:
         )
 
     @classmethod
-    async def get_user_followers(cls, session: AsyncSession, user_id: int):
-        try:
-            query = (
-                select(
-                    Profile.user_id,
-                    Profile.name,
-                    Profile.username,
-                    Profile.avatar_basename,
-                )
-                .distinct()
-                .where(Follower.target_id == user_id, Profile.user_id != user_id)
-                .order_by(Profile.user_id)
+    async def get_user_followers(
+        cls,
+        session: AsyncSession,
+        user_id: int,
+        pagination: Optional[PaginationSchema] = None,
+    ):
+        query = (
+            select(
+                Profile.user_id,
+                Profile.name,
+                Profile.username,
+                Profile.avatar_basename,
             )
+            .join(Follower, Follower.follower_id == Profile.user_id)
+            .where(Follower.target_id == user_id)
+            .order_by(Profile.user_id)
+            .offset(pagination.limit * (pagination.page - 1))
+            .limit(pagination.limit)
+        )
 
-            res = await session.execute(query)
-            return [
-                {
-                    "user_id": row.user_id,
-                    "name": row.name,
-                    "username": row.username,
-                    "avatar_basename": row.avatar_basename,
-                }
-                for row in res
-            ]
-
-        except NotFoundException as e:
-            return e
+        res = await session.execute(query)
+        return res.mappings().unique().all()
 
     @classmethod
-    async def get_user_follows(cls, session: AsyncSession, user_id: int):
-        try:
-            query = (
-                select(
-                    Profile.user_id,
-                    Profile.name,
-                    Profile.username,
-                    Profile.avatar_basename,
-                )
-                .distinct()
-                .where(Follower.follower_id == user_id, Profile.user_id != user_id)
-                .order_by(Profile.user_id)
+    async def get_user_follows(
+        cls,
+        session: AsyncSession,
+        user_id: int,
+        pagination: PaginationSchema,
+    ):
+        query = (
+            select(
+                Profile.user_id,
+                Profile.name,
+                Profile.username,
+                Profile.avatar_basename,
             )
+            .join(Follower, Follower.target_id == Profile.user_id)
+            .where(Follower.follower_id == user_id)
+            .order_by(Profile.user_id)
+            .offset(pagination.limit * (pagination.page - 1))
+            .limit(pagination.limit)
+        )
 
-            res = await session.execute(query)
-            return [
-                {
-                    "user_id": row.user_id,
-                    "name": row.name,
-                    "username": row.username,
-                    "avatar_basename": row.avatar_basename,
-                }
-                for row in res
-            ]
+        res = await session.execute(query)
+        return res.mappings().unique().all()
 
-        except NotFoundException as e:
-            return e
+    @classmethod
+    async def get_count_user_followers(cls, session: AsyncSession, user_id: int) -> int:
+        query = (
+            select(func.count())
+            .select_from(Follower)
+            .where(Follower.target_id == user_id)
+        )
+        res = await session.execute(query)
+        return res.scalar_one()
+
+    @classmethod
+    async def get_count_user_follows(cls, session: AsyncSession, user_id: int) -> int:
+        query = (
+            select(func.count())
+            .select_from(Follower)
+            .where(Follower.follower_id == user_id)
+        )
+        res = await session.execute(query)
+        return res.scalar_one()
