@@ -40,6 +40,10 @@ class DatabaseHelper:
     def get_engine(self):
         return self._engine
 
+    @property
+    def get_session_factory(self):
+        return self._session_factory
+
 
 # App DB
 db_helper = DatabaseHelper(url=str(settings.db.url), echo=int(settings.db.echo))

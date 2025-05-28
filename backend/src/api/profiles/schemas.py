@@ -1,7 +1,14 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+    field_validator,
+    field_serializer,
+)
 
 from api.enums import Sex, MuctrFaculties, Courses, Skills
 from api.exceptions import BadRequestException
@@ -53,7 +60,7 @@ class ProfileReadDetailSchema(BaseModel):
 
     @field_serializer("skills", when_used="always")
     def serialize_skills(self, skills: list["UsersSkill"]) -> list:
-        return [s.skill_name.skill_name for s in skills]
+        return [s.skill.skill_name for s in skills]
 
 
 class ProfileReadSummarySchema(BaseModel):

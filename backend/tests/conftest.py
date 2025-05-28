@@ -1,89 +1,83 @@
 import asyncio
-from pathlib import Path
 
 import pytest
 import pytest_asyncio
-from alembic import command
-from alembic.config import Config
 from httpx import AsyncClient, ASGITransport
 
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy_utils import database_exists, drop_database, create_database
+from fastapi.testclient import TestClient
+from alembic.config import Config
+from pathlib import Path
+
 from core.config import settings
-from database.db import db_helper, Base
+from core.database import db_helper
+from alembic import command
 from main import app
+
+BASE_DIR = Path(__file__).parent.parent / "src"
+ALEMBIC_CONFIG = BASE_DIR / "alembic.ini"
+ALEMBIC_BASE_DIR = BASE_DIR / "alembic"
 
 
 @pytest.fixture(scope="session")
 def event_loop():
-    loop = asyncio.get_event_loop_policy().get_event_loop()
+    """Создает цикл событий для сессии."""
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
-async def setup_db(event_loop):
-    """Применяем миграции перед всеми тестами"""
-    assert settings.db.mode == "TEST"
+@pytest.fixture(scope="session")
+async def setup_db_with_alembic():
+    """
+    Создает временную базу данных, применяет Alembic миграции
+    и удаляет базу данных после завершения тестов.
+    """
+    temp_db_url_str: str = str(settings.db.url) + "_pytest"
 
-    # config_path = Path(__file__).parent.parent / "src" / "alembic.ini"
-    # config = Config(str(config_path))
+    if database_exists(temp_db_url_str):
+        drop_database(temp_db_url_str)
 
-    # command.upgrade(config, "head")
+    create_database(temp_db_url_str)
+
+    # Настройки Alembic
+    alembic_cfg = Config(ALEMBIC_CONFIG)
+    alembic_cfg.set_main_option("sqlalchemy.url", temp_db_url_str)
+    alembic_cfg.set_main_option("script_location", str(ALEMBIC_BASE_DIR))
+
+    # Применяем миграции
+    print("Running Alembic migrations...")
+    command.upgrade(alembic_cfg, "head")
+    print("Alembic migrations applied.")
+
+    # Создаем асинхронный движок для тестов
+    test_engine = create_async_engine(temp_db_url_str)
+    test_session = async_sessionmaker(
+        bind=test_engine,
+        autocommit=False,
+        autoflush=False,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+
+    async def override_get_db():
+        async with test_session() as session:
+            yield session
+
+    app.dependency_overrides[db_helper.session_getter] = override_get_db
 
     yield
 
-    # command.downgrade(config, "base")
-    await db_helper.dispose()
+    # Очистка: удаление базы данных
+    print(f"Dropping test database: {temp_db_url_str}")
+    drop_database(temp_db_url_str)
 
 
-@pytest_asyncio.fixture(scope="package")
-async def client(event_loop):
+@pytest.fixture(scope="package")
+async def client():
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://127.0.0.1:8000/api"
+        transport=ASGITransport(app=app), base_url="http://127.0.0.1:8000"
     ) as client:
         yield client
-
-
-@pytest_asyncio.fixture(scope="package")
-async def register_user(client):
-    response = await client.post(
-        url="/auth/register",
-        json={
-            "email": "test@example.com",
-            "password": "qwerty123",
-            "password_repeat": "qwerty123",
-        },
-    )
-    assert response.status_code == 200
-    assert response.json()["user"] is not None
-    assert response.json()["user"]["email"] == "test@example.com"
-
-
-@pytest_asyncio.fixture(scope="package")
-async def login_user(client, register_user):
-    response = await client.post(
-        url="/auth/login",
-        json={
-            "email": "test@example.com",
-            "password": "qwerty123",
-        },
-    )
-
-    assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert response.json()["token_type"] == "Bearer"
-    assert response.cookies.get("refresh_token_cookie") is not None
-
-    return {
-        "access_token": response.json()["access_token"],
-        "refresh_token": response.cookies.get("refresh_token_cookie"),
-    }
-
-
-@pytest_asyncio.fixture(scope="package")
-async def auth_client(event_loop, login_user):
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://127.0.0.1:8000/api",
-        headers={"Authorization": f"Bearer {login_user['access_token']}"},
-    ) as auth_client:
-        yield auth_client

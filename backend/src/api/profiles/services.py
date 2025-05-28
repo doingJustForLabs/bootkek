@@ -12,7 +12,7 @@ from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
 from api.search.schemas import PaginationSchema
 from api.skills.services import UserSkillsRepository
-from api.skills.models import UsersSkill
+from api.skills.models import UsersSkill, Skills
 from core.config import settings
 
 
@@ -21,36 +21,56 @@ class ProfileRepository:
     async def create_profile(
         cls, session: AsyncSession, user_id: int, profile_data: ProfileCreateSchema
     ) -> Profile:
-
         if not (profile_data.username and profile_data.name):
             raise BadRequestException("Поля 'name' и 'username' обязательные")
 
+        # Проверка, существует ли уже профиль
         if await cls.get_profile_by_user_id(session, user_id, not_found_error=False):
             raise BadRequestException("Профиль уже существует")
 
+        # Проверка уникальности юзернейма
         if await cls.get_profile_by_username(
             session, profile_data.username, not_found_error=False
         ):
             raise BadRequestException("Данный юзернейм уже существует")
 
-        data = {
-            "user_id": user_id,
-            "course": profile_data.course if profile_data.course else None,
-            "faculty": profile_data.faculty if profile_data.faculty else None,
-            "sex": profile_data.sex if profile_data.sex else None,
-            **profile_data.model_dump(exclude={"course", "faculty", "sex", "skills"}),
-        }
-
-        profile = await session.scalar(
-            insert(Profile).values(**data).returning(Profile)
-        )
-        await session.refresh(profile)
-
+        # Обработка навыков
+        user_skills: list[UsersSkill] = []
         if profile_data.skills:
-            await UserSkillsRepository.add_skills(session, user_id, profile_data.skills)
+            # Получаем объекты Skills по названиям
+            result = await session.execute(
+                select(Skills).where(Skills.skill_name.in_(profile_data.skills))
+            )
+            found_skills: list[Skills] = list(result.scalars().all())
 
+            if not found_skills:
+                raise BadRequestException("Переданные навыки не найдены в базе данных")
+
+            found_names = {skill.skill_name for skill in found_skills}
+            not_found = set(profile_data.skills) - found_names
+            if not_found:
+                raise BadRequestException(
+                    f"Следующие навыки не найдены в базе данных: {', '.join(not_found)}"
+                )
+
+            # Создаём UsersSkill объекты (но без user_id)
+            user_skills = [UsersSkill(skill_id=skill.id) for skill in found_skills]
+
+        # Создание объекта профиля и прикрепление skills через relationship
+        profile = Profile(
+            user_id=user_id,
+            course=profile_data.course,
+            faculty=profile_data.faculty,
+            sex=profile_data.sex,
+            username=profile_data.username,
+            name=profile_data.name,
+            skills=user_skills,  # сюда кладутся UsersSkill
+        )
+
+        session.add(profile)
         await session.commit()
 
+        await session.refresh(profile, attribute_names=["skills"])
         return profile
 
     @classmethod
@@ -59,7 +79,9 @@ class ProfileRepository:
     ) -> Profile:
 
         profile: Profile = await session.scalar(
-            select(Profile).where(Profile.user_id == user_id)
+            select(Profile)
+            .where(Profile.user_id == user_id)
+            .options(selectinload(Profile.skills).selectinload(UsersSkill.skill))
         )
 
         if not profile:
@@ -74,7 +96,7 @@ class ProfileRepository:
 
         data = update_data.model_dump(exclude_none=True, exclude={"skills"})
 
-        if not data:
+        if not data and update_data.skills is None:
             raise BadRequestException("Пустой запрос")
 
         for key, value in data.items():
@@ -82,10 +104,21 @@ class ProfileRepository:
                 raise BadRequestException(f"Невалидный ключ для обновления: {key}")
             setattr(profile, key, value)
 
-        if update_data.skills:
-            await UserSkillsRepository.update_skills(
-                session, user_id, update_data.skills
+        # Обновляем навыки
+        if update_data.skills is not None:
+            result = await session.execute(
+                select(Skills).where(Skills.skill_name.in_(update_data.skills))
             )
+            found_skills = result.scalars().all()
+            found_skill_names = {s.skill_name for s in found_skills}
+            not_found = set(update_data.skills) - found_skill_names
+
+            if not_found:
+                raise BadRequestException(
+                    f"Следующие предметы не найдены в базе данных: {', '.join(not_found)}"
+                )
+
+            profile.skills = [UsersSkill(skill_id=skill.id) for skill in found_skills]
 
         await session.commit()
         await session.refresh(profile)
@@ -95,8 +128,13 @@ class ProfileRepository:
     async def get_profile_by_username(
         cls, session: AsyncSession, username: str, not_found_error: bool = False
     ) -> Profile:
-        query = select(Profile).where(Profile.username == username)
-        profile = await session.scalar(query)
+        profile = await session.scalar(
+            select(Profile)
+            .where(Profile.username == username)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
+        )
 
         if not profile and not_found_error:
             raise NotFoundException("Профиль не найден")
@@ -110,8 +148,7 @@ class ProfileRepository:
             select(Profile)
             .where(Profile.user_id == user_id)
             .options(
-                selectinload(Profile.skills)
-                .selectinload(UsersSkill.skill_name),
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
             )
         )
 

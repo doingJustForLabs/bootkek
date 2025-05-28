@@ -13,16 +13,21 @@ if TYPE_CHECKING:
 class Skills(Base):
     __tablename__ = "skills"
 
-    skill_name: Mapped[Skills] = mapped_column(String(128))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    skill_name: Mapped[str] = mapped_column(String(128))
 
-    user_skills: Mapped["UsersSkill"] = relationship(back_populates="skill_name")
+    user_skills: Mapped[list["UsersSkill"]] = relationship(back_populates="skill")
 
 
 class UsersSkill(Base):
     __tablename__ = "users_skills"
 
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("profiles.user_id"))
-    skill_id: Mapped[int] = mapped_column(Integer, ForeignKey("skills.id"))
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("profiles.user_id"), primary_key=True
+    )
+    skill_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("skills.id"), primary_key=True
+    )
 
     profile: Mapped["Profile"] = relationship(back_populates="skills")
-    skill_name: Mapped["Skills"] = relationship(back_populates="user_skills")
+    skill: Mapped["Skills"] = relationship(back_populates="user_skills")

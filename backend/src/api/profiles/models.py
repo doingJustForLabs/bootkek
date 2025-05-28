@@ -21,8 +21,6 @@ class Profile(Base):
     sex: Mapped[Sex | None]
     faculty: Mapped[MuctrFaculties | None]
 
-    skills: Mapped[list["UsersSkill"]] = relationship(back_populates="profile")
-
     avatar_basename: Mapped[str] = mapped_column(String, default=None, nullable=True)
 
     subscribers_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -30,4 +28,10 @@ class Profile(Base):
 
     update_date: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+
+    skills: Mapped[list["UsersSkill"]] = relationship(
+        back_populates="profile", cascade="all, delete-orphan"
     )
