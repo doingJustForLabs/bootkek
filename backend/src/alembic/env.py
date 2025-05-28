@@ -14,6 +14,8 @@ from api.profiles.models import Profile
 from api.followers.models import Follower
 from api.skills.models import Skills
 from api.enums.enums import *
+from api.chat.models import Chat, ChatUser, Message
+
 
 config = context.config
 
