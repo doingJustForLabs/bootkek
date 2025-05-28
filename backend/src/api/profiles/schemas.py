@@ -1,7 +1,14 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+    field_validator,
+    field_serializer,
+)
 
 from api.enums import Sex, MuctrFaculties, Courses, Skills
 from api.exceptions import BadRequestException
@@ -22,16 +29,6 @@ class ProfileCreateSchema(BaseModel):
     faculty: Optional[MuctrFaculties] = None
     skills: Optional[List[Skills]] = None
 
-    @model_validator(mode="after")
-    def validate_username(self):
-        if self.username:
-            if any(let not in "".join(alf + nums) for let in self.username.lower()):
-                raise BadRequestException(
-                    "Невалидный юзернейм. Use (0-9) and (a-z, A-Z)"
-                )
-            return self
-        return self
-
 
 class ProfileReadDetailSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -46,14 +43,14 @@ class ProfileReadDetailSchema(BaseModel):
     avatar_basename: Optional[str] = None
     subscribers_count: int
     subscriptions_count: int
-    skills: list = []
+    skills: list
 
     create_date: datetime
     update_date: datetime
 
     @field_serializer("skills", when_used="always")
     def serialize_skills(self, skills: list["UsersSkill"]) -> list:
-        return [s.skill_name.skill_name for s in skills]
+        return [s.skill.skill_name for s in skills]
 
 
 class ProfileReadSummarySchema(BaseModel):

@@ -60,6 +60,11 @@ def downgrade() -> None:
     op.drop_table("users_skills")
     op.drop_index(op.f("ix_skills_id"), table_name="skills")
     op.drop_table("skills")
+
+    op.execute(
+        "UPDATE profiles SET avatar_basename = 'static/' WHERE avatar_basename IS NULL"
+    )
+
     op.alter_column(
         "profiles",
         "avatar_basename",

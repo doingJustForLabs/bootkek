@@ -116,17 +116,15 @@ async def get_user_profile_by_user_id(
         session, user_id, not_found_error=True
     )
 
-    return profile
-
     is_following = await FollowerRepository.is_following(
         session, int(token.sub), user_id
     )
 
-    # return ProfileResponseSearchSchema(
-    #     profile=ProfileReadDetailSchema.model_validate(profile),
-    #     is_current_user=int(token.sub) == user_id,
-    #     is_following=is_following,
-    # )
+    return ProfileResponseSearchSchema(
+        profile=ProfileReadDetailSchema.model_validate(profile),
+        is_current_user=int(token.sub) == user_id,
+        is_following=is_following,
+    )
 
 
 @router.get("", response_model=SearchResponseSchema)
