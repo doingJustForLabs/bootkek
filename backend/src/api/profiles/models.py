@@ -12,22 +12,19 @@ from database.db import Base
 class Profile(Base):
     __tablename__ = "profiles"
 
+    # Columns
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True)
-
     username: Mapped[str] = mapped_column(String, unique=True)
     name: Mapped[str]
-
     course: Mapped[Courses | None]
     sex: Mapped[Sex | None]
     faculty: Mapped[MuctrFaculties | None]
-
-    skills: Mapped[list["UsersSkill"]] = relationship(back_populates="profile")
-
     avatar_basename: Mapped[str] = mapped_column(String, default=None, nullable=True)
-
     subscribers_count: Mapped[int] = mapped_column(Integer, default=0)
     subscriptions_count: Mapped[int] = mapped_column(Integer, default=0)
-
     update_date: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()
     )
+
+    # Relationships
+    skills: Mapped[list["UsersSkill"]] = relationship(back_populates="profile")

@@ -16,6 +16,10 @@ from api.skills.models import UsersSkill
 from core.config import settings
 
 
+alf = [chr(i) for i in range(ord("a"), ord("z") + 1)]
+nums = [str(i) for i in range(10)]
+
+
 class ProfileRepository:
     @classmethod
     async def create_profile(
@@ -32,6 +36,9 @@ class ProfileRepository:
             session, profile_data.username, not_found_error=False
         ):
             raise BadRequestException("Данный юзернейм уже существует")
+
+        if any(let not in "".join(alf + nums) for let in profile_data.username.lower()):
+            raise BadRequestException("Невалидный юзернейм. Use (0-9) and (a-z, A-Z)")
 
         data = {
             "user_id": user_id,
@@ -58,34 +65,25 @@ class ProfileRepository:
         cls, session: AsyncSession, user_id: int, update_data: ProfileCreateSchema
     ) -> Profile:
 
-        profile: Profile = await session.scalar(
-            select(Profile).where(Profile.user_id == user_id)
-        )
+        profile = await cls.get_profile_by_user_id(session, user_id)
 
-        if not profile:
-            raise NotFoundException("Профиль не найден")
-
-        profile_by_username = await session.scalar(
-            select(Profile).where(Profile.username == update_data.username)
-        )
-
-        if profile_by_username and profile.username != update_data.username:
+        if (
+            await cls.get_profile_by_username(session, update_data.username)
+            and profile.username != update_data.username
+        ):
             raise BadRequestException("Данный юзернейм уже существует")
 
         data = update_data.model_dump(exclude_none=True, exclude={"skills"})
-
-        if not data:
-            raise BadRequestException("Пустой запрос")
-
-        for key, value in data.items():
-            if not hasattr(profile, key):
-                raise BadRequestException(f"Невалидный ключ для обновления: {key}")
-            setattr(profile, key, value)
 
         if update_data.skills:
             await UserSkillsRepository.update_skills(
                 session, user_id, update_data.skills
             )
+
+        for key, value in data.items():
+            if not hasattr(profile, key):
+                raise BadRequestException(f"Невалидный ключ для обновления: {key}")
+            setattr(profile, key, value)
 
         await session.commit()
         await session.refresh(profile)
@@ -95,11 +93,18 @@ class ProfileRepository:
     async def get_profile_by_username(
         cls, session: AsyncSession, username: str, not_found_error: bool = False
     ) -> Profile:
-        query = select(Profile).where(Profile.username == username)
+        query = (
+            select(Profile)
+            .where(Profile.username == username)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
+        )
         profile = await session.scalar(query)
 
         if not profile and not_found_error:
             raise NotFoundException("Профиль не найден")
+
         return profile
 
     @classmethod
@@ -110,8 +115,7 @@ class ProfileRepository:
             select(Profile)
             .where(Profile.user_id == user_id)
             .options(
-                selectinload(Profile.skills)
-                .selectinload(UsersSkill.skill_name),
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
             )
         )
 
