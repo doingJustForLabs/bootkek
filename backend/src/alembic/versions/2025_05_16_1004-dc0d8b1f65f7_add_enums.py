@@ -22,7 +22,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    postgresql.ENUM(
+    # Сначала создаем enum типы
+    courses_enum = postgresql.ENUM(
         "course1",
         "course2",
         "course3",
@@ -31,91 +32,43 @@ def upgrade() -> None:
         "mag1",
         "mag2",
         name="courses",
-    ).create(op.get_bind())
+    )
+    courses_enum.create(op.get_bind())
 
-    postgresql.ENUM("male", "female", name="sex").create(op.get_bind())
+    sex_enum = postgresql.ENUM("male", "female", name="sex")
+    sex_enum.create(op.get_bind())
 
-    postgresql.ENUM(
+    faculties_enum = postgresql.ENUM(
         "cithin", "npm", "hft", "ipur", "fen", name="muctrfaculties"
-    ).create(op.get_bind())
+    )
+    faculties_enum.create(op.get_bind())
 
+    # Затем изменяем колонки, используя созданные enum типы
     op.alter_column(
         "profiles",
         "course",
-        type_=sa.Enum("math", "physics", "chemistry", name="courses"),
-        postgresql_using="course::text::courses",
-    )
-
-    op.alter_column(
-        "profiles",
-        "course",
-        existing_type=sa.VARCHAR(),
-        type_=sa.Enum(
-            "course1",
-            "course2",
-            "course3",
-            "course4",
-            "course5",
-            "mag1",
-            "mag2",
-            name="courses",
-        ),
-        existing_nullable=True,
+        type_=courses_enum,
         postgresql_using="course::text::courses",
     )
     op.alter_column(
-        "profiles",
-        "sex",
-        existing_type=sa.VARCHAR(),
-        type_=sa.Enum("male", "female", name="sex"),
-        existing_nullable=True,
-        postgresql_using="sex::text::sex",
+        "profiles", "sex", type_=sex_enum, postgresql_using="sex::text::sex"
     )
     op.alter_column(
         "profiles",
         "faculty",
-        existing_type=sa.VARCHAR(),
-        type_=sa.Enum("cithin", "npm", "hft", "ipur", "fen", name="muctrfaculties"),
-        existing_nullable=True,
+        type_=faculties_enum,
         postgresql_using="faculty::text::muctrfaculties",
     )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.alter_column(
-        "profiles",
-        "faculty",
-        existing_type=sa.Enum(
-            "cithin", "npm", "hft", "ipur", "fen", name="muctrfaculties"
-        ),
-        type_=sa.VARCHAR(),
-        existing_nullable=True,
-    )
-    op.alter_column(
-        "profiles",
-        "sex",
-        existing_type=sa.Enum("male", "female", name="sex"),
-        type_=sa.VARCHAR(),
-        existing_nullable=True,
-    )
-    op.alter_column(
-        "profiles",
-        "course",
-        existing_type=sa.Enum(
-            "course1",
-            "course2",
-            "course3",
-            "course4",
-            "course5",
-            "mag1",
-            "mag2",
-            name="courses",
-        ),
-        type_=sa.VARCHAR(),
-        existing_nullable=True,
-    )
+    # Возвращаем обратно VARCHAR типы
+    op.alter_column("profiles", "faculty", type_=sa.VARCHAR())
+    op.alter_column("profiles", "sex", type_=sa.VARCHAR())
+    op.alter_column("profiles", "course", type_=sa.VARCHAR())
 
-    postgresql.ENUM(name="courses").drop(op.get_bind())
-    postgresql.ENUM(name="sex").drop(op.get_bind())
-    postgresql.ENUM(name="muctrfaculties").drop(op.get_bind())
+    # Удаляем enum типы
+    op.execute("DROP TYPE IF EXISTS muctrfaculties")
+    op.execute("DROP TYPE IF EXISTS sex")
+    op.execute("DROP TYPE IF EXISTS courses")
