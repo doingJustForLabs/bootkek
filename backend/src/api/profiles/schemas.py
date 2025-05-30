@@ -5,17 +5,11 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    model_validator,
-    field_validator,
     field_serializer,
 )
 
 from api.enums import Sex, MuctrFaculties, Courses, Skills
-from api.exceptions import BadRequestException
 from api.skills.models import UsersSkill
-
-alf = [chr(i) for i in range(ord("a"), ord("z") + 1)]
-nums = [str(i) for i in range(10)]
 
 
 class ProfileCreateSchema(BaseModel):
@@ -60,6 +54,11 @@ class ProfileReadSummarySchema(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=32)
     username: Optional[str] = Field(None, min_length=5, max_length=32)
     avatar_basename: Optional[str] = None
+    skills: list
+
+    @field_serializer("skills", when_used="always")
+    def serialize_skills(self, skills: list["UsersSkill"]) -> list:
+        return [s.skill.skill_name for s in skills]
 
 
 class ProfileResponseSchema(BaseModel):

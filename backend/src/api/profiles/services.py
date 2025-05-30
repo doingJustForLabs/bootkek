@@ -132,6 +132,9 @@ class ProfileRepository:
         query = (
             select(Profile)
             .order_by(Profile.user_id)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
             .offset(pagination.limit * (pagination.page - 1))
             .limit(pagination.limit)
         )
