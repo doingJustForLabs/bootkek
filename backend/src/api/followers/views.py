@@ -10,6 +10,7 @@ from api.dependencies import (
 )
 from api.followers.schemas import FollowsResponseSchema
 from api.followers.services import FollowerRepository
+from api.profiles.schemas import ProfileReadSummarySchema
 from api.profiles.services import ProfileRepository
 from api.search.schemas import SearchResponseSchema
 
@@ -34,7 +35,7 @@ async def get_user_followers(
     count = await FollowerRepository.get_count_user_followers(session, user_id)
 
     return SearchResponseSchema(
-        profiles=followers,
+        profiles=[ProfileReadSummarySchema.model_validate(follower) for follower in followers],
         pagination=pagination,
         total_pages=ceil(count / pagination.limit),
         total_profiles=count,
@@ -56,7 +57,7 @@ async def get_user_follows(
     count = await FollowerRepository.get_count_user_follows(session, user_id)
 
     return SearchResponseSchema(
-        profiles=follows,
+        profiles=[ProfileReadSummarySchema.model_validate(follow) for follow in follows],
         pagination=pagination,
         total_pages=ceil(count / pagination.limit),
         total_profiles=count,
