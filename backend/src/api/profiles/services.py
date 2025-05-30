@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from PIL import Image
 from fastapi import UploadFile
@@ -10,7 +11,7 @@ from sqlalchemy.sql.functions import func
 from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
-from api.search.schemas import PaginationSchema
+from api.search.schemas import PaginationSchema, FiltersSchema
 from api.skills.services import UserSkillsRepository
 from api.skills.models import UsersSkill
 from core.config import settings
@@ -51,12 +52,17 @@ class ProfileRepository:
         profile = await session.scalar(
             insert(Profile).values(**data).returning(Profile)
         )
-        await session.refresh(profile)
 
         if profile_data.skills:
             await UserSkillsRepository.add_skills(session, user_id, profile_data.skills)
 
         await session.commit()
+
+        profile = await session.scalar(
+            select(Profile)
+            .where(Profile.user_id == user_id)
+            .options(selectinload(Profile.skills).selectinload(UsersSkill.skill))
+        )
 
         return profile
 
@@ -75,10 +81,7 @@ class ProfileRepository:
 
         data = update_data.model_dump(exclude_none=True, exclude={"skills"})
 
-        if update_data.skills:
-            await UserSkillsRepository.update_skills(
-                session, user_id, update_data.skills
-            )
+        await UserSkillsRepository.update_skills(session, user_id, update_data.skills)
 
         for key, value in data.items():
             if not hasattr(profile, key):
@@ -132,6 +135,9 @@ class ProfileRepository:
         query = (
             select(Profile)
             .order_by(Profile.user_id)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
             .offset(pagination.limit * (pagination.page - 1))
             .limit(pagination.limit)
         )
@@ -144,8 +150,23 @@ class ProfileRepository:
         return profiles.all()
 
     @classmethod
-    async def get_count_profiles(cls, session: AsyncSession) -> int:
-        query = select(func.count()).select_from(Profile)
+    async def get_count_profiles(
+        cls, session: AsyncSession, filters: Optional[FiltersSchema] = None
+    ) -> int:
+        query = select(Profile)
+
+        if filters:
+            if filters.course:
+                query = query.where(Profile.course == filters.course)
+
+            if filters.faculty:
+                query = query.where(Profile.faculty == filters.faculty)
+
+            if filters.sex:
+                query = query.where(Profile.sex == filters.sex)
+
+        query = query.select(func.count())
+
         res = await session.execute(query)
         return res.scalar_one()
 
