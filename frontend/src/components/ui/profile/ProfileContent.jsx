@@ -1,12 +1,15 @@
-import React from "react";
+import React, {useState} from "react";
 import SkillsList from "./SkillsList";
 import FollowersListPreview from "components/ui/profile/FollowersListPreview.jsx";
 import InfoCard from "components/ui/InfoCard.jsx";
 import Post from "components/Post.jsx";
-// import FollowersList from "./FollowersList";
-// import PostFeed from "./PostFeed";
+import {Modal, Tabs} from "antd";
+import ProfilesList from "components/ui/profile/ProfilesList.jsx";
 
-const ProfileContent = ({ profileData, followersData }) => {
+const ProfileContent = ({ profileData, followersData, followingsData }) => {
+
+    const [showFollowersModal, setShowFollowersModal] = useState(false)
+
     return (
         <div
             style={{
@@ -16,7 +19,7 @@ const ProfileContent = ({ profileData, followersData }) => {
                 backgroundColor: "#f4f4f4",
                 flex: 1,
                 gap: "16px",
-                minHeight: "70vh",
+                minHeight: "75vh",
                 boxSizing: "border-box",
             }}
         >
@@ -69,7 +72,7 @@ const ProfileContent = ({ profileData, followersData }) => {
                                 <SkillsList skills={profileData.skills}/>
                             </InfoCard>
 
-                            <InfoCard title={"Подписчики"} statistics={profileData?.subscribers_count}>
+                            <InfoCard title={"Подписчики"} statistics={profileData?.subscribers_count} handleDetails={() => {setShowFollowersModal(true)}}>
                                 <FollowersListPreview followers={followersData.profiles}/>
                             </InfoCard>
                         </div>
@@ -77,6 +80,34 @@ const ProfileContent = ({ profileData, followersData }) => {
                     </div>
                 </div>
             </div>
+
+            <Modal
+                open={showFollowersModal}
+                title="Информация о подписках..."
+                onCancel={() => setShowFollowersModal(false)}
+                footer={null}
+            >
+                <Tabs
+                    defaultActiveKey="1"
+                    type="card"
+                    size="large"
+                    items={[
+                        {
+                            label: "Подписчики",
+                            key: "1",
+                            children: <ProfilesList profilesData={followersData.profiles} style={{borderRadius:"0px", backgroundColor: null}}/>
+                        },
+                        {
+                            label: "Подписки",
+                            key: "2",
+                            children: <ProfilesList profilesData={followingsData.profiles} style={{borderRadius:"0px", backgroundColor: null}}/>
+                        }
+                    ]}
+
+
+                />
+            </Modal>
+
         </div>
     );
 };

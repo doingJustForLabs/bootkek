@@ -10,6 +10,7 @@ import {wrapHandleError} from "utils/errors.js";
 import {observer} from "mobx-react-lite";
 import InputPassword from "components/ui/inputs/InputPassword.jsx";
 import InputEmail from "components/ui/inputs/InputEmail.jsx";
+import {getCurrentId, setCurrentId} from "utils/currentId.js";
 
 
 const Login = observer(() => {
@@ -22,11 +23,11 @@ const Login = observer(() => {
                 const accessToken = token.getAccessToken();
 
                 if (accessToken) {
-                    await ProfileStore.getProfile().then((response) => {
+                    await ProfileStore.getProfile().then(async (response) => {
                         const userId = response.data?.profile?.user_id;
                         if (userId !== undefined) {
-                            AuthStore.setCurrentId(response.data?.profile?.user_id)
-                            goTo(`/profile/${AuthStore.currentId}`);
+                            await setCurrentId(`${userId}`)
+                            goTo(`/profile/${getCurrentId()}`);
                         }
                     });
                 }})()

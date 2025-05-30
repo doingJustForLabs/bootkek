@@ -1,9 +1,9 @@
 import React from 'react';
-import { UserOutlined, TeamOutlined, LeftCircleOutlined, NotificationOutlined, CommentOutlined, CarryOutOutlined } from '@ant-design/icons';
+import { HomeOutlined, TeamOutlined, LeftCircleOutlined, NotificationOutlined, CommentOutlined, CarryOutOutlined } from '@ant-design/icons';
 import { Layout, Menu } from 'antd';
-import AuthStore from "store/AuthStore.js";
 import {goTo} from "utils/navigator.js";
 import {observer} from "mobx-react-lite";
+import {getCurrentId} from "utils/currentId.js";
 
 const { Content, Sider } = Layout;
 
@@ -12,7 +12,7 @@ const NavLayout = observer(({ children }) => {
     const topMenuItems = [
         {
             key: "profile",
-            icon: <UserOutlined style={{ fontSize: 20 }} />,
+            icon: <HomeOutlined style={{ fontSize: 20 }} />,
             label: "Профиль"
         },
 
@@ -53,7 +53,7 @@ const NavLayout = observer(({ children }) => {
     const handleMenuClick = ({ key }) => {
         switch (key){
             case "profile":
-                goTo(`/profile/${AuthStore.currentId}`); break;
+                goTo(`/profile/${getCurrentId()}`); break;
             case "feed":
                 goTo(`/feed`); break;
             case "chats":
@@ -95,7 +95,7 @@ const NavLayout = observer(({ children }) => {
                 />
             </Sider>
             <Layout>
-                <Content style={{ overflow: 'initial', backgroundColor: '#3b488c' }}>
+                <Content style={{ overflow: 'initial', backgroundColor: '#24385c' }}>
                     {children}
                 </Content>
             </Layout>

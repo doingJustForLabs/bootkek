@@ -3,6 +3,7 @@ import ProfileStore from "store/ProfileStore.js";
 import NavLayout from "components/layouts/NavLayout.jsx";
 import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
 import {wrapHandleError} from "utils/errors.js";
+import ProfilesList from "components/ui/profile/ProfilesList.jsx";
 
 const Profiles = () => {
     const [profiles, setProfiles] = useState([]);
@@ -36,17 +37,7 @@ const Profiles = () => {
 
     return (
         <NavLayout>
-            <div style={{backgroundColor: '#3b488c', minHeight: '100vh'}}>
-                <div className="w-full max-w-4xl space-y-4 p-4">
-                    {profiles.length === 0 ? (
-                        <div className="text-center text-gray-600 text-xl">Профили не найдены</div>
-                    ) : (
-                        profiles.map(profile => (
-                            <ProfilePreview key={profile.user_id} profileData={profile} />
-                        ))
-                    )}
-                </div>
-            </div>
+            <ProfilesList profilesData={profiles}/>
         </NavLayout>
     );
 };

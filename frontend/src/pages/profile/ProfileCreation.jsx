@@ -16,6 +16,7 @@ import InputUsername from "components/ui/inputs/InputUsername.jsx";
 import SelectGender from "components/ui/inputs/SelectGender.jsx";
 import SelectFaculty from "components/ui/inputs/SelectFaculty.jsx";
 import SelectCourse from "components/ui/inputs/SelectCourse.jsx";
+import {getCurrentId, setCurrentId} from "utils/currentId.js";
 
 const ProfileCreation = observer(() => {
     const [formStep1] = Form.useForm();
@@ -43,12 +44,11 @@ const ProfileCreation = observer(() => {
                 await ProfileStore.createProfile(name, username);
                 setIsProfileCreated(true);
                 const response = ProfileStore.getProfile();
-                AuthStore.setCurrentId(response.data?.profile?.user_id);
+                setCurrentId(`${response.data?.profile?.user_id}`);
             } else {
                 await ProfileStore.updateProfile({ name, username });
             }
             if (avatarFile) {
-                console.log(avatarFile);
                 await ProfileStore.setAvatar(avatarFile);
             }
             setStep(2);
@@ -74,7 +74,7 @@ const ProfileCreation = observer(() => {
                 await ProfileStore.updateProfile({ faculty, course });
             }
 
-            goTo(`/profile/${AuthStore.id}`);
+            goTo(`/profile/${getCurrentId()}`);
         })();
     };
 

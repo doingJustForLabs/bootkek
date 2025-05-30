@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input, Button, List, message, Spin } from 'antd';
-import API from '../../services/API.js';
-import AuthStore from "store/AuthStore";
+import API from 'services/api.js';
+import AuthStore from "store/AuthStore.js";
 
 const ChatViewComponent = ({ chatId }) => {
     const { currentId } = AuthStore;

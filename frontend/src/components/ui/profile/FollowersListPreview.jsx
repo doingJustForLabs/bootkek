@@ -17,7 +17,7 @@ const FollowersListPreview = ({ followers, style }) => {
                 height: "100%",
                 textAlign: "center"
             }}>
-                <span style={{ color: "#888", fontSize: "18px" }}>Нет подписчиков</span>
+                <span style={{ color: "#888", fontSize: "24px" }}>Нет подписчиков</span>
             </div>
 
         );

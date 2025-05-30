@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { List, Spin, Button, Modal, Input, message } from 'antd';
-import API from '../../services/API.js';
-import AuthStore from "store/AuthStore";
-import ProfileService from "../../services/profile.service.js";
-import { PlusOutlined } from '@ant-design/icons';
+import {List, Spin, Button, FloatButton, Modal, Input, message, Tooltip} from 'antd';
+import API from 'services/api.js';
+import AuthStore from "store/AuthStore.js";
+import ProfileService from "services/profile.service.js";
+import { FormOutlined } from '@ant-design/icons';
 
-const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
+const ChatsList = ({ onChatSelect, selectedChatId }) => {
     const { currentId } = AuthStore;
     const [chats, setChats] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -73,24 +73,99 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
         }
     };
 
+    if (!chats || !Array.isArray(chats) || chats.length === 0) {
+        return (
+            <div style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "10px",
+                height: "100%",
+                textAlign: "center"
+            }}>
+                <span style={{ color: "#888", fontSize: "20px" }}>Нет доступных чатов...</span>
+                <Button type="link" style={{ color: "#5695ee", fontSize: "20px", textDecoration: "underline" }} onClick={showCreateChatModal}>Создайте новый!</Button>
+
+                <Modal
+                    title="Создать новый чат"
+                    visible={isModalVisible}
+                    onOk={createChat}
+                    onCancel={() => setIsModalVisible(false)}
+                    okText="Создать"
+                    cancelText="Отмена"
+                    confirmLoading={loading}
+                >
+                    <Input
+                        placeholder="Ведите название чата"
+                        value={newChatName}
+                        onChange={(e) => setNewChatName(e.target.value)}
+                    />
+                    <div style={{ marginBottom: 8 }}>Выберите участников:</div>
+                    <List
+                        dataSource={allUsers.filter(u => u.user_id !== currentId)}
+                        renderItem={profile => (
+                            <List.Item
+                                onClick={() => {
+                                    setNewChatUsers(prev =>
+                                        prev.includes(profile.user_id)
+                                            ? prev.filter(id => id !== profile.user_id)
+                                            : [...prev, profile.user_id]
+                                    );
+                                }}
+                                style={{
+                                    cursor: 'pointer',
+                                    background: newChatUsers.includes(profile.user_id) ? '#e6f7ff' : 'white',
+                                    padding: '8px 12px',
+                                    borderRadius: 4
+                                }}
+                            >
+                                <div>
+                                    <div>{profile.name || 'Без имени'}</div>
+                                    {profile.username && <div style={{ fontSize: 12, color: '#666' }}>{profile.username}</div>}
+                                </div>
+                            </List.Item>
+                        )}
+                    />
+                </Modal>
+
+            </div>
+
+
+
+
+        );
+    }
     return (
-        <div style={{ borderRight: '1px', paddingRight: 16 }}>
-            <div className="mb-4">
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={showCreateChatModal}
-                    size="small"
-                />
+        <div style={{padding: 16, height: "100%" }}>
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "10px",
+                gap: "5px"
+            }}>
+                <h2 style={{ fontSize: "28px", fontWeight: "bold" }}>Чаты</h2>
+                <Tooltip title={"Создать чат"}>
+                    <Button
+                        type="primary"
+                        style={{
+                            marginLeft: "auto",
+                            borderRadius: "50%"
+                        }}
+                        icon={<FormOutlined />}
+                        onClick={showCreateChatModal}
+                    />
+                </Tooltip>
             </div>
             <Spin spinning={loading}>
                 <List
-                    dataSource={chats}
+
+                    dataSource={Array.from({ length: 100 }, () => chats)}
                     renderItem={chat => (
                         <List.Item
                             key={chat.id}
                             onClick={() => {
-                                console.log('ChatListComponent - Chat clicked - id:', chat.id);
+                                console.log('ChatsList - Chat clicked - id:', chat.id);
                                 onChatSelect(chat.id);
                             }}
                             style={{
@@ -99,12 +174,14 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
                                 borderBottom: '1px solid #f0f0f0',
                                 backgroundColor: selectedChatId === chat.id ? '#bae7ff' : 'white',
                                 fontWeight: selectedChatId === chat.id ? 'bold' : 'normal',
+                                fontSize: "18px",
                                 borderRadius: '6px',
                                 marginBottom: '4px',
                             }}
                         >
                             {chat.name || `Чат ${chat.id}`}
                         </List.Item>
+
                     )}
                 />
             </Spin>
@@ -119,7 +196,7 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
                 confirmLoading={loading}
             >
                 <Input
-                    placeholder="Название чата (необязательно)"
+                    placeholder="Ведите название чата"
                     value={newChatName}
                     onChange={(e) => setNewChatName(e.target.value)}
                     style={{ marginBottom: 16 }}
@@ -155,4 +232,4 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
     );
 };
 
-export default ChatListComponent;
+export default ChatsList;

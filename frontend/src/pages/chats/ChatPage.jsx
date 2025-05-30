@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import NavLayout from "../../components/layouts/NavLayout";
-import ChatListComponent from "./ChatListComponent";
-import ChatViewComponent from "./ChatViewComponent";
+import ChatsList from "components/ui/chats/ChatsList.jsx";
+import ChatViewComponent from "components/ui/chats/ChatViewComponent.jsx";
 
 
 const ChatPage = () => {
@@ -36,24 +36,48 @@ const ChatPage = () => {
 
     return (
         <NavLayout>
-            <div className="h-screen flex">
-                <div className="w-80 border-r p-4">
-                    <div className="mb-4 flex justify-between items-center">
-                        <h2 className="text-lg font-semibold " style={{ color: 'white' }}>Чаты</h2>
-                    </div>
-                    <ChatListComponent
+            <div style={{
+                display: "flex",
+                width: "80%",
+                justifyContent: "center",
+                justifySelf: "center",
+                alignSelf: "center",
+                height: "100%",
+                padding: "10vh 0 10vh 0",
+                textAlign: "center"
+            }}>
+                <div style={{
+                    backgroundColor: "#f4f4f4",
+                    borderRadius: "30px",
+                    padding: "16px",
+                    display: "flex",
+                    width: "100%"
+                }}>
+                    <div style={{
+                    width: "25%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyItems: "center",
+                }}>
+                    <ChatsList
                         onChatSelect={handleChatSelect}
                         selectedChatId={selectedChatId}
                     />
                 </div>
-                <div className="flex-1 p-4"> {/* Правая колонка для отображения выбранного чата */}
-                    {selectedChatId ? (
-                        <ChatViewComponent key={selectedChatId} chatId={selectedChatId} />
-                    ) : (
-                        <div className="h-full flex items-center justify-center text-gray-500">
-                            Выберите чат из списка
-                        </div>
-                    )}
+
+                    <div style={{
+                        display: "flex",
+                        flex: 1,
+                        borderRadius: "30px",
+                        backgroundColor: '#596acc',
+                    }}>
+
+                        {selectedChatId ? (
+                            <ChatViewComponent key={selectedChatId} chatId={selectedChatId} />
+                        ) :
+                            null
+                        }
+                    </div>
                 </div>
             </div>
         </NavLayout>

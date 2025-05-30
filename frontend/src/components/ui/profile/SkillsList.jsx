@@ -1,7 +1,7 @@
 import React from 'react';
 import {Tag} from "antd";
 
-const SkillsList = ({ skills, style }) => {
+const SkillsList = ({ skills, onClose, style }) => {
     const skillsToRender = Array.isArray(skills) ? skills : [];
 
     if (skillsToRender.length === 0){
@@ -15,7 +15,7 @@ const SkillsList = ({ skills, style }) => {
                 height: "100%",
                 textAlign: "center"
             }}>
-                <span style={{ color: "#888", fontSize: "18px" }}>Нет навыков</span>
+                <span style={{ color: "#888", fontSize: "24px" }}>Нет навыков</span>
             </div>
         );
     }
@@ -31,17 +31,19 @@ const SkillsList = ({ skills, style }) => {
         }}>
             {skillsToRender.map(skill => (
                 <Tag
+                    closable={onClose !== undefined && onClose !== null}
+                    onClose={() => onClose(skill)}
                     key={skill}
                     color="blue"
                     style={{
                         borderRadius: '12px',
                         marginBottom: 5,
                         display: 'flex',
-                        fontSize: '14px',
+                        fontSize: '18px',
                         alignItems: 'center',
                         justifyContent: 'center',
                         height: '20px',
-                        padding: '0 12px',
+                        padding: '14px',
                     }}
                 >
                     {skill}

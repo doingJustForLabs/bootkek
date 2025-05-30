@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 
-function ProfilePreview({ profileData }) {
+function ProfilePreview({ profileData, style }) {
     const navigate = useNavigate();
     const avatar = profileData?.avatar_basename;
 
@@ -24,6 +24,7 @@ function ProfilePreview({ profileData }) {
                 backgroundColor: '#f4f4f4',
                 display: 'flex',
                 alignItems: 'center',
+                ...style
             }}
         >
             <Avatar

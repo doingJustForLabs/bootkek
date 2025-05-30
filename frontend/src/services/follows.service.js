@@ -11,8 +11,8 @@ export default class FollowsService {
         })
     }
 
-    static async getProfilesFollowing (userId, limit = 5, page = 1) {
-        return API.get(`/follows/${userId}/following`, {
+    static async getProfilesFollowings (userId, limit = 5, page = 1) {
+        return API.get(`/follows/${userId}/followings`, {
             params: {
                 limit,
                 page,
