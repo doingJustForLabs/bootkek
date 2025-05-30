@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional, Sequence
 
 from PIL import Image
 from fastapi import UploadFile
@@ -79,14 +79,22 @@ class ProfileRepository:
         ):
             raise BadRequestException("Данный юзернейм уже существует")
 
-        data = update_data.model_dump(exclude_none=True, exclude={"skills"})
+        data = {
+            "course": update_data.course if update_data.course else None,
+            "faculty": update_data.faculty if update_data.faculty else None,
+            "sex": update_data.sex if update_data.sex else None,
+            **update_data.model_dump(
+                exclude={"course", "faculty", "sex", "skills"}, exclude_none=True
+            ),
+        }
 
         await UserSkillsRepository.update_skills(session, user_id, update_data.skills)
 
         for key, value in data.items():
             if not hasattr(profile, key):
                 raise BadRequestException(f"Невалидный ключ для обновления: {key}")
-            setattr(profile, key, value)
+            else:
+                setattr(profile, key, value)
 
         await session.commit()
         await session.refresh(profile)
@@ -131,7 +139,8 @@ class ProfileRepository:
         cls,
         session: AsyncSession,
         pagination: PaginationSchema,
-    ):
+    ) -> Sequence[Profile]:
+
         query = (
             select(Profile)
             .order_by(Profile.user_id)
@@ -150,23 +159,8 @@ class ProfileRepository:
         return profiles.all()
 
     @classmethod
-    async def get_count_profiles(
-        cls, session: AsyncSession, filters: Optional[FiltersSchema] = None
-    ) -> int:
-        query = select(Profile)
-
-        if filters:
-            if filters.course:
-                query = query.where(Profile.course == filters.course)
-
-            if filters.faculty:
-                query = query.where(Profile.faculty == filters.faculty)
-
-            if filters.sex:
-                query = query.where(Profile.sex == filters.sex)
-
-        query = query.select(func.count())
-
+    async def get_count_profiles(cls, session: AsyncSession) -> int:
+        query = select(func.count()).select_from(Profile)
         res = await session.execute(query)
         return res.scalar_one()
 

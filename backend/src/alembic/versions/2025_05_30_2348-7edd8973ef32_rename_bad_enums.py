@@ -187,12 +187,12 @@ def downgrade_courses():
 def upgrade() -> None:
     """Upgrade schema."""
 
-    update_faculties()
+    # update_faculties()
     # update_courses()
 
 
 def downgrade() -> None:
     """Downgrade schema."""
 
-    downgrade_faculties()
+    # downgrade_faculties()
     # downgrade_courses()

@@ -14,7 +14,7 @@ from api.profiles.schemas import (
     ProfileReadDetailSchema,
     ProfileResponseSchema,
     AvatarResponseSchema,
-    ProfileResponseSearchSchema,
+    ProfileResponseSearchSchema, ProfileReadSummarySchema,
 )
 from api.profiles.services import ProfileRepository, AvatarRepository
 from api.search.schemas import SearchResponseSchema
@@ -127,12 +127,12 @@ async def get_user_profile_by_user_id(
 
 @router.get("", response_model=SearchResponseSchema)
 async def get_all_users(session: DbSession, pagination: PaginationDependency):
-    """Получение данных о пользователях"""
+    """Получение данных о пользователях (скоро перестанет поддерживаться)"""
     count = await ProfileRepository.get_count_profiles(session)
     profiles = await ProfileRepository.get_all_profiles(session, pagination)
 
     return SearchResponseSchema(
-        profiles=profiles,
+        profiles=[ProfileReadSummarySchema.model_validate(profile) for profile in profiles],
         pagination=pagination,
         total_profiles=count,
         total_pages=ceil(count / pagination.limit),

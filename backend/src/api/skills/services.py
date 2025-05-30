@@ -44,6 +44,10 @@ class UserSkillsRepository:
     async def update_skills(
         cls, session: AsyncSession, user_id: int, skills: list[str]
     ) -> None:
+
+        if skills is None:
+            return
+
         result = await session.execute(
             select(Skills.id).where(Skills.skill_name.in_(skills))
         )
