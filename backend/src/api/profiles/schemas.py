@@ -54,7 +54,7 @@ class ProfileReadSummarySchema(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=32)
     username: Optional[str] = Field(None, min_length=5, max_length=32)
     avatar_basename: Optional[str] = None
-    skills: list
+    skills: Optional[list] = None
 
     @field_serializer("skills", when_used="always")
     def serialize_skills(self, skills: list["UsersSkill"]) -> list:

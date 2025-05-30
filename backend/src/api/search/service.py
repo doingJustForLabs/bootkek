@@ -1,20 +1,16 @@
 from math import ceil
-from typing import List, Sequence
+from typing import Optional
 
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload, aliased
 from sqlalchemy.sql.elements import or_
 
 from api.profiles.models import Profile
-from api.profiles.schemas import ProfileReadDetailSchema, ProfileReadSummarySchema
+from api.profiles.schemas import ProfileReadSummarySchema
 from api.profiles.services import ProfileRepository
 from api.search.schemas import PaginationSchema, FiltersSchema, SearchResponseSchema
-
-# from database.repository import AbstractRepository
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-
-from api.skills.models import Skills, UsersSkill
+from api.skills.models import UsersSkill, Skills
 
 
 class SearchRepository:
@@ -23,54 +19,53 @@ class SearchRepository:
     async def search_profiles(
         cls,
         session: AsyncSession,
-        keyword: str,
+        keyword: Optional[str],
         pagination: PaginationSchema,
         filters: FiltersSchema,
     ) -> SearchResponseSchema:
-        """
-        SELECT (p.user_id, p.name, p.username, p.avatar_basename, skills)
-        FROM profiles
-        WHERE ... LIKE "%:keyword%"
-        LIMIT :limit
-        OFFSET :page * :limit
-        ORDER BY user_id
-        """
 
-        query = (
-            select(Profile)
-            .where(
-                or_(
-                    Profile.name.like(keyword),
-                    Profile.username.like(keyword),
+        base_query = select(Profile)
+
+        if keyword:
+            skill_alias = aliased(Skills)
+            base_query = (
+                base_query.join(Profile.skills)
+                .join(UsersSkill.skill.of_type(skill_alias))
+                .where(
+                    or_(
+                        Profile.name.ilike(f"%{keyword}%"),
+                        Profile.username.ilike(f"%{keyword}%"),
+                        skill_alias.skill_name.ilike(f"%{keyword}%"),
+                    )
                 )
+                .distinct()
             )
-            .options(
-                selectinload(Profile.skills).selectinload(UsersSkill.skill),
-            )
-            .order_by(Profile.subscribers_count)
-            .offset(pagination.limit * (pagination.page - 1))
-            .limit(pagination.limit)
-        )
 
         if filters:
             if filters.course:
-                query = query.where(Profile.course == filters.course)
-
+                base_query = base_query.where(Profile.course == filters.course)
             if filters.faculty:
-                query = query.where(Profile.faculty == filters.faculty)
-
+                base_query = base_query.where(Profile.faculty == filters.faculty)
             if filters.sex:
-                query = query.where(Profile.sex == filters.sex)
+                base_query = base_query.where(Profile.sex == filters.sex)
 
-        res = await session.execute(query)
-        profiles = res.scalars().all()
-        count = await ProfileRepository.get_count_profiles(session)
+        paginated_query = (
+            base_query.order_by(Profile.subscribers_count.desc())
+            .offset(pagination.limit * (pagination.page - 1))
+            .limit(pagination.limit)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
+        )
+
+        count_query = select(func.count()).select_from(base_query.subquery())
+
+        profiles = (await session.scalars(paginated_query)).all()
+        total_count = (await session.execute(count_query)).scalar_one()
 
         return SearchResponseSchema(
-            profiles=[
-                ProfileReadSummarySchema.model_validate(profile) for profile in profiles
-            ],
+            profiles=[ProfileReadSummarySchema.model_validate(p) for p in profiles],
             pagination=pagination,
-            total_pages=ceil(count / pagination.limit),
-            total_profiles=count,
+            total_pages=ceil(total_count / pagination.limit),
+            total_profiles=total_count,
         )

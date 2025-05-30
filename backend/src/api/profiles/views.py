@@ -24,6 +24,7 @@ router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profil
 
 @router.post(
     "/me",
+    response_model=ProfileResponseSchema,
     dependencies=[BearerDependency],
 )
 async def setup_user_profile(
@@ -35,13 +36,10 @@ async def setup_user_profile(
     profile = await ProfileRepository.create_profile(
         session, int(token.sub), profile_data
     )
-    print(profile)
 
-    return profile
-
-    # return ProfileResponseSchema(
-    #     profile=ProfileReadDetailSchema.model_validate(profile)
-    # )
+    return ProfileResponseSchema(
+        profile=ProfileReadDetailSchema.model_validate(profile)
+    )
 
 
 @router.patch(
