@@ -20,7 +20,7 @@ from database.db import db_helper
 
 from fastapi import WebSocket, WebSocketDisconnect, Depends
 import json
-from api.chat.websocket_handler import handle_websocket
+from api.chat import websocket_handler
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -93,7 +93,7 @@ async def websocket_chat(
             return
 
         # Переадресуем обработку в отдельную функцию
-        await handle_websocket(websocket, token, chat_id, db)
+        await websocket_handler.handle_websocket(websocket, token, chat_id, db)
 
         print("WebSocket message handled")
 
@@ -105,6 +105,11 @@ async def websocket_chat(
         logger.error(f"Unexpected error: {str(e)}")
         await websocket.close(code=1011)
 
+@app.websocket("/ws/user/{user_id}")
+async def websocket_user(websocket: WebSocket, user_id: int, db: AsyncSession = Depends(db_helper.session_getter)):
+    await websocket.accept()
+    logger.info(f"User {user_id} connected for notifications.")
+    await websocket_handler.handle_user_websocket(websocket, user_id, db)
 
 @app.get("/")
 def get_root():

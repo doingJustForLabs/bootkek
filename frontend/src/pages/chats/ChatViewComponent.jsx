@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, Button, List, message, Spin } from 'antd';
+import { Input, Button, List, message, Spin, Modal, Avatar } from 'antd';
 import API from '../../services/API.js';
 import AuthStore from "store/AuthStore";
+import ChatService from '../../services/chat.service';
+import { Link } from 'react-router-dom';
 
 const ChatViewComponent = ({ chatId }) => {
     const { currentId } = AuthStore;
@@ -10,16 +12,21 @@ const ChatViewComponent = ({ chatId }) => {
     const [loading, setLoading] = useState(false);
     const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
+    const [showChatInfo, setShowChatInfo] = useState(false);
+    const [chatDetails, setChatDetails] = useState(null);
+    const [loadingChatDetails, setLoadingChatDetails] = useState(false);
 
     useEffect(() => {
         if (chatId) {
             fetchMessages(chatId);
             connectWebSocket(chatId);
+            fetchChatDetails(chatId, currentId);
             console.log('ChatId changed:', chatId)
         }
         else{
             setMessages([]);
             setInputValue('');
+            setChatDetails(null);
             console.log('ChatId changed:', chatId)
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.close(1000, 'ChatId changed to null');
@@ -47,6 +54,24 @@ const ChatViewComponent = ({ chatId }) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchChatDetails = async (chatId, userId) => {
+        if (!chatId || !userId) return;
+        setLoadingChatDetails(true);
+        try {
+            const response = await ChatService.getChatDetails(chatId, userId);
+            setChatDetails(response.data);
+        } catch (error) {
+            console.error('Ошибка загрузки деталей чата:', error);
+            message.error('Не удалось загрузить детали чата');
+        } finally {
+            setLoadingChatDetails(false);
+        }
+    };
+
+    const toggleChatInfo = () => {
+        setShowChatInfo(!showChatInfo);
     };
 
     const sendMessage = async () => {
@@ -175,6 +200,17 @@ const ChatViewComponent = ({ chatId }) => {
 
     return (
         <div className="h-full flex flex-col">
+            <div className="p-2 border-b flex justify-between items-center">
+                <h2 className="font-semibold" style={{ color: 'white' }}>
+                    {chatDetails?.name || (chatDetails?.participants_profiles?.length === 2
+                        ? chatDetails.participants_profiles.find(p => p.user_id !== currentId)?.name || chatDetails.participants_profiles.find(p => p.user_id !== currentId)?.username || 'Личный чат'
+                        : 'Групповой чат') || 'Чат'}
+                </h2>
+                <Button onClick={toggleChatInfo} size="small">
+                    Информация
+                </Button>
+            </div>
+
             {loading ? (
                 <div className="flex-1 flex items-center justify-center">
                     <Spin tip="Загрузка сообщений..." />
@@ -255,6 +291,38 @@ const ChatViewComponent = ({ chatId }) => {
                     Отправить
                 </Button>
             </div>
+
+            <Modal
+                title={chatDetails?.name || 'Информация о чате'}
+                visible={showChatInfo}
+                onCancel={toggleChatInfo}
+                footer={null}
+            >
+                {loadingChatDetails ? (
+                    <Spin tip="Загрузка информации..." />
+                ) : (
+                    chatDetails && (
+                        <div>
+                            <h4>Участники:</h4>
+                            <List
+                                dataSource={chatDetails.participants_profiles}
+                                renderItem={item => (
+                                    <Link to={`/profile/${item.user_id}`} key={item.user_id} style={{ display: 'block' }}>
+                                        <List.Item>
+                                            <List.Item.Meta
+                                                avatar={<Avatar>{item.name ? item.name[0].toUpperCase() : item.username ? item.username[0].toUpperCase() : '?'}</Avatar>}
+                                                title={item.name || item.username || 'Неизвестный'}
+                                                description={item.username && `@${item.username}`}
+                                            />
+                                        </List.Item>
+                                    </Link>
+                                )}
+                            />
+                            {/* Дополнительная информация о чате, если есть */}
+                        </div>
+                    )
+                )}
+            </Modal>
         </div>
     );
 };

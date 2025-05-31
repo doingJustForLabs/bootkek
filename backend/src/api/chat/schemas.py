@@ -1,7 +1,11 @@
-# schemas/message_schemas.py
 from pydantic import BaseModel
+from typing import List, Optional
 from datetime import datetime
 
+
+class CreateChatRequest(BaseModel):
+    name: Optional[str] = None
+    user_ids: List[int]
 
 class MessageResponse(BaseModel):
     id: int
