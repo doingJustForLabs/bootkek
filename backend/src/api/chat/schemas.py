@@ -18,3 +18,11 @@ class MessageResponse(BaseModel):
         from_attributes = (
             True  # Это позволяет использовать SQLAlchemy объекты для сериализации
         )
+
+class ChatSchema(BaseModel):
+    id: int
+    name: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
