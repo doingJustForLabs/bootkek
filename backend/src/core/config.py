@@ -8,9 +8,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 load_dotenv()
 
 
-class RunConfig(BaseModel):
+class ApiConfig(BaseModel):
     host: str = "127.0.0.1"
     port: int = 8000
+    url: str = f"http://{host}:{port}"
+
+
+class FrontendConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 5173
+    url: str = f"http://{host}:{port}"
 
 
 class DBConfig(BaseModel):
@@ -51,7 +58,8 @@ class FilesConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    run: RunConfig = RunConfig()
+    run: ApiConfig = ApiConfig()
+    front: FrontendConfig = FrontendConfig()
     db: DBConfig
     jwt: JWTConfig
     files: FilesConfig = FilesConfig()

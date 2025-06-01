@@ -69,8 +69,8 @@ async def get_database_version(session: DbSession):
     return {"version": res.scalar()}
 
 
+settings.files.avatar_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")
-
 
 if __name__ == "__main__":
     uvicorn.run(

@@ -8,7 +8,6 @@ from sqlalchemy.sql.elements import or_
 
 from api.profiles.models import Profile
 from api.profiles.schemas import ProfileReadSummarySchema
-from api.profiles.services import ProfileRepository
 from api.search.schemas import PaginationSchema, FiltersSchema, SearchResponseSchema
 from api.skills.models import UsersSkill, Skills
 
@@ -29,8 +28,8 @@ class SearchRepository:
         if keyword:
             skill_alias = aliased(Skills)
             base_query = (
-                base_query.join(Profile.skills)
-                .join(UsersSkill.skill.of_type(skill_alias))
+                base_query.outerjoin(Profile.skills)
+                .outerjoin(UsersSkill.skill.of_type(skill_alias))
                 .where(
                     or_(
                         Profile.name.ilike(f"%{keyword}%"),
@@ -38,7 +37,6 @@ class SearchRepository:
                         skill_alias.skill_name.ilike(f"%{keyword}%"),
                     )
                 )
-                .distinct()
             )
 
         if filters:

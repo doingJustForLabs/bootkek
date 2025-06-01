@@ -35,7 +35,9 @@ async def get_user_followers(
     count = await FollowerRepository.get_count_user_followers(session, user_id)
 
     return SearchResponseSchema(
-        profiles=[ProfileReadSummarySchema.model_validate(follower) for follower in followers],
+        profiles=[
+            ProfileReadSummarySchema.model_validate(follower) for follower in followers
+        ],
         pagination=pagination,
         total_pages=ceil(count / pagination.limit),
         total_profiles=count,
@@ -57,7 +59,9 @@ async def get_user_follows(
     count = await FollowerRepository.get_count_user_follows(session, user_id)
 
     return SearchResponseSchema(
-        profiles=[ProfileReadSummarySchema.model_validate(follow) for follow in follows],
+        profiles=[
+            ProfileReadSummarySchema.model_validate(follow) for follow in follows
+        ],
         pagination=pagination,
         total_pages=ceil(count / pagination.limit),
         total_profiles=count,

@@ -39,4 +39,5 @@ class UserReadSchema(BaseModel):
 
 
 class UserResponseSchema(BaseModel):
+    detail: str
     user: UserReadSchema
