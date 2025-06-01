@@ -1,6 +1,7 @@
 from math import ceil
 
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Request
+from fastapi_cache.decorator import cache
 
 from api.dependencies import (
     AccessDependency,
@@ -19,6 +20,7 @@ from api.profiles.schemas import (
 )
 from api.profiles.services import ProfileRepository, AvatarRepository
 from api.search.schemas import SearchResponseSchema
+from limiter import limiter
 
 router = APIRouter(tags=["Пользователи👨‍💻"], prefix="/profiles")
 
@@ -48,10 +50,12 @@ async def setup_user_profile(
     response_model=ProfileResponseSchema,
     dependencies=[BearerDependency],
 )
+@limiter.limit("3/minute")
 async def update_user_profile(
     session: DbSession,
     token: AccessDependency,
     update_data: ProfileCreateSchema,
+    request: Request,
 ):
     """Обновление профиля пользователя"""
     profile = await ProfileRepository.update_profile(
@@ -85,9 +89,11 @@ async def get_user_profile(
 @router.post(
     "/avatars", dependencies=[BearerDependency], response_model=AvatarResponseSchema
 )
+@limiter.limit("2/minute")
 async def update_user_avatar(
     token: AccessDependency,
     session: DbSession,
+    request: Request,
     avatar: UploadFile = File(...),
 ):
     """
@@ -101,6 +107,7 @@ async def update_user_avatar(
     return AvatarResponseSchema(basename=basename)
 
 
+@cache(expire=300)
 @router.get(
     "/{user_id}",
     dependencies=[BearerDependency],
@@ -126,6 +133,7 @@ async def get_user_profile_by_user_id(
     )
 
 
+@cache(expire=300)
 @router.get("", response_model=SearchResponseSchema)
 async def get_all_users(session: DbSession, pagination: PaginationDependency):
     """Получение данных о пользователях (скоро перестанет поддерживаться)"""

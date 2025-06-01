@@ -6,8 +6,15 @@ import sys
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from redis import asyncio as aioredis
+
+from limiter import limiter
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
@@ -22,7 +29,8 @@ from database.db import db_helper
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # startup
-
+    redis = aioredis.from_url("redis://localhost")
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
     yield
 
     # shutdown
@@ -37,6 +45,8 @@ app = FastAPI(
 )
 
 app.include_router(main_router)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Middleware
 
@@ -59,7 +69,8 @@ def handle_not_found_error(request: Request, exc: AppException):
 
 
 @app.get("/")
-def get_root():
+@limiter.limit("5/minute")
+def get_root(request: Request):
     return {"message": "Api is working!~!!"}
 
 

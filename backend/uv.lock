@@ -338,6 +338,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6d/b3/ce7c5d9f5e75257a3039ee1e38feb77bee29da3a1792c57d6ea1acb55d17/fastapi_cache2-0.2.2-py3-none-any.whl", hash = "sha256:e1fae86d8eaaa6c8501dfe08407f71d69e87cc6748042d59d51994000532846c", size = 25411, upload_time = "2024-07-24T15:47:19.065Z" },
 ]
 
+[package.optional-dependencies]
+redis = [
+    { name = "redis" },
+]
+
 [[package]]
 name = "granite"
 version = "0.10.0"
@@ -349,7 +354,7 @@ dependencies = [
     { name = "authx" },
     { name = "bcrypt" },
     { name = "fastapi" },
-    { name = "fastapi-cache2" },
+    { name = "fastapi-cache2", extra = ["redis"] },
     { name = "orjson" },
     { name = "pillow" },
     { name = "pydantic", extra = ["email"] },
@@ -377,7 +382,7 @@ requires-dist = [
     { name = "authx", specifier = ">=1.4.2" },
     { name = "bcrypt", specifier = ">=4.3.0" },
     { name = "fastapi", specifier = ">=0.115.12" },
-    { name = "fastapi-cache2", specifier = ">=0.2.2" },
+    { name = "fastapi-cache2", extras = ["redis"], specifier = ">=0.2.2" },
     { name = "orjson", specifier = ">=3.10.16" },
     { name = "pillow", specifier = ">=11.2.1" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.11.3" },
@@ -913,6 +918,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f8/bf/abbd3cdfb8fbc7fb3d4d38d320f2441b1e7cbe29be4f23797b4a2b5d8aac/pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3", size = 320884, upload_time = "2025-03-25T02:25:00.538Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/c4/34e93fe5f5429d7570ec1fa436f1986fb1f00c3e0f43a589fe2bbcd22c3f/pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00", size = 509225, upload_time = "2025-03-25T02:24:58.468Z" },
+]
+
+[[package]]
+name = "redis"
+version = "4.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/73/88/63d802c2b18dd9eaa5b846cbf18917c6b2882f20efda398cc16a7500b02c/redis-4.6.0.tar.gz", hash = "sha256:585dc516b9eb042a619ef0a39c3d7d55fe81bdb4df09a52c9cdde0d07bf1aa7d", size = 4561721, upload_time = "2023-06-25T13:13:57.139Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/2e/409703d645363352a20c944f5d119bdae3eb3034051a53724a7c5fee12b8/redis-4.6.0-py3-none-any.whl", hash = "sha256:e2b03db868160ee4591de3cb90d40ebb50a90dd302138775937f6a42b7ed183c", size = 241149, upload_time = "2023-06-25T13:13:54.563Z" },
 ]
 
 [[package]]

@@ -67,7 +67,9 @@ async def get_protected(
 ):
     """Получение данных о пользователе"""
     user = await UserRepository.get_user_by_user_id(session, int(token.sub))
-    return UserResponseSchema(user=UserReadSchema.model_validate(user), detail="Успешно")
+    return UserResponseSchema(
+        user=UserReadSchema.model_validate(user), detail="Успешно"
+    )
 
 
 @router.post(
