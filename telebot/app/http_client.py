@@ -8,7 +8,7 @@ class ApiClient:
 
     async def create_session(self):
         if self._session is None:
-            self._session = ClientSession(base_url=f"{self._base_url}/")
+            self._session = ClientSession(base_url=f"{self._base_url}")
 
     async def close_session(self):
         if self._session and not self._session.closed:
@@ -22,9 +22,9 @@ class ApiClient:
             "password": password
         }
 
-        async with self._session.post("auth/login", json=data) as resp:
+        async with self._session.post("/api/auth/login", json=data) as resp:
             res = await resp.json()
             return res
 
 
-api_client = ApiClient(base_url="http://127.0.0.1:8000/api")
+api_client = ApiClient(base_url="http://localhost:8000")
