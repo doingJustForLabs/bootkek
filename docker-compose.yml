@@ -1,4 +1,19 @@
+networks:
+  dev:
+
 services:
+#  nginx:
+#    image: nginx:stable-alpine
+#    ports:
+#      - "80:80"
+#    volumes:
+#      - './nginx.conf:/etc/nginx/nginx.conf'
+#      - '/etc/letsencrypt:/etc/letsencrypt'
+#    depends_on:
+#      - backend
+#    networks:
+#      - dev
+
   backend:
     build:
       context: ./backend
@@ -17,6 +32,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - dev
+
+#  frontend:
+#    build:
+#      context: ./frontend
+#    networks:
+#      - dev
 
   db:
     image: postgres
@@ -35,6 +58,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 3
+    networks:
+      - dev
 
   maildev:
     image: maildev/maildev
@@ -43,12 +68,14 @@ services:
       - MAILDEV_WEB_PORT/1080
       - MAILDEV_SMTP_PORT/1025
     ports:
-      - "8080:1080"
+      - "1080:1080"
       - "1025:1025"
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
+    networks:
+      - dev
 
 volumes:
   pgdata:

@@ -148,6 +148,6 @@ class EmailRepository:
             message,
             sender=admin_email,
             recipients=recipient,
-            hostname="localhost",
-            port=1025,
+            hostname=settings.mail.host,
+            port=settings.mail.port,
         )

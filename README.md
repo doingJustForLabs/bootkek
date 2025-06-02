@@ -1,6 +1,6 @@
 # Granite
 
-Версия: 0.10.0
+Версия: 0.10.3
 
 ## Описание 
 
@@ -20,7 +20,7 @@
 
 ### 🖥️ Frontend
 
-- **Фреймворк**: React 17 + Vite + JavaScript
+- **Фреймворк**: React 18 + Vite + JavaScript
 
 ...
 

@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Avatar, Button, message } from "antd";
+import { Avatar } from "antd/es/avatar";
+import { Button} from "antd/es/button";
+import { message } from "antd/es/message";
 import { UserOutlined, FormOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import FollowsStore from "../../store/FollowsStore";

@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserOutlined, TeamOutlined } from '@ant-design/icons';
-import { Layout, Menu } from 'antd';
+import { Layout } from 'antd/es/layout/layout.js';
+import { Menu  } from 'antd/es/menu/menu.js';
 import { useNavigate } from 'react-router-dom';
 
 const { Content, Sider } = Layout;

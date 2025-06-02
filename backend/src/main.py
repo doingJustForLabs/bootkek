@@ -39,7 +39,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Granite",
-    version="0.10.0",
+    version="0.10.3",
     lifespan=lifespan,
     default_response_class=ORJSONResponse,
 )

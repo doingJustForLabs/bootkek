@@ -20,10 +20,15 @@ class FrontendConfig(BaseModel):
     url: str = f"http://{host}:{port}"
 
 
+class MailDevConfig(BaseModel):
+    host: str = "maildev"
+    port: int = 1025
+    url: str = f"http://{host}:{port}"
+
+
 class DBConfig(BaseModel):
     url: PostgresDsn
     echo: int
-    mode: str = "DEV"
 
 
 class JWTAccessToken(BaseModel):
@@ -60,11 +65,18 @@ class FilesConfig(BaseModel):
 class Settings(BaseSettings):
     run: ApiConfig = ApiConfig()
     front: FrontendConfig = FrontendConfig()
+    mail: MailDevConfig = MailDevConfig()
     db: DBConfig
     jwt: JWTConfig
     files: FilesConfig = FilesConfig()
 
-    model_config = SettingsConfigDict(env_nested_delimiter="__", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_nested_delimiter="__",
+        case_sensitive=False,
+        env_file=("./.env.example", "./.env")
+    )
 
 
 settings = Settings()
+
+print(settings.mail.host)
