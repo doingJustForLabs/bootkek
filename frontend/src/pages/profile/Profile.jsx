@@ -15,8 +15,6 @@ const Profile = () => {
     const [followersData, setFollowersData] = useState(null);
     const [followingsData, setFollowingsData] = useState(null);
     const [notFound, setNotFound] = useState(false);
-    const [creatingChat, setCreatingChat] = useState(false);
-    const [chats, setChats] = useState([]);
 
     const fetchProfile = async () => {
         try {
@@ -26,6 +24,7 @@ const Profile = () => {
                     setProfileData({...responseProfile.data.profile,
                         is_current_user: responseProfile.data.is_current_user,
                         is_following: responseProfile.data.is_following});
+
                     const responseFollowers = await FollowsStore.getFollowersByUserId(userId, 100, 1);
                     setFollowersData(responseFollowers.data);
 
@@ -44,26 +43,8 @@ const Profile = () => {
 
     useEffect(() => {
         fetchProfile();
-        if (currentId) {
-            ChatService.getChatsWithProfiles(currentId)
-                .then(response => setChats(response.data || []))
-                .catch(error => console.error('Ошибка загрузки чатов:', error));
-        }
-    }, [userId, currentId]);
+    }, [userId]);
 
-const handleCreateDirectChat = async () => {
-        if (!profileData || profileData.is_current_user || creatingChat) return;
-        setCreatingChat(true);
-        await findOrCreateDirectChat(
-            userId,
-            currentId,
-            chats,
-            ChatService.createChat,
-            navigate,
-            Message // Передаем Message для отображения уведомлений
-        );
-        setCreatingChat(false);
-    };
 
     if (notFound) {
         return (
@@ -96,15 +77,6 @@ const handleCreateDirectChat = async () => {
                     profileData={profileData}
                     context={profileData.is_current_user ? "me" : "other"}
                     actions={{fetchProfile}}
-                    handlerFunc={profileData.is_current_user ? null : handleFollow}
-                    extraActions={!profileData.is_current_user && (
-                        <Button
-                            onClick={handleCreateDirectChat}
-                            loading={creatingChat}
-                            icon={<CommentOutlined />}
-                        >
-                        </Button>
-                    )}
                 />
 
                 <ProfileContent

@@ -19,3 +19,11 @@ export const goToProfile = (userId) => {
     }
     navigate(`/profile/${userId}`);
 }
+
+export const goToChat = (chatId) => {
+    if (!navigate) {
+        console.error("Navigator is not set!");
+        return;
+    }
+    navigate(`/chats/${chatId}`);
+}

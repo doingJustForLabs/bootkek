@@ -7,6 +7,7 @@ import FollowersDetailsModal from "components/ui/profile/FollowersDetailsModal.j
 import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
 import ProfileButtonsPanel from "components/ui/buttons/ProfileButtonsPanel.jsx";
 import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
+import Placeholder from "components/ui/Placeholder.jsx";
 
 const ProfileContent = ({ profileData, followersData, followingsData, actions }) => {
 
@@ -41,7 +42,7 @@ const ProfileContent = ({ profileData, followersData, followingsData, actions })
             style={{
                 display: "flex",
                 flexDirection: "column",
-                padding: "24px 16px",
+                padding: "10px 50px",
                 backgroundColor: "#f4f4f4",
                 flex: 1,
                 gap: "16px",
@@ -62,17 +63,11 @@ const ProfileContent = ({ profileData, followersData, followingsData, actions })
                     style={{
                         flex: 1,
                         width: "60%",
-                        backgroundColor: "red",
+                        backgroundColor: "#cdcdcd",
+                        borderRadius: "50px"
                     }}
                 >
-                    {/* <PostFeed /> */}
-                    <Post></Post>
-                    <Post></Post>
-                    <Post></Post>
-                    <Post></Post>
-                    <Post></Post>
-                    <Post></Post>
-                    <Post></Post>
+                    <Placeholder>Сервис постов в разработке</Placeholder>
                 </div>
 
                 <div
@@ -107,7 +102,7 @@ const ProfileContent = ({ profileData, followersData, followingsData, actions })
                             </InfoCard>
 
                             <InfoCard title={"Подписчики"} statistics={profileData?.subscribers_count} handleDetails={() => {setShowFollowersDetailsModal(true)}}>
-                                <ProfilesList style={{ flexDirection: "row", flexWrap: "wrap", gap: "18px", padding: "20px"}}
+                                <ProfilesList style={{ flexDirection: "row", flexWrap: "wrap", gap: "18px", paddingLeft: "10px"}}
                                               profilesData={[...followersData.profiles].sort(() => 0.5 - Math.random()).slice(0, 10)}
                                               renderItem={(profile) => (<ProfileAvatar key={profile.user_id} showTip={true} profileData={profile} linked={true} avatarSize={80}/>)
                                 }

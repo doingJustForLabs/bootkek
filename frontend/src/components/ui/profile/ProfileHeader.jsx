@@ -82,6 +82,7 @@ const ProfileHeader = ({ profileData, context = "other", actions}) => {
             >
                 <ProfileAvatar
                     profileData={profileData}
+                    onClick={null}
                     avatarSize={150}
                     srcFile={actions.getAvatarFile()}
                     style={{ cursor: 'pointer', marginTop: '-30px' }}
@@ -92,6 +93,7 @@ const ProfileHeader = ({ profileData, context = "other", actions}) => {
         return (
             <ProfileAvatar
                 profileData={profileData}
+                onClick={null}
                 avatarSize={150}
                 style={{ marginTop: '-30px' }}
             />

@@ -4,45 +4,44 @@ import API from 'services/api.js';
 import AuthStore from "store/AuthStore.js";
 import ProfileService from "services/profile.service.js";
 import { FormOutlined } from '@ant-design/icons';
+import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
+import ProfilesList from "components/ui/profile/ProfilesList.jsx";
+import Pagination from "components/ui/Pagination.jsx";
+import ProfileStore from "store/ProfileStore.js";
 
-const ChatsList = ({ onChatSelect, selectedChatId }) => {
+const ChatsList = ({ onChatSelect, selectedChatId, chats}) => {
     const { currentId } = AuthStore;
-    const [chats, setChats] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newChatUsers, setNewChatUsers] = useState([]);
-    const [allUsers, setAllUsers] = useState([]);
+    const [profiles, setProfiles] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [newChatName, setNewChatName] = useState('');
 
     useEffect(() => {
         if (currentId) {
-            fetchChats();
-            fetchAllUsers();
+            fetchProfiles(1);
         }
     }, [currentId]);
 
-    const fetchChats = async () => {
-        if (!currentId) return;
-        setLoading(true);
-        try {
-            const response = await API.get(`/chats/${currentId}`);
-            setChats(response.data || []);
-        } catch (error) {
-            console.error('Chats load error:', error);
-            message.error('Ошибка загрузки чатов');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const fetchProfiles = async (page) => {
 
-    const fetchAllUsers = async () => {
+        setCurrentPage(page);
+
         try {
-            const response = await ProfileService.getProfiles();
-            setAllUsers(response.data.profiles || []);
+            const response = await ProfileStore.getProfilesBySearch("", page, 4, {} );
+            console.log(response.data);
+            setProfiles(response.data.profiles);
+            setTotalPages(response.data.total_pages);
         } catch (error) {
             console.error('Ошибка загрузки профилей:', error);
             message.error('Не удалось загрузить профили пользователей');
         }
+    };
+
+    const handlePageChange = (newPage) => {
+        fetchProfiles(newPage);
     };
 
     const showCreateChatModal = () => {
@@ -100,33 +99,34 @@ const ChatsList = ({ onChatSelect, selectedChatId }) => {
                         placeholder="Ведите название чата"
                         value={newChatName}
                         onChange={(e) => setNewChatName(e.target.value)}
+                        style={{ marginBottom: 16 }}
                     />
                     <div style={{ marginBottom: 8 }}>Выберите участников:</div>
-                    <List
-                        dataSource={allUsers.filter(u => u.user_id !== currentId)}
-                        renderItem={profile => (
-                            <List.Item
-                                onClick={() => {
-                                    setNewChatUsers(prev =>
-                                        prev.includes(profile.user_id)
-                                            ? prev.filter(id => id !== profile.user_id)
-                                            : [...prev, profile.user_id]
-                                    );
-                                }}
-                                style={{
-                                    cursor: 'pointer',
-                                    background: newChatUsers.includes(profile.user_id) ? '#e6f7ff' : 'white',
-                                    padding: '8px 12px',
-                                    borderRadius: 4
-                                }}
-                            >
-                                <div>
-                                    <div>{profile.name || 'Без имени'}</div>
-                                    {profile.username && <div style={{ fontSize: 12, color: '#666' }}>{profile.username}</div>}
-                                </div>
-                            </List.Item>
-                        )}
-                    />
+                    <ProfilesList profilesData={profiles}
+                                  renderItem={
+                                      (profile) => (
+                                          <ProfilePreview
+                                              profileData={profile}
+                                              disabled={profile.user_id === currentId}
+                                              style={{ background: newChatUsers.includes(profile.user_id) || (profile.user_id === currentId) ? '#e5e5ff' : '#f4f4f4',}}
+                                              onClick={() => {
+                                                  if (profile.user_id === currentId) return;
+                                                  setNewChatUsers(prev => prev.includes(profile.user_id) ? prev.filter(id => id !== profile.user_id) : [...prev, profile.user_id]);}
+                                              }
+                                          />
+                                      )
+                                  }/>
+                    {totalPages <= 1 ? null : (
+                        <div style={{
+                            justifySelf: "center"
+                        }}>
+                            <Pagination
+                                style={{ justifyItems: "center", marginLeft: 'auto' }}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}/>
+                        </div>)}
+
                 </Modal>
 
             </div>
@@ -171,11 +171,10 @@ const ChatsList = ({ onChatSelect, selectedChatId }) => {
                                 }}
                                 style={{
                                     cursor: 'pointer',
-                                    padding: '8px 12px',
-                                    backgroundColor: selectedChatId === chat.id ? '#bae7ff' : 'white',
-                                    fontWeight: selectedChatId === chat.id ? 'bold' : 'normal',
+                                    padding: '14px',
+                                    backgroundColor: selectedChatId === chat.id ? '#e5e5ff' : 'white',
                                     fontSize: "18px",
-                                    borderRadius: '6px',
+                                    borderRadius: selectedChatId === chat.id ? "50px 0 0 50px" : "50px",
                                     marginBottom: '4px',
                                 }}
                             >
@@ -202,31 +201,31 @@ const ChatsList = ({ onChatSelect, selectedChatId }) => {
                     style={{ marginBottom: 16 }}
                 />
                 <div style={{ marginBottom: 8 }}>Выберите участников:</div>
-                <List
-                    dataSource={allUsers.filter(u => u.user_id !== currentId)}
-                    renderItem={profile => (
-                        <List.Item
+                <ProfilesList profilesData={profiles}
+                              renderItem={
+                    (profile) => (
+                        <ProfilePreview
+                            profileData={profile}
+                            disabled={profile.user_id === currentId}
+                            style={{ background: newChatUsers.includes(profile.user_id) || (profile.user_id === currentId) ? '#e5e5ff' : '#f4f4f4',}}
                             onClick={() => {
-                                setNewChatUsers(prev =>
-                                    prev.includes(profile.user_id)
-                                        ? prev.filter(id => id !== profile.user_id)
-                                        : [...prev, profile.user_id]
-                                );
-                            }}
-                            style={{
-                                cursor: 'pointer',
-                                background: newChatUsers.includes(profile.user_id) ? '#e6f7ff' : 'white',
-                                padding: '8px 12px',
-                                borderRadius: 4
-                            }}
-                        >
-                            <div>
-                                <div>{profile.name || 'Без имени'}</div>
-                                {profile.username && <div style={{ fontSize: 12, color: '#666' }}>{profile.username}</div>}
-                            </div>
-                        </List.Item>
-                    )}
-                />
+                                if (profile.user_id === currentId) return;
+                                setNewChatUsers(prev => prev.includes(profile.user_id) ? prev.filter(id => id !== profile.user_id) : [...prev, profile.user_id]);}
+                            }
+                        />
+                    )
+                }/>
+                {totalPages <= 1 ? null : (
+                    <div style={{
+                        justifySelf: "center"
+                    }}>
+                        <Pagination
+                            style={{ justifyItems: "center", marginLeft: 'auto' }}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}/>
+                    </div>)}
+
             </Modal>
         </div>
     );

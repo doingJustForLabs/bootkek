@@ -89,7 +89,9 @@ const FollowersDetailsModal = ({ profileData={}, userId, showFollowersDetailsMod
                         key: "1",
                         children:
                             <div>
-                                <ProfilesList profilesData={profiles}/>
+                                <ProfilesList profilesData={profiles} renderItem={
+                                    (profile) => (<ProfilePreview profileData={profile} onAvatarClick={() => {goToProfile(profile.user_id); setShowFollowersDetailsModal(false)}}/>)
+                                }/>
                                 {totalPages <= 1 ? null : (
                                     <div style={{
                                         justifySelf: "center"
@@ -113,12 +115,14 @@ const FollowersDetailsModal = ({ profileData={}, userId, showFollowersDetailsMod
                                 {profileData.is_current_user ? (
                                     <ProfilesList profilesData={profiles} renderItem={
                                         (profile) => (
-                                            <ProfilePreview key={profile.user_id} profileData={profile}>
+                                            <ProfilePreview key={profile.user_id} onAvatarClick={() => {goToProfile(profile.user_id); setShowFollowersDetailsModal(false)}} profileData={profile}>
                                                 <ButtonUnfollowUser onRefresh={() => fetchProfiles("following", currentPage)} targetUserId={profile.user_id} showTip={true} shape="circle" style={{marginLeft: "auto"}}/>
                                             </ProfilePreview>)
                                     }/>
                                 ) : (
-                                    <ProfilesList profilesData={profiles}/>
+                                    <ProfilesList profilesData={profiles} renderItem={
+                                        (profile) => (<ProfilePreview profileData={profile} onAvatarClick={() => {goToProfile(profile.user_id); setShowFollowersDetailsModal(false)}}/>)
+                                    }/>
                                 )}
 
                                 {totalPages <= 1 ? null : (

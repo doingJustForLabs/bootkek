@@ -2,7 +2,7 @@ import React from 'react';
 import 'styles/profile/ProfilePreview.css';
 import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
 
-const ProfilePreview = ({ profileData = {}, onClick, children, avatarSize = 64, style = {} }) => {
+const ProfilePreview = ({ profileData = {}, onClick, onAvatarClick, children, avatarSize = 64, disabled = false, style = {} }) => {
 
     const name = profileData?.name;
     const username = profileData?.username;
@@ -10,10 +10,12 @@ const ProfilePreview = ({ profileData = {}, onClick, children, avatarSize = 64, 
     return (
         <div
             className="profile-preview"
+            style={{
+                cursor: (disabled ? "not-allowed" : (onClick && "pointer")),
+                ...style}}
             onClick={onClick}
-            style={{...style}}
         >
-           <ProfileAvatar profileData={profileData} avatarSize={64}/>
+           <ProfileAvatar profileData={profileData} onClick={onAvatarClick} avatarSize={64}/>
 
             <div className="info">
                 <span className="name">

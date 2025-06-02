@@ -1,13 +1,22 @@
-import React from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import { HomeOutlined, TeamOutlined, LeftCircleOutlined, NotificationOutlined, CommentOutlined, CarryOutOutlined } from '@ant-design/icons';
 import { Layout, Menu } from 'antd';
 import {goTo} from "utils/navigator.js";
 import {getCurrentId} from "utils/currentId.js";
 import "styles/ui/NavLayout.css"
+import {useParams} from "react-router-dom";
+import {getAccessToken} from "utils/token.js";
+import NotificationContainer from "components/NotificationContainer.jsx";
 
 const { Content, Sider } = Layout;
 
 const NavLayout = ({ children }) => {
+    const { chatId: currentChatIdFromUrl } = useParams();
+    const socketRef = useRef(null);
+    const accessToken = getAccessToken();
+    const [showNotification, setShowNotification] = useState(() => {});
+    const [isNavigatingToChat, setIsNavigatingToChat] = useState(null);
+    const currentId = getCurrentId();
 
     const menuItems = [
         {
@@ -46,13 +55,13 @@ const NavLayout = ({ children }) => {
     const handleMenuClick = ({ key }) => {
         switch (key){
             case "profile":
-                goTo(`/profile/${getCurrentId()}`); break;
-            case "feed":
-                goTo(`/feed`); break;
+                goTo(`/profile/${currentId}`); break;
+            // case "feed":
+            //     goTo(`/feed`); break;
             case "chats":
                 goTo(`/chats`); break;
-            case "events":
-                goTo(`/search/events`); break;
+            // case "events":
+            //     goTo(`/search/events`); break;
             case "users":
                 goTo(`/search/profiles`); break;
             case "logout":
@@ -119,7 +128,7 @@ const NavLayout = ({ children }) => {
                 socketRef.current.close();
             }
         };
-    }, [currentId, accessToken, navigate, showNotification, currentChatIdFromUrl]);
+    }, [currentId, accessToken, goTo, showNotification, currentChatIdFromUrl]);
 
     return (
         <Layout className="nav">

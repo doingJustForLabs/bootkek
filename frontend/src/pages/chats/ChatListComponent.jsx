@@ -8,7 +8,8 @@ import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 // import DeleteOutlined from '@ant-design/icons/lib/icons';
 import ChatService from '../../services/chat.service';
 import { useNavigate } from 'react-router-dom';
-import { findOrCreateDirectChat } from '../../utils/chatUtils.js';
+import { findOrCreateDirectChat } from 'utils/findOrCreateChat.js';
+import ProfilesList from "components/ui/profile/ProfilesList.jsx";
 
 const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
     const { currentId } = AuthStore;
@@ -219,6 +220,7 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
                 />
                 )}
                 <div style={{ marginBottom: 8 }}>Выберите участников:</div>
+                <ProfilesList profilesData={allUsers.filter(u => u.user_id !== currentId)}/>
                 <List
                     dataSource={allUsers.filter(u => u.user_id !== currentId)}
                     renderItem={profile => (

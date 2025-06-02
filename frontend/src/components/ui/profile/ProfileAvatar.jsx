@@ -4,7 +4,7 @@ import {Avatar, Tooltip} from "antd";
 import {goToProfile} from "utils/navigator.js";
 
 
-const ProfileAvatar = ({profileData = {}, linked = false, avatarSize= 64, showTip = false, style = {}, srcFile = null}) => {
+const ProfileAvatar = ({profileData = {}, onClick = () => goToProfile(profileData.user_id), avatarSize= 64, showTip = false, style = {}, srcFile = null}) => {
 
     const avatarBasename = profileData?.avatar_basename;
     const username = profileData?.username;
@@ -17,9 +17,9 @@ const ProfileAvatar = ({profileData = {}, linked = false, avatarSize= 64, showTi
                 size={avatarSize}
                 className="avatar"
                 src={imgSource}
-                onClick={linked ? () => goToProfile(profileData.user_id) : null}
+                onClick={onClick}
                 icon={!avatarBasename && <UserOutlined />}
-                style={{ backgroundColor: '#9fa8d3', border: "solid 2px #9fa8d3", ...style}}
+                style={{ cursor: (onClick && "pointer"), backgroundColor: '#9fa8d3', border: "solid 2px #9fa8d3", ...style}}
             />
         </Tooltip>
     );

@@ -6,6 +6,7 @@ import {CloseOutlined} from "@ant-design/icons";
 import {goToProfile} from "utils/navigator.js";
 import {Button} from "antd";
 import ButtonSave from "components/ui/buttons/ButtonSave.jsx";
+import ButtonPersonalChat from "components/ui/buttons/ButtonPersonalChat.jsx";
 
 const ProfileButtonsPanel = ({context = "other", profileData = {}, actions = {}, preview = false, style}) => {
 
@@ -18,6 +19,7 @@ const ProfileButtonsPanel = ({context = "other", profileData = {}, actions = {},
                     ) : (
                         <ButtonFollowUser text={!preview &&"Подписаться"} shape={preview && "circle"} showTip={preview} targetUserId={profileData.user_id} onRefresh={actions?.fetchProfile}/>
                     )}
+                    <ButtonPersonalChat text={!preview && "Чат"} shape={preview && "circle"} targetUserId={profileData.user_id} showTip={preview}/>
                 </div>
             )
 
