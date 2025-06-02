@@ -10,6 +10,7 @@ function InputPassword(props) {
             type="password"
             placeholder="Введите пароль"
             maxLength={MAX_PASSWORD_LENGTH}
+            size="large"
             {...props}
         />
     );

@@ -4,11 +4,9 @@ import API from 'services/api.js';
 import AuthStore from "store/AuthStore";
 import ProfileService from "../../services/profile.service.js";
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-// import PlusOutlined from '@ant-design/icons/lib/icons';
-// import DeleteOutlined from '@ant-design/icons/lib/icons';
 import ChatService from '../../services/chat.service';
 import { useNavigate } from 'react-router-dom';
-import { findOrCreateDirectChat } from '../../utils/chatUtils.js';
+import ProfilesList from "components/profile/ProfilesList.jsx";
 
 const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
     const { currentId } = AuthStore;
@@ -116,7 +114,7 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
         setLoading(true);
         try {
             const nameToSend = newChatUsers.length === 1 ? "" : newChatName || `Чат с ${newChatUsers.length + 1} участниками`;
-            await API.post('/chats', {
+            const response = await API.post('/chats', {
                 name: nameToSend,
                 user_ids: [...newChatUsers, currentId]
             });
@@ -124,7 +122,7 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
             setIsModalVisible(false);
             await fetchChats();
             onChatSelect(response.data.id);
-            navigate(`/chat/${response.data.id}`);
+            navigate(`/chats/${response.data.id}`);
         } catch (error) {
             message.error('Ошибка создания чата');
             console.error('Ошибка создания чата:', error);
@@ -219,6 +217,7 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
                 />
                 )}
                 <div style={{ marginBottom: 8 }}>Выберите участников:</div>
+                <ProfilesList profilesData={allUsers.filter(u => u.user_id !== currentId)}/>
                 <List
                     dataSource={allUsers.filter(u => u.user_id !== currentId)}
                     renderItem={profile => (

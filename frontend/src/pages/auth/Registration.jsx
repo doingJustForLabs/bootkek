@@ -27,9 +27,7 @@ const Registration = observer(() => {
     };
 
     return (
-        <CardLayout title="Granite">
-            <div className="flex flex-col items-center justify-center py-8 px-4">
-                <h2 className="text-2xl font-semibold text-muctr mb-6">РЕГИСТРАЦИЯ</h2>
+        <CardLayout title="РЕГИСТРАЦИЯ">
 
                 <Form
                     form={form}
@@ -62,21 +60,16 @@ const Registration = observer(() => {
                         <InputPassword placeholder="Повторите пароль"/>
                     </Form.Item>
 
-                    <Form.Item className="mb-0">
-                        <Button
-                            block
-                            type="primary"
-                            htmlType="submit"
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
+                    <Form.Item style={{display: "flex", justifyContent: "center"}}>
+                        <Button block type={"primary"} htmlType="submit" style={{ fontSize: 20, padding: 20}}>
                             Создать профиль
                         </Button>
-                        <div className="mt-3 text-sm text-right">
+                        <div style={{ margin: "10px", fontSize: 18}}>
                             или <a href="/" className="text-blue-600 hover:underline">использовать существующий</a>
                         </div>
                     </Form.Item>
                 </Form>
-            </div>
+
         </CardLayout>
     );
 });

@@ -89,7 +89,10 @@ async def create_chat(
         chat_name = None
 
     new_chat = await ChatRepository.create_chat(db, chat_data.name, chat_data.user_ids)
-    return {"message": "Chat created successfully!"}
+    return {
+        "message": "Chat created successfully!",
+        "id": new_chat.id,
+    }
 
     # except Exception as e:
     #     print(f"Error: {str(e)}")

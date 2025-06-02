@@ -9,6 +9,7 @@ function InputName(props) {
             placeholder="Введите имя"
             prefix={<UserOutlined />}
             maxLength={MAX_NAME_LENGTH}
+            size="large"
             {...props}
         />
     );

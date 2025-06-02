@@ -8,6 +8,7 @@ function InputUsername(props) {
             placeholder="Введите никнейм"
             prefix="@"
             maxLength={MAX_USERNAME_LENGTH}
+            size="large"
             {...props}
         />
     );

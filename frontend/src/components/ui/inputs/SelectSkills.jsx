@@ -1,7 +1,8 @@
 import { Select, Button, Tag } from 'antd';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
-import EnumsService from "services/enums.service.js"; // Assuming this path is correct
+import EnumsService from "services/enums.service.js";
+import SkillsList from "components/profile/SkillsList.jsx"; // Assuming this path is correct
 
 const SkillSelector = ({ value, onChange }) => {
     const currentSkills = Array.isArray(value) ? value : [];
@@ -18,7 +19,6 @@ const SkillSelector = ({ value, onChange }) => {
                 setFilteredOptions(skills);
             })
             .catch(error => {
-                console.error("Failed to fetch skills:", error);
                 setAllSkills([]);
                 setFilteredOptions([]);
             });
@@ -26,7 +26,7 @@ const SkillSelector = ({ value, onChange }) => {
 
     const removeSkill = (removedSkill) => {
         const newValue = currentSkills.filter(skill => skill !== removedSkill);
-        onChange?.(newValue.length > 0 ? newValue : null);
+        onChange?.(newValue.length > 0 ? newValue : []);
     };
 
 
@@ -53,6 +53,7 @@ const SkillSelector = ({ value, onChange }) => {
                 value={input || undefined}
                 onSearch={handleSearch}
                 onSelect={handleSelect}
+                size="large"
                 placeholder="Выберите и добавьте навык"
                 style={{ minWidth: 200 }}
                 options={Array.isArray(filteredOptions)
@@ -60,8 +61,11 @@ const SkillSelector = ({ value, onChange }) => {
                     : []}
                 filterOption={false}
             />
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                <div style={{
+            <SkillsList
+                skills={currentSkills}
+                limit={null}
+                onClose={removeSkill}
+                style={{
                     display: 'flex',
                     flexWrap: 'wrap',
                     padding: '10px',
@@ -69,28 +73,8 @@ const SkillSelector = ({ value, onChange }) => {
                     background: 'white',
                     border: '1px solid lightgray',
                     borderRadius: '8px',
-                    flex: 1,
-                }}>
-                    {currentSkills.map(skill => (
-                        <Tag
-                            key={skill}
-                            color="blue"
-                            closable
-                            onClose={() => removeSkill(skill)}
-                            closeIcon={<CloseOutlined />}
-                            style={{
-                                borderRadius: '12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: 24,
-                            }}
-                        >
-                            {skill}
-                        </Tag>
-                    ))}
-                </div>
-            </div>
+                    flex: 1}}
+            />
         </div>
     );
 };

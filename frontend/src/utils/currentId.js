@@ -1,4 +1,4 @@
-export function setCurrentId(currentId) {
+export async function setCurrentId(currentId) {
     localStorage.setItem("currentId", currentId);
 }
 

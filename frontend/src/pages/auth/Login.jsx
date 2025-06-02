@@ -10,6 +10,7 @@ import {wrapHandleError} from "utils/errors.js";
 import {observer} from "mobx-react-lite";
 import InputPassword from "components/ui/inputs/InputPassword.jsx";
 import InputEmail from "components/ui/inputs/InputEmail.jsx";
+import {getCurrentId, setCurrentId} from "utils/currentId.js";
 
 
 const Login = observer(() => {
@@ -22,11 +23,11 @@ const Login = observer(() => {
                 const accessToken = token.getAccessToken();
 
                 if (accessToken) {
-                    await ProfileStore.getProfile().then((response) => {
+                    await ProfileStore.getProfile().then(async (response) => {
                         const userId = response.data?.profile?.user_id;
                         if (userId !== undefined) {
-                            AuthStore.setCurrentId(response.data?.profile?.user_id)
-                            goTo(`/profile/${AuthStore.currentId}`);
+                            await setCurrentId(`${userId}`)
+                            goTo(`/profile/${getCurrentId()}`);
                         }
                     });
                 }})()
@@ -37,10 +38,7 @@ const Login = observer(() => {
     };
 
     return (
-        <CardLayout title={"Granite"}>
-            <div className="m-5">
-                <h2 className="text-muctr text-2xl">АВТОРИЗАЦИЯ</h2>
-            </div>
+        <CardLayout title="Авторизация">
             <Form
                 form={form}
                 name="login"
@@ -62,11 +60,11 @@ const Login = observer(() => {
                     <InputPassword/>
                 </Form.Item>
 
-                <Form.Item>
-                    <Button block type="primary" htmlType="submit">
+                <Form.Item style={{ display: "flex", justifyContent: "center" }}>
+                    <Button block type={"primary"} htmlType="submit" style={{ fontSize: 20, padding: 20}}>
                         Войти
                     </Button>
-                    <div className="mt-2 text-right">
+                    <div style={{ margin: "10px", fontSize: 18}}>
                         или <a href="/registration">создать профиль!</a>
                     </div>
                 </Form.Item>

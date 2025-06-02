@@ -7,6 +7,7 @@ function InputEmail(props) {
         <Input
             prefix={<MailOutlined />}
             placeholder="Введите почту"
+            size="large"
             {...props}
         />
     );

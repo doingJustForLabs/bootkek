@@ -7,7 +7,7 @@ import Registration from "./pages/auth/Registration.jsx";
 import Profile from "./pages/profile/Profile.jsx";
 import ProfileCreation from "./pages/profile/ProfileCreation.jsx";
 import ProfileEditing from "./pages/profile/ProfileEditing.jsx";
-import Profiles from "./pages/profile/Profiles.jsx";
+import SearchProfiles from "pages/search/SearchProfiles.jsx";
 import ChatPage from "./pages/chats/ChatPage";
 import {setNavigator} from "./utils/navigator.js";
 import AuthStore from "./store/AuthStore";
@@ -38,7 +38,7 @@ function AppContent() {
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile/create" element={<ProfileCreation />} />
             <Route path="/profile/edit" element={<ProfileEditing />} />
-            <Route path="/search/profiles" element={<Profiles />} />
+            <Route path="/search/profiles" element={<SearchProfiles />} />
             <Route path="/chats" element={<ChatPage  />} />
             <Route path="/chats/:chatId" element={<ChatPage />} />
         </Routes>

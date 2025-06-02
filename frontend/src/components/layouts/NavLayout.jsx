@@ -1,76 +1,68 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { UserOutlined, TeamOutlined, LeftCircleOutlined, NotificationOutlined, CommentOutlined, CarryOutOutlined } from '@ant-design/icons';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import { HomeOutlined, TeamOutlined, LeftCircleOutlined, NotificationOutlined, CommentOutlined, CarryOutOutlined } from '@ant-design/icons';
 import { Layout, Menu } from 'antd';
-import AuthStore from "store/AuthStore.js";
 import {goTo} from "utils/navigator.js";
-import {observer} from "mobx-react-lite";
-import { useNavigate, useParams } from 'react-router-dom';
-import { getAccessToken } from '../../utils/token';
-import { NotificationContainer } from '../NotificationContainer.jsx'
-
+import {getCurrentId} from "utils/currentId.js";
+import "styles/ui/NavLayout.css"
+import {useParams} from "react-router-dom";
+import {getAccessToken} from "utils/token.js";
+import NotificationContainer from "components/NotificationContainer.jsx";
+import GraniteLogo from "components/GraniteLogo.jsx";
 
 const { Content, Sider } = Layout;
 
-const NavLayout = observer(({ children }) => {
-    const navigate = useNavigate();
+const NavLayout = ({ children }) => {
     const { chatId: currentChatIdFromUrl } = useParams();
     const socketRef = useRef(null);
-    const { currentId } = AuthStore;
     const accessToken = getAccessToken();
     const [showNotification, setShowNotification] = useState(() => {});
     const [isNavigatingToChat, setIsNavigatingToChat] = useState(null);
+    const currentId = getCurrentId();
 
-    const topMenuItems = [
+    const menuItems = [
         {
             key: "profile",
-            icon: <UserOutlined style={{ fontSize: 20 }} />,
+            icon: <HomeOutlined style={{fontSize: 24}}/>,
             label: "Профиль"
         },
-
         {
             key: "feed",
-            icon: <NotificationOutlined style={{ fontSize: 20 }}/>,
+            icon: <NotificationOutlined style={{fontSize: 24}}/>,
             label: "Новости"
         },
-
         {
             key: "chats",
-            icon: <CommentOutlined style={{ fontSize: 20 }}/>,
+            icon: <CommentOutlined style={{fontSize: 24}}/>,
             label: "Чаты"
         },
-
         {
             key: "events",
-            icon: <CarryOutOutlined style={{ fontSize: 20 }}/>,
+            icon: <CarryOutOutlined style={{fontSize: 24}}/>,
             label: "Встречи"
         },
-
         {
             key: "users",
-            icon: <TeamOutlined style={{ fontSize: 20 }}/>,
+            icon: <TeamOutlined style={{fontSize: 24}}/>,
             label: "Люди"
         },
-    ]
-
-    const bottomMenuItems = [
         {
             key: "logout",
-            icon: <LeftCircleOutlined style={{ fontSize: 20 }}/>,
+            icon: <LeftCircleOutlined style={{fontSize: 24}}/>,
             label: "Выйти",
             danger: true
         }
-    ]
+    ];
 
     const handleMenuClick = ({ key }) => {
         switch (key){
             case "profile":
-                goTo(`/profile/${AuthStore.currentId}`); break;
-            case "feed":
-                goTo(`/feed`); break;
+                goTo(`/profile/${currentId}`); break;
+            // case "feed":
+            //     goTo(`/feed`); break;
             case "chats":
                 goTo(`/chats`); break;
-            case "events":
-                goTo(`/search/events`); break;
+            // case "events":
+            //     goTo(`/search/events`); break;
             case "users":
                 goTo(`/search/profiles`); break;
             case "logout":
@@ -137,34 +129,25 @@ const NavLayout = observer(({ children }) => {
                 socketRef.current.close();
             }
         };
-    }, [currentId, accessToken, navigate, showNotification, currentChatIdFromUrl]);
+    }, [currentId, accessToken, goTo, showNotification, currentChatIdFromUrl]);
 
     return (
+        <Layout className="nav">
+            <Sider className="sider">
+                <div style={{display: "flex", alignItems: "center"}}>
+                    <GraniteLogo style={{ width: 48, height: 48, margin: "10px"}} />
+                    <h1 className="logo">Granite</h1>
+                </div>
 
-        <Layout>
-            <Sider style={{
-                overflow: 'auto',
-                height: '100vh',
-                position: 'sticky',
-                insetInlineStart: 0,
-                top: 0,
-                bottom: 0,
-            }}>
-                <h1 className="pl-6 pt-2 pb-3 text-white text-4xl">Granite</h1>
-                <Menu
-                    theme="dark"
-                    style={{fontSize: "18px"}}
-                    mode="inline"
-                    items={topMenuItems}
-                    onClick={handleMenuClick}
-                />
-                <Menu
-                    theme="dark"
-                    style={{fontSize: "18px", marginTop: "auto"}}
-                    mode="inline"
-                    items={bottomMenuItems}
-                    onClick={handleMenuClick}
-                />
+                <div className="sider-inner">
+                    <Menu
+                        className="menu"
+                        theme="dark"
+                        mode="inline"
+                        items={menuItems}
+                        onClick={handleMenuClick}
+                    />
+                </div>
             </Sider>
             <Layout>
                 <Content style={{ overflow: 'initial', backgroundColor: '#3b488c' }}>
@@ -174,6 +157,6 @@ const NavLayout = observer(({ children }) => {
             </Layout>
         </Layout>
     );
-});
+};
 
 export default NavLayout;

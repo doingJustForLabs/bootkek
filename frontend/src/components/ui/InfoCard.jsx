@@ -1,32 +1,17 @@
 import React from 'react';
+import 'styles/ui/InfoCard.css';
+import DetailsButton from "components/ui/buttons/DetailsButton.jsx";
 
-const InfoCard = ({ title, statistics, children }) => {
+const InfoCard = ({ title, statistics, children, handleDetails }) => {
+
     return (
-        <div style={{
-            display: "flex",
-            flexDirection: "column",
-            height: "210px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.33)",
-            borderRadius: "10px",
-            overflow: "hidden",
-        }}>
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                backgroundColor: '#596acc',
-                padding: "0 10px",
-                gap: "5px",
-                height: "30px",
-                flexShrink: 0
-            }}>
-                {title ? <h2 style={{ fontSize: "16px", color: 'white', margin: 0 }}>{title}</h2> : null}
-                {statistics ? <span style={{ fontSize: "13px", color: "#d5d7f8" }}>{statistics}</span> : null}
+        <div className="info-card">
+            <div className="header">
+                {title && <h2 className="title">{title}</h2>}
+                {statistics !== 0 && <span className="statistics">{statistics}</span>}
+                {handleDetails && (<DetailsButton onClick={handleDetails} style={{color: "white", fontSize: "24px", marginLeft: "auto"}}/>)}
             </div>
-            <div style={{
-                backgroundColor: '#ededed',
-                padding: "10px",
-                flex: 1,
-            }}>
+            <div className="info-card-content">
                 {children}
             </div>
         </div>
