@@ -1,17 +1,24 @@
 import uuid
+from typing import Optional, Sequence
 
 from PIL import Image
 from fastapi import UploadFile
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.functions import func
 
 from api.exceptions import NotFoundException, BadRequestException
 from api.profiles.models import Profile
 from api.profiles.schemas import ProfileCreateSchema
-from api.search.schemas import PaginationSchema
+from api.search.schemas import PaginationSchema, FiltersSchema
 from api.skills.services import UserSkillsRepository
+from api.skills.models import UsersSkill
 from core.config import settings
+
+
+alf = [chr(i) for i in range(ord("a"), ord("z") + 1)]
+nums = [str(i) for i in range(10)]
 
 
 class ProfileRepository:
@@ -31,6 +38,9 @@ class ProfileRepository:
         ):
             raise BadRequestException("Данный юзернейм уже существует")
 
+        if any(let not in "".join(alf + nums) for let in profile_data.username.lower()):
+            raise BadRequestException("Невалидный юзернейм. Use (0-9) and (a-z, A-Z)")
+
         data = {
             "user_id": user_id,
             "course": profile_data.course if profile_data.course else None,
@@ -42,12 +52,17 @@ class ProfileRepository:
         profile = await session.scalar(
             insert(Profile).values(**data).returning(Profile)
         )
-        await session.refresh(profile)
 
         if profile_data.skills:
             await UserSkillsRepository.add_skills(session, user_id, profile_data.skills)
 
         await session.commit()
+
+        profile = await session.scalar(
+            select(Profile)
+            .where(Profile.user_id == user_id)
+            .options(selectinload(Profile.skills).selectinload(UsersSkill.skill))
+        )
 
         return profile
 
@@ -56,34 +71,30 @@ class ProfileRepository:
         cls, session: AsyncSession, user_id: int, update_data: ProfileCreateSchema
     ) -> Profile:
 
-        profile: Profile = await session.scalar(
-            select(Profile).where(Profile.user_id == user_id)
-        )
+        profile = await cls.get_profile_by_user_id(session, user_id)
 
-        if not profile:
-            raise NotFoundException("Профиль не найден")
-
-        profile_by_username = await session.scalar(
-            select(Profile).where(Profile.username == update_data.username)
-        )
-
-        if profile_by_username and profile.username != update_data.username:
+        if (
+            await cls.get_profile_by_username(session, update_data.username)
+            and profile.username != update_data.username
+        ):
             raise BadRequestException("Данный юзернейм уже существует")
 
-        data = update_data.model_dump(exclude_none=True, exclude={"skills"})
+        data = {
+            "course": update_data.course if update_data.course else None,
+            "faculty": update_data.faculty if update_data.faculty else None,
+            "sex": update_data.sex if update_data.sex else None,
+            **update_data.model_dump(
+                exclude={"course", "faculty", "sex", "skills"}, exclude_none=True
+            ),
+        }
 
-        if not data:
-            raise BadRequestException("Пустой запрос")
+        await UserSkillsRepository.update_skills(session, user_id, update_data.skills)
 
         for key, value in data.items():
             if not hasattr(profile, key):
                 raise BadRequestException(f"Невалидный ключ для обновления: {key}")
-            setattr(profile, key, value)
-
-        if update_data.skills:
-            await UserSkillsRepository.update_skills(
-                session, user_id, update_data.skills
-            )
+            else:
+                setattr(profile, key, value)
 
         await session.commit()
         await session.refresh(profile)
@@ -93,11 +104,18 @@ class ProfileRepository:
     async def get_profile_by_username(
         cls, session: AsyncSession, username: str, not_found_error: bool = False
     ) -> Profile:
-        query = select(Profile).where(Profile.username == username)
+        query = (
+            select(Profile)
+            .where(Profile.username == username)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
+        )
         profile = await session.scalar(query)
 
         if not profile and not_found_error:
             raise NotFoundException("Профиль не найден")
+
         return profile
 
     @classmethod
@@ -105,8 +123,13 @@ class ProfileRepository:
         cls, session: AsyncSession, user_id: int, not_found_error: bool = False
     ) -> Profile:
         profile = await session.scalar(
-            select(Profile).where(Profile.user_id == user_id)
+            select(Profile)
+            .where(Profile.user_id == user_id)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
         )
+
         if not profile and not_found_error:
             raise NotFoundException("Профиль не найден")
         return profile
@@ -116,10 +139,14 @@ class ProfileRepository:
         cls,
         session: AsyncSession,
         pagination: PaginationSchema,
-    ):
+    ) -> Sequence[Profile]:
+
         query = (
             select(Profile)
             .order_by(Profile.user_id)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
             .offset(pagination.limit * (pagination.page - 1))
             .limit(pagination.limit)
         )

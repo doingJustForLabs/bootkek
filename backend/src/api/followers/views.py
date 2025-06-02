@@ -1,6 +1,7 @@
 from math import ceil
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from fastapi_cache.decorator import cache
 
 from api.dependencies import (
     AccessDependency,
@@ -10,12 +11,15 @@ from api.dependencies import (
 )
 from api.followers.schemas import FollowsResponseSchema
 from api.followers.services import FollowerRepository
+from api.profiles.schemas import ProfileReadSummarySchema
 from api.profiles.services import ProfileRepository
 from api.search.schemas import SearchResponseSchema
+from limiter import limiter
 
 router = APIRouter(prefix="/follows", tags=["Фолловеры🫂"])
 
 
+@cache(expire=300)
 @router.get("/{user_id}/followers", response_model=SearchResponseSchema)
 async def get_user_followers(
     session: DbSession,
@@ -34,13 +38,16 @@ async def get_user_followers(
     count = await FollowerRepository.get_count_user_followers(session, user_id)
 
     return SearchResponseSchema(
-        profiles=followers,
+        profiles=[
+            ProfileReadSummarySchema.model_validate(follower) for follower in followers
+        ],
         pagination=pagination,
         total_pages=ceil(count / pagination.limit),
         total_profiles=count,
     )
 
 
+@cache(expire=300)
 @router.get("/{user_id}/followings", response_model=SearchResponseSchema)
 async def get_user_follows(
     session: DbSession,
@@ -56,7 +63,9 @@ async def get_user_follows(
     count = await FollowerRepository.get_count_user_follows(session, user_id)
 
     return SearchResponseSchema(
-        profiles=follows,
+        profiles=[
+            ProfileReadSummarySchema.model_validate(follow) for follow in follows
+        ],
         pagination=pagination,
         total_pages=ceil(count / pagination.limit),
         total_profiles=count,
@@ -68,10 +77,9 @@ async def get_user_follows(
     dependencies=[BearerDependency],
     response_model=FollowsResponseSchema,
 )
+@limiter.limit("3/minute")
 async def follow_user(
-    session: DbSession,
-    token: AccessDependency,
-    target_id: int,
+    session: DbSession, token: AccessDependency, target_id: int, request: Request
 ):
     """Подписка на пользователя"""
     await ProfileRepository.get_profile_by_user_id(
@@ -91,10 +99,9 @@ async def follow_user(
     dependencies=[BearerDependency],
     response_model=FollowsResponseSchema,
 )
+@limiter.limit("3/minute")
 async def unfollow_user(
-    session: DbSession,
-    token: AccessDependency,
-    target_id: int,
+    session: DbSession, token: AccessDependency, target_id: int, request: Request
 ):
     """Отписка от пользователя"""
     await ProfileRepository.get_profile_by_user_id(

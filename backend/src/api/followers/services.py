@@ -1,13 +1,15 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 from sqlalchemy import select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.functions import func
 
 from api.exceptions import BadRequestException, NotFoundException
 from api.followers.models import Follower
 from api.profiles.models import Profile
 from api.search.schemas import PaginationSchema
+from api.skills.models import UsersSkill
 
 
 class FollowerRepository:
@@ -101,23 +103,22 @@ class FollowerRepository:
         session: AsyncSession,
         user_id: int,
         pagination: Optional[PaginationSchema] = None,
-    ):
+    ) -> Sequence[Profile]:
+
         query = (
-            select(
-                Profile.user_id,
-                Profile.name,
-                Profile.username,
-                Profile.avatar_basename,
-            )
+            select(Profile)
             .join(Follower, Follower.follower_id == Profile.user_id)
             .where(Follower.target_id == user_id)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
             .order_by(Profile.user_id)
             .offset(pagination.limit * (pagination.page - 1))
             .limit(pagination.limit)
         )
 
         res = await session.execute(query)
-        return res.mappings().unique().all()
+        return res.scalars().all()
 
     @classmethod
     async def get_user_follows(
@@ -125,23 +126,21 @@ class FollowerRepository:
         session: AsyncSession,
         user_id: int,
         pagination: PaginationSchema,
-    ):
+    ) -> Sequence[Profile]:
         query = (
-            select(
-                Profile.user_id,
-                Profile.name,
-                Profile.username,
-                Profile.avatar_basename,
-            )
+            select(Profile)
             .join(Follower, Follower.target_id == Profile.user_id)
             .where(Follower.follower_id == user_id)
             .order_by(Profile.user_id)
+            .options(
+                selectinload(Profile.skills).selectinload(UsersSkill.skill),
+            )
             .offset(pagination.limit * (pagination.page - 1))
             .limit(pagination.limit)
         )
 
         res = await session.execute(query)
-        return res.mappings().unique().all()
+        return res.scalars().all()
 
     @classmethod
     async def get_count_user_followers(cls, session: AsyncSession, user_id: int) -> int:

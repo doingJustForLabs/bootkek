@@ -8,15 +8,28 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 load_dotenv()
 
 
-class RunConfig(BaseModel):
-    host: str = "127.0.0.1"
+class ApiConfig(BaseModel):
+    host: str = "localhost"
     port: int = 8000
+    base_url: str = f"http://{host}"
+    url: str = f"http://{host}:{port}"
+
+
+class FrontendConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 5173
+    url: str = f"http://{host}"
+
+
+class MailDevConfig(BaseModel):
+    host: str = "maildev"
+    port: int = 1025
+    url: str = f"http://{host}:{port}"
 
 
 class DBConfig(BaseModel):
     url: PostgresDsn
     echo: int
-    mode: str = "DEV"
 
 
 class JWTAccessToken(BaseModel):
@@ -51,12 +64,18 @@ class FilesConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    run: RunConfig = RunConfig()
+    run: ApiConfig = ApiConfig()
+    front: FrontendConfig = FrontendConfig()
+    mail: MailDevConfig = MailDevConfig()
     db: DBConfig
     jwt: JWTConfig
     files: FilesConfig = FilesConfig()
 
-    model_config = SettingsConfigDict(env_nested_delimiter="__", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_nested_delimiter="__",
+        case_sensitive=False,
+        env_file=("./.env.example", "./.env"),
+    )
 
 
 settings = Settings()

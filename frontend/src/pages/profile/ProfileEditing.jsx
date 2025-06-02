@@ -43,8 +43,7 @@ const ProfileEditing = () => {
                         sex: profile.sex,
                         faculty: profile.faculty,
                         course: profile.course,
-                        // birthdate: profile.birthdate ? dayjs(profile.birthdate) : null,
-                        // skills: profile.skills || [],
+                        skills: profile.skills,
                     });
                 })();
             } catch (error) {
@@ -69,7 +68,9 @@ const ProfileEditing = () => {
     const handleSave = async () => {
         await wrapHandleError( async () => {
             const values = await formEditing.validateFields();
-            const {name, username, sex, faculty, course} = values;
+            const {name, username, sex, faculty, course, skills} = values;
+
+            console.log(values);
 
             const updatedFields = {};
 
@@ -78,6 +79,7 @@ const ProfileEditing = () => {
             if (sex !== profileData.sex) updatedFields.sex = sex;
             if (faculty !== profileData.faculty) updatedFields.faculty = faculty;
             if (course !== profileData.course) updatedFields.course = course;
+            if (skills !== profileData.skills) updatedFields.skills = skills;
 
             const isDataChanged = Object.keys(updatedFields).length > 0 || isAvatarChanged;
 
@@ -102,9 +104,14 @@ const ProfileEditing = () => {
 
     return (
         <NavLayout>
-            <div className="flex justify-center min-h-screen">
+            <div style={{
+                display: "flex",
+                minHeight: "100vh",
+                justifyContent: "center",
+                backgroundColor: "#3b488c"
+            }}>
                 <div style={{
-                    width: "100%",
+                    width: "80%",
                     display: "flex",
                     flexDirection: "column",
                     backgroundColor: '#3b488c'
@@ -210,6 +217,7 @@ const ProfileEditing = () => {
                             <Form.Item label="Навыки" name="skills">
                                 <SkillsSelector />
                             </Form.Item>
+
                         </Form>
                     </div>
                 </div>

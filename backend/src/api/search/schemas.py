@@ -1,9 +1,8 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict
 
-from api.enums import Sex, MuctrFaculties
-from api.exceptions import BadRequestException
+from api.enums import Sex, MuctrFaculties, Courses
 from api.profiles.schemas import ProfileReadSummarySchema
 
 
@@ -15,7 +14,7 @@ class PaginationSchema(BaseModel):
 class FiltersSchema(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
-    course: Optional[int] = Field(None, ge=1, le=4)
+    course: Optional[Courses] = None
     sex: Optional[Sex] = None
     faculty: Optional[MuctrFaculties] = None
 
@@ -25,9 +24,3 @@ class SearchResponseSchema(BaseModel):
     pagination: PaginationSchema
     total_profiles: int
     total_pages: int
-
-    # @model_validator(mode="after")
-    # def validate_page(self):
-    #     if not 1 <= self.pagination.page <= self.total_pages:
-    #         raise BadRequestException("Такой страницы не существует")
-    #     return self

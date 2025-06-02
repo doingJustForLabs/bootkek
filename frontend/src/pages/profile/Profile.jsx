@@ -3,18 +3,16 @@ import { useParams } from "react-router-dom";
 import ProfileStore from "../../store/ProfileStore";
 import NavLayout from "../../components/layouts/NavLayout";
 import Message from "../../utils/messages.js";
-import {Avatar, Button} from "antd";
-import {FormOutlined, UserOutlined} from "@ant-design/icons";
 import FollowsStore from "store/FollowsStore.js";
 import {wrapHandleError} from "utils/errors.js";
 import {goTo} from "utils/navigator.js";
+import ProfileHeader from "components/ui/profile/ProfileHeader.jsx";
+import ProfileContent from "components/ui/profile/ProfileContent.jsx"; // Убедитесь, что SkillsList работает корректно
 
 const Profile = () => {
     const userId = Number(useParams().userId);
     const [profileData, setProfileData] = useState(null);
-    const [isFollowing, setIsFollowing] = useState(false);
-    const [isCurrentUser, setIsCurrentUser] = useState(false);
-    const [avatar, setAvatar] = useState(null);
+    const [followersData, setFollowersData] = useState(null);
     const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
@@ -22,10 +20,13 @@ const Profile = () => {
             try {
                 await wrapHandleError(async () => {
                     if (userId) {
-                        const response = await ProfileStore.getProfileByUserId(userId);
-                        setAvatar(response.data.profile.avatar_basename);
-                        setProfileData(response.data.profile);
-                        setIsCurrentUser(response.data.is_current_user)
+                        const responseProfile = await ProfileStore.getProfileByUserId(userId);
+                        setProfileData({...responseProfile.data.profile,
+                            is_current_user: responseProfile.data.is_current_user,
+                            is_following: responseProfile.data.is_following});
+
+                        const responseFollowers = await FollowsStore.getFollowersByUserId(userId, 100, 1);
+                        setFollowersData(responseFollowers.data);
                     } else {
                         goTo('/');
                     }
@@ -40,18 +41,16 @@ const Profile = () => {
 
     const handleFollow = async () => {
         await wrapHandleError(async () => {
-            await FollowsStore.followByUserId(userId);
-            setIsFollowing(true);
-            Message.success("Вы подписались на пользователя");
+            if (profileData.is_following) {
+                await FollowsStore.unfollowByUserId(userId);
+                setProfileData({...profileData, is_following: false});
+                Message.success("Вы отписались от пользователя");
+            } else {
+                await FollowsStore.followByUserId(userId);
+                setProfileData({...profileData, is_following: true});
+                Message.success("Вы подписались на пользователя");
+            }
         })()
-    };
-
-    const handleUnfollow = async () => {
-        await wrapHandleError(async () => {
-            await FollowsStore.unfollowByUserId(userId);
-            setIsFollowing(false);
-            Message.success("Вы отписались от пользователя");
-        })();
     };
 
     if (notFound) {
@@ -64,81 +63,37 @@ const Profile = () => {
         );
     }
 
+    if (!(profileData && followersData)) {
+        return (
+            <NavLayout>
+                <div className="flex justify-center items-center min-h-screen">
+                    <h1 className="text-2xl text-gray-600">Загрузка профиля...</h1>
+                </div>
+            </NavLayout>
+        );
+    }
+
     return (
         <NavLayout>
-            <div className="flex justify-center min-h-screen">
-                <div
-                    style={{
-                        width: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        backgroundColor: "#3b488c",
-                    }}
-                >
-                    <div style={{ height: "25vh" }} />
+            <div
+                style={{
+                    width: "80%",
+                    display: "flex",
+                    flexDirection: "column",
+                    backgroundColor: "#3b488c",
+                    margin: '0 auto',
+                }}
+            >
+                <ProfileHeader
+                    context={profileData.is_current_user ? "ME" : null}
+                    profileData={profileData}
+                    handlerFunc={profileData.is_current_user ? null : handleFollow}
+                />
 
-                    <div
-                        style={{
-                            height: "100px",
-                            padding: "0px 50px",
-                            borderRadius: "30px 30px 0 0",
-                            backgroundColor: "#f4f4f4",
-                            display: "flex",
-                            alignItems: "center",
-                        }}
-                    >
-                        <Avatar
-                            size={150}
-                            src={avatar ? `http://127.0.0.1:8000/${avatar}_256.jpg` : undefined}
-                            icon={!avatar && <UserOutlined />}
-                            style={{ backgroundColor: "#76777c", marginTop: "-50px" }}
-                        />
-                        <h2 style={{ alignSelf: "center", margin: "0px 20px" }}>
-                        <span style={{ fontSize: "28px", fontWeight: "bold" }}>
-                            {profileData?.name}
-                        </span>
-                            <br />
-                            <span style={{ color: "gray" }}>@{profileData?.username}</span>
-                        </h2>
+                <ProfileContent
+                    profileData={profileData}
+                    followersData={followersData} />
 
-                        <div style={{ flex: "1", display: "flex", flexDirection: "row-reverse" }}>
-                            {isCurrentUser ? (
-                                <Button
-                                    style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
-                                    icon={<FormOutlined />}
-                                    onClick={() => goTo("/profile/edit")}
-                                >
-                                    Редактировать
-                                </Button>
-                            ) : isFollowing ? (
-                                <Button
-                                    style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
-                                    danger
-                                    onClick={handleUnfollow}
-                                >
-                                    Отписаться
-                                </Button>
-                            ) : (
-                                <Button
-                                    style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
-                                    type="primary"
-                                    onClick={handleFollow}
-                                >
-                                    Подписаться
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div
-                        style={{
-                            padding: "25px 50px",
-                            backgroundColor: "#f4f4f4",
-                            height: "100%",
-                        }}
-                    >
-                    </div>
-                </div>
             </div>
         </NavLayout>
     );
