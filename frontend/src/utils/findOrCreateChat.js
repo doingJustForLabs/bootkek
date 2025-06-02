@@ -25,7 +25,7 @@ export const findOrCreateDirectChat = async (targetUserId) => {
             ChatService.createChat({
                 user_ids: [targetUserId, currentId],
                 name: ""
-            }).then((response) => {console.log(response); goToChat(response.data.id)});
+            }).then((response) => {goToChat(response.data.id)});
         } catch (error) {
             Message.error("Не удалось создать личный чат");
             console.error("Ошибка при создании личного чата:", error);

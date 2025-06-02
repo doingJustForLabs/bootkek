@@ -93,6 +93,7 @@ const ChatPage = () => {
                             chats={chats}
                             onChatSelect={handleChatSelect}
                             selectedChatId={selectedChatId}
+                            onRefresh={fetchChats}
                         />
                     </div>
 

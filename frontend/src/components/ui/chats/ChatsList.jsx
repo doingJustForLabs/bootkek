@@ -8,8 +8,9 @@ import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
 import ProfilesList from "components/ui/profile/ProfilesList.jsx";
 import Pagination from "components/ui/Pagination.jsx";
 import ProfileStore from "store/ProfileStore.js";
+import {goToChat} from "utils/navigator.js";
 
-const ChatsList = ({ onChatSelect, selectedChatId, chats}) => {
+const ChatsList = ({ onChatSelect, selectedChatId, chats, onRefresh}) => {
     const { currentId } = AuthStore;
     const [loading, setLoading] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -57,13 +58,14 @@ const ChatsList = ({ onChatSelect, selectedChatId, chats}) => {
         }
         setLoading(true);
         try {
-            await API.post('/chats', {
+            API.post('/chats', {
                 name: newChatName || `Чат с ${newChatUsers.length} участниками`,
                 user_ids: [...newChatUsers, currentId]
-            });
+            }).then((response) => {if (onRefresh) onRefresh(); goToChat(response.data.id)});
+
             message.success('Чат создан!');
             setIsModalVisible(false);
-            await fetchChats();
+
         } catch (error) {
             message.error('Ошибка создания чата');
             console.error('Ошибка создания чата:', error);
