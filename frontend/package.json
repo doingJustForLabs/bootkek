@@ -10,10 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mui/x-data-grid": "^7.28.3",
     "@tailwindcss/vite": "^4.0.8",
-    "antd": "^5.24.2",
+    "antd": "^5.24.6",
     "axios": "^1.8.1",
-    "esbuild": "^0.25.5",
+    "mobx": "^6.13.7",
+    "mobx-react-lite": "^4.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0"

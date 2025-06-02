@@ -1,100 +1,88 @@
-import { useState, useEffect } from 'react';
-import { Form, Input, Button, Upload, Avatar, message, Select, DatePicker } from 'antd';
+import {useState, useEffect} from 'react';
+import { Form, Button, Upload, Avatar, DatePicker } from 'antd';
 import { UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import { useNavigate } from "react-router-dom";
-import ProfileCreationLayout from '../../components/layouts/ProfileCreationLayout.jsx';
-import ProfileStore from "../../store/ProfileStore.js";
-import Validator from "../../utils/validation.js";
-import SkillsSelector from "../../components/ui/SkillsSelector.jsx";
+import ProfileStore from "store/ProfileStore.js";
+import Validator from "utils/validation.js";
+import Message from "utils/messages.js";
+import SkillsSelector from "components/ui/inputs/SelectSkills.jsx";
+import CardLayout from "components/layouts/CardLayout.jsx";
+import StepProgress from "components/ui/profile/StepProgress.jsx";
+import {goTo} from "utils/navigator.js";
+import AuthStore from "store/AuthStore.js";
+import {wrapHandleError} from "utils/errors.js";
+import {observer} from "mobx-react-lite";
+import InputName from "components/ui/inputs/InputName.jsx";
+import InputUsername from "components/ui/inputs/InputUsername.jsx";
+import SelectGender from "components/ui/inputs/SelectGender.jsx";
+import SelectFaculty from "components/ui/inputs/SelectFaculty.jsx";
+import SelectCourse from "components/ui/inputs/SelectCourse.jsx";
 
-const ProfileCreation = () => {
+const ProfileCreation = observer(() => {
     const [formStep1] = Form.useForm();
     const [formStep2] = Form.useForm();
     const [formStep3] = Form.useForm();
     const [step, setStep] = useState(1);
     const [isProfileCreated, setIsProfileCreated] = useState(false);
     const [avatarFile, setAvatarFile] = useState(null);
-    const [messageApi, contextHolder] = message.useMessage();
     const [showSkip, setShowSkip] = useState(true);
-    const navigate = useNavigate();
 
     const handleAvatarChange = (info) => {
         const fileObj = info?.file;
         if (!fileObj) {
-            messageApi.error('Ошибка при чтении файла!');
+            Message.error('Ошибка при чтении файла!');
             return;
         }
         setAvatarFile(fileObj);
     };
 
     const handleNextStep1 = async (values) => {
-        try {
+        await wrapHandleError(async () => {
             const { name, username } = values;
+
             if (!isProfileCreated) {
                 await ProfileStore.createProfile(name, username);
                 setIsProfileCreated(true);
+                const response = ProfileStore.getProfile();
+                AuthStore.setCurrentId(response.data?.profile?.user_id);
             } else {
                 await ProfileStore.updateProfile({ name, username });
             }
             if (avatarFile) {
+                console.log(avatarFile);
                 await ProfileStore.setAvatar(avatarFile);
             }
             setStep(2);
-        } catch (error) {
-
-            messageApi.open({
-                type: 'error',
-                content: error?.response?.data?.detail || 'Ошибка создания профиля.',
-            });
-
-            if (error.response?.status === 401) navigate("/");
-        }
+        })();
     };
 
     const handleNextStep2 = async () => {
-        try {
+        await wrapHandleError(async () => {
             const values = await formStep2.validateFields();
             const { sex } = values;
-            console.log(sex)
 
             await ProfileStore.updateProfile({ sex });
             setStep(3);
-        } catch (error) {
-
-            messageApi.open({
-                type: 'error',
-                content: error?.response?.data?.detail || 'Ошибка создания профиля.',
-            });
-
-            if (error.response?.status === 401) navigate("/");
-        }
+        })();
     };
 
     const handleFinish = async () => {
-        try {
+        await wrapHandleError( async () => {
             const values = await formStep3.validateFields();
             const { faculty, course } = values;
 
             if (faculty || course) {
                 await ProfileStore.updateProfile({ faculty, course });
             }
-            navigate("/profile/me");
-        } catch (error) {
 
-            messageApi.open({
-                type: 'error',
-                content: error?.response?.data?.detail || 'Ошибка создания профиля.',
-            });
-
-            if (error.response?.status === 401) navigate("/");
-        }
+            goTo(`/profile/${AuthStore.id}`);
+        })();
     };
 
     const handleSkip = () => {
         if (step === 2) {
             setStep(3);
         } else {
-            navigate("/profile/me");
+            goTo(`/profile/${AuthStore.id}`);
         }
     };
 
@@ -109,9 +97,8 @@ const ProfileCreation = () => {
     }, [formStep2]);
 
     return (
-        <ProfileCreationLayout step={step}>
-            {contextHolder}
-
+        <CardLayout title="Создание профиля">
+            <StepProgress currentStep={step} />
             {step === 1 && (
                 <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep1} onFinish={handleNextStep1}>
                     <Form.Item>
@@ -132,18 +119,12 @@ const ProfileCreation = () => {
                         </Upload>
                     </Form.Item>
 
-                    <Form.Item
-                        name="name"
-                        rules={[{ validator: Validator.validateName }]}
-                    >
-                        <Input placeholder="Имя" prefix={<UserOutlined />} maxLength={50} />
+                    <Form.Item name="name" rules={[{ validator: Validator.validateName }]}>
+                        <InputName/>
                     </Form.Item>
 
-                    <Form.Item
-                        name="username"
-                        rules={[{ validator: Validator.validateUsername }]}
-                    >
-                        <Input placeholder="Никнейм" prefix="@" maxLength={50} />
+                    <Form.Item name="username" rules={[{ validator: Validator.validateUsername }]}>
+                        <InputUsername/>
                     </Form.Item>
 
                     <Form.Item>
@@ -169,13 +150,7 @@ const ProfileCreation = () => {
                     </Form.Item>
 
                     <Form.Item name="sex">
-                        <Select
-                            options={[
-                                { value: 'male', label: 'Мужчина' },
-                                { value: 'female', label: 'Женщина' },
-                            ]}
-                            placeholder="Ваш пол"
-                        />
+                        <SelectGender/>
                     </Form.Item>
 
                     <Form.Item>
@@ -196,30 +171,11 @@ const ProfileCreation = () => {
                     <Form.Item>
                         <div style={{ display: 'flex', gap: 8 }}>
                             <Form.Item name="faculty" style={{ flex: 1 }}>
-                                <Select
-                                    style={{ width: 125 }}
-                                    placeholder="Факультет"
-                                    options={[
-                                        { value: 'ЦиТХИн', label: 'ЦиТХИн' },
-                                        { value: 'НПМ', label: 'НПМ' },
-                                        { value: 'ХФТ', label: 'ХФТ' },
-                                        { value: 'ИПУР', label: 'ИПУР' },
-                                        { value: 'ФЕН', label: 'ФЕН' },
-                                    ]}
-                                />
+                                <SelectFaculty/>
                             </Form.Item>
 
                             <Form.Item name="course" style={{ flex: 1 }}>
-                                <Select
-                                    style={{ width: 100 }}
-                                    placeholder="Курс"
-                                    options={[
-                                        { value: 1, label: '1 курс' },
-                                        { value: 2, label: '2 курс' },
-                                        { value: 3, label: '3 курс' },
-                                        { value: 4, label: '4 курс' },
-                                    ]}
-                                />
+                                <SelectCourse/>
                             </Form.Item>
                         </div>
 
@@ -236,8 +192,8 @@ const ProfileCreation = () => {
                     </Form.Item>
                 </Form>
             )}
-        </ProfileCreationLayout>
+        </CardLayout>
     );
-};
+});
 
 export default ProfileCreation;

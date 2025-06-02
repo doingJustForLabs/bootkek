@@ -8,7 +8,7 @@
 .step-container {
     display: flex;
     align-items: center;
-    height: 10px;
+    margin-top: 2rem;
 }
 
 .step-circle {

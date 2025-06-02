@@ -25,6 +25,13 @@ from core.config import settings
 from core.security import security
 from database.db import db_helper
 
+from fastapi import WebSocket, WebSocketDisconnect, Depends
+import json
+from api.chat.websocket_handler import handle_websocket
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -50,7 +57,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Middleware
 
-origins = ["http://localhost", "http://localhost:5173", "http://127.0.0.1:5173"]
+origins = ["http://localhost", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,6 +73,47 @@ security.handle_errors(app)
 @app.exception_handler(AppException)
 def handle_not_found_error(request: Request, exc: AppException):
     return ORJSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@app.websocket("/ws/chat")
+async def websocket_chat(
+    websocket: WebSocket, db: AsyncSession = Depends(db_helper.session_getter)
+):
+    await websocket.accept()
+    print("WebSocket connected")
+    logging.debug("WebSocket connected")
+
+    try:
+        # 1. Получаем первое сообщение с токеном
+        auth_data = await websocket.receive_text()
+        auth = json.loads(auth_data)
+
+        token = auth.get("token")
+        chat_id = auth.get("chatId")
+
+        # 2. Проверяем обязательные поля
+        if not token or not chat_id:
+            await websocket.close(code=1008, reason="Token and chatId required")
+            return
+
+        # Переадресуем обработку в отдельную функцию
+        await handle_websocket(websocket, token, chat_id, db)
+
+        print("WebSocket message handled")
+
+    except json.JSONDecodeError:
+        error_msg = "Invalid JSON data"
+        logger.error(error_msg)
+        await websocket.close(code=1008, reason=error_msg)
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        await websocket.close(code=1011)
 
 
 @app.get("/")

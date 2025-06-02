@@ -9,6 +9,10 @@ export default class AuthService {
         })
     }
 
+    static async logout (){
+        return API.post("/auth/logout", {});
+    }
+
     static async refresh () {
         return API.get("/auth/refresh", {});
     }
