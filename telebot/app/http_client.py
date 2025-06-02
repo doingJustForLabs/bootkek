@@ -27,4 +27,4 @@ class ApiClient:
             return res
 
 
-api_client = ApiClient(base_url="http://localhost:8000")
+api_client = ApiClient(base_url="http://backend:8000")

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
@@ -11,11 +12,13 @@ load_dotenv()
 
 async def on_startup(dispatcher: Dispatcher):
     print("Бот запускается...")
+    logging.info("Запускает бота")
     await api_client.create_session()
 
 
 async def on_shutdown(dispatcher: Dispatcher):
     print("Бот останавливается...")
+    logging.info("Останавливаем бота")
     await api_client.close_session()
 
 async def init():
@@ -25,6 +28,7 @@ async def main():
     await init_db_pool()
     await init()
     print('sql-скрипт запущен')
+    logging.info("sql-скрипт запущен")
 
     bot = Bot(token=os.getenv("TOKEN_API"))
     dp = Dispatcher()
@@ -36,6 +40,7 @@ async def main():
     asyncio.create_task(pg_listener(bot))
 
     print("🤖 Бот запущен")
+    logging.basicConfig(level=logging.INFO)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
