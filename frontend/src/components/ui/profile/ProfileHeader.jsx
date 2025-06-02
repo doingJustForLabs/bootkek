@@ -7,7 +7,7 @@ import {
 } from "@ant-design/icons";
 import {goTo} from "utils/navigator.js";
 
-const ProfileHeader = ({context = null, profileData, handlerFunc}) => {
+const ProfileHeader = ({context = null, profileData, handlerFunc, extraActions}) => {
 
     const renderButtons = () => {
         console.log(profileData);
@@ -43,14 +43,21 @@ const ProfileHeader = ({context = null, profileData, handlerFunc}) => {
                 );
             default:
                 return (
-                    <Button
-                        style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
-                        type={profileData.is_following ? "default" : "primary"}
-                        danger={profileData.is_following}
-                        onClick={handlerFunc}
-                    >
-                        {profileData.is_following ? "Отписаться" : "Подписаться"}
-                    </Button>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <Button
+                            style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
+                            type={profileData.is_following ? "default" : "primary"}
+                            danger={profileData.is_following}
+                            onClick={handlerFunc}
+                        >
+                            {profileData.is_following ? "Отписаться" : "Подписаться"}
+                        </Button>
+                        {extraActions && (
+                            <div style={{ marginLeft: '10px' }}>
+                                {extraActions}
+                            </div>
+                        )}
+                    </div>
                 );
         }
     };
@@ -86,11 +93,11 @@ const ProfileHeader = ({context = null, profileData, handlerFunc}) => {
                 {renderAvatar()}
                 <h2 style={{ alignSelf: "center", margin: "0px 20px" }}>
                     <span style={{ fontSize: "28px", fontWeight: "bold" }}>
-                      {profileData?.name || "Имя"}
+                        {profileData?.name || "Имя"}
                     </span>
                                 <br />
                     <span style={{ fontSize: "18px", color: "gray" }}>
-                      @{profileData?.username || "username"}
+                        @{profileData?.username || "username"}
                     </span>
                 </h2>
 

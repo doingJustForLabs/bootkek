@@ -1,20 +1,26 @@
 import shutil
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Query
+from typing import List, Optional
 
 from fastapi.encoders import jsonable_encoder
+
+# from select import select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from starlette.responses import JSONResponse
 
 from database.db import db_helper
-from database.repositories.chats import ChatRepository
+from api.chat.services import ChatRepository
 from api.auth.services import UserRepository
+from api.profiles.services import ProfileRepository
 from api.chat.models import Chat, Message
-from database.schemas.message_schemas import MessageResponse
-from database.schemas.chat_creation import CreateChatRequest
+
+# from database.schemas.message_schemas import MessageResponse
+from api.chat.schemas import CreateChatRequest
+from api.profiles.models import Profile
 
 import logging
 
@@ -33,9 +39,24 @@ async def get_users(db: AsyncSession = Depends(db_helper.session_getter)):
 
 # Получение всех чатов пользователя
 @router.get("/chats/{user_id}")
-async def get_chats(user_id: int, db: AsyncSession = Depends(db_helper.session_getter)):
-    chats = await ChatRepository.get_chats_for_user(db, user_id)
-    return chats
+async def get_chats(
+    user_id: int,
+    db: AsyncSession = Depends(db_helper.session_getter),
+    chat_id: Optional[int] = Query(
+        None, description="ID конкретного чата для получения деталей"
+    ),
+):
+    if chat_id:
+        chat = await ChatRepository.get_chat_by_id(db, chat_id)
+        if not chat:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Чат с ID {chat_id} не найден.",
+            )
+        return chat
+    else:
+        chats = await ChatRepository.get_chats_for_user(db, user_id)
+        return chats
 
 
 # Создание нового чата
@@ -43,7 +64,10 @@ async def get_chats(user_id: int, db: AsyncSession = Depends(db_helper.session_g
 async def create_chat(
     chat_data: CreateChatRequest, db: AsyncSession = Depends(db_helper.session_getter)
 ):
+    user_ids = chat_data.user_ids
+
     # Проверка, чтобы все пользователи были валидными
+    profiles = []
     for user_id in chat_data.user_ids:
         user = await UserRepository.get_user_by_user_id(db, user_id)
         if not user:
@@ -51,6 +75,18 @@ async def create_chat(
                 "success": False,
                 "message": f"Пользователь с id {user_id} не найден",
             }
+        # Подгружаем профиль пользователя
+        profile_data = await db.execute(
+            select(Profile).where(Profile.user_id == user_id)
+        )
+        profile = profile_data.scalar_one_or_none()
+        profiles.append(profile)
+
+    chat_name: Optional[str] = chat_data.name
+
+    # личный чат
+    if len(user_ids) == 2:
+        chat_name = None
 
     new_chat = await ChatRepository.create_chat(db, chat_data.name, chat_data.user_ids)
     return {"message": "Chat created successfully!"}
@@ -70,6 +106,71 @@ async def get_messages(
 ):
     messages = await ChatRepository.get_messages_in_chat(db, chat_id)
     return messages
+
+
+#
+@router.get("/chats/{user_id}/with_profiles")
+async def get_user_chats_with_profiles(
+    user_id: int,
+    db: AsyncSession = Depends(db_helper.session_getter),
+    chat_id: Optional[int] = Query(
+        None, description="ID конкретного чата для получения деталей"
+    ),
+):
+    if chat_id:
+        chat = await ChatRepository.get_chat_by_id(db, chat_id)
+        if not chat:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Чат с ID {chat_id} не найден.",
+            )
+
+        participants_id = chat.users
+        profiles = []
+        for user in participants_id:
+            profile = await ProfileRepository.get_profile_by_user_id(db, user.id)
+            if profile:
+                profiles.append(profile)
+
+        chat_data = {
+            "id": chat.id,
+            "name": chat.name,
+            "participants_profiles": [
+                {
+                    "user_id": profile.user_id,
+                    "name": profile.name,
+                    "username": profile.username,
+                }
+                for profile in profiles
+            ],
+        }
+        return chat_data  # <--- ВОЗВРАЩАЕМ ОДИН ОБЪЕКТ
+
+    chats = await ChatRepository.get_chats_for_user(db, user_id)
+    chat_list_with_profiles = []
+    for chat in chats:
+        participants_id = chat.users
+        profiles = []
+        for user in participants_id:
+            profile = await ProfileRepository.get_profile_by_user_id(db, user.id)
+            if profile:
+                profiles.append(profile)
+
+        chat_data = {
+            "id": chat.id,
+            "name": chat.name,
+            "participants_profiles": [
+                {
+                    "user_id": profile.user_id,
+                    "name": profile.name,
+                    "username": profile.username,
+                }
+                for profile in profiles
+            ],
+        }
+        chat_list_with_profiles.append(chat_data)
+
+    return chat_list_with_profiles
 
 
 # @router.get("/chats/{chat_id}/messages")
@@ -167,6 +268,21 @@ async def add_message_with_file(
             content={"message": "Message sent successfully without file"},
             status_code=200,
         )
+
+
+@router.delete("/chats", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_chat(
+    chat_id: int, db: AsyncSession = Depends(db_helper.session_getter)
+):
+    chat_deleted = await ChatRepository.delete_chat_by_id(db, chat_id)
+
+    if not chat_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Чат с ID {chat_id} не найден.",
+        )
+
+    return
 
 
 # @router.post("/create_chat")

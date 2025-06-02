@@ -1,5 +1,5 @@
 import { useEffect, useState} from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ProfileStore from "../../store/ProfileStore";
 import NavLayout from "../../components/layouts/NavLayout";
 import Message from "../../utils/messages.js";
@@ -8,12 +8,21 @@ import {wrapHandleError} from "utils/errors.js";
 import {goTo} from "utils/navigator.js";
 import ProfileHeader from "components/ui/profile/ProfileHeader.jsx";
 import ProfileContent from "components/ui/profile/ProfileContent.jsx"; // Убедитесь, что SkillsList работает корректно
+import { Button } from "antd";
+import ChatService from "../../services/chat.service";
+import AuthStore from "store/AuthStore";
+import { CommentOutlined } from "@ant-design/icons";
+import { findOrCreateDirectChat } from "../../utils/chatUtils.js";
 
 const Profile = () => {
     const userId = Number(useParams().userId);
+    const navigate = useNavigate();
+    const { currentId } = AuthStore;
     const [profileData, setProfileData] = useState(null);
     const [followersData, setFollowersData] = useState(null);
     const [notFound, setNotFound] = useState(false);
+    const [creatingChat, setCreatingChat] = useState(false);
+    const [chats, setChats] = useState([]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -37,7 +46,12 @@ const Profile = () => {
             }
         };
         fetchProfile();
-    }, [userId]);
+        if (currentId) {
+            ChatService.getChatsWithProfiles(currentId)
+                .then(response => setChats(response.data || []))
+                .catch(error => console.error('Ошибка загрузки чатов:', error));
+        }
+    }, [userId, currentId]);
 
     const handleFollow = async () => {
         await wrapHandleError(async () => {
@@ -51,6 +65,21 @@ const Profile = () => {
                 Message.success("Вы подписались на пользователя");
             }
         })()
+    };
+
+
+const handleCreateDirectChat = async () => {
+        if (!profileData || profileData.is_current_user || creatingChat) return;
+        setCreatingChat(true);
+        await findOrCreateDirectChat(
+            userId,
+            currentId,
+            chats,
+            ChatService.createChat,
+            navigate,
+            Message // Передаем Message для отображения уведомлений
+        );
+        setCreatingChat(false);
     };
 
     if (notFound) {
@@ -88,6 +117,14 @@ const Profile = () => {
                     context={profileData.is_current_user ? "ME" : null}
                     profileData={profileData}
                     handlerFunc={profileData.is_current_user ? null : handleFollow}
+                    extraActions={!profileData.is_current_user && (
+                        <Button
+                            onClick={handleCreateDirectChat}
+                            loading={creatingChat}
+                            icon={<CommentOutlined />}
+                        >
+                        </Button>
+                    )}
                 />
 
                 <ProfileContent

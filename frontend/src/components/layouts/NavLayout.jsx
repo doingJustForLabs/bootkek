@@ -1,13 +1,24 @@
-import React from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { UserOutlined, TeamOutlined, LeftCircleOutlined, NotificationOutlined, CommentOutlined, CarryOutOutlined } from '@ant-design/icons';
 import { Layout, Menu } from 'antd';
 import AuthStore from "store/AuthStore.js";
 import {goTo} from "utils/navigator.js";
 import {observer} from "mobx-react-lite";
+import { useNavigate, useParams } from 'react-router-dom';
+import { getAccessToken } from '../../utils/token';
+import { NotificationContainer } from '../NotificationContainer.jsx'
+
 
 const { Content, Sider } = Layout;
 
 const NavLayout = observer(({ children }) => {
+    const navigate = useNavigate();
+    const { chatId: currentChatIdFromUrl } = useParams();
+    const socketRef = useRef(null);
+    const { currentId } = AuthStore;
+    const accessToken = getAccessToken();
+    const [showNotification, setShowNotification] = useState(() => {});
+    const [isNavigatingToChat, setIsNavigatingToChat] = useState(null);
 
     const topMenuItems = [
         {
@@ -67,6 +78,67 @@ const NavLayout = observer(({ children }) => {
         }
     };
 
+    const handleNotificationClick = useCallback((chatId) => {
+        if (isNavigatingToChat === chatId) {
+            return;
+        }
+        setIsNavigatingToChat(chatId);
+        goTo(`/chats/${chatId}`);
+        setTimeout(() => {
+            setIsNavigatingToChat(null);
+        }, 500);
+    }, [goTo, isNavigatingToChat]);
+
+    const handleNotificationFunction = useCallback((func) => {
+        setShowNotification(() => func);
+    }, []);
+
+    useEffect(() => {
+        if (currentId && accessToken) {
+            socketRef.current = new WebSocket(`ws://localhost:8000/ws/user/${currentId}`);
+
+            socketRef.current.onopen = () => {
+                console.log('WebSocket connection established for notifications.');
+            };
+
+            socketRef.current.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'new_message') {
+                        console.log('New message notification:', data);
+                        // Проверяем, находится ли пользователь в чате, о котором пришло уведомление
+                        if (String(data.chatId) !== currentChatIdFromUrl) {
+                            console.log('Показываем уведомление, так как пользователь не в этом чате.');
+                            if (showNotification) {
+                                showNotification(`Новое сообщение от ${data.senderUsername}: ${data.preview}`, 5000, data.chatId);
+                            } else {
+                                console.warn('showNotification не инициализирована!');
+                            }
+                        } else {
+                            console.log('Пользователь находится в чате, уведомление не показывается.');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error processing notification:', error);
+                }
+            };
+
+            socketRef.current.onclose = () => {
+                console.log('WebSocket connection for notifications closed.');
+            };
+
+            socketRef.current.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        return () => {
+            if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                socketRef.current.close();
+            }
+        };
+    }, [currentId, accessToken, navigate, showNotification, currentChatIdFromUrl]);
+
     return (
 
         <Layout>
@@ -96,6 +168,7 @@ const NavLayout = observer(({ children }) => {
             </Sider>
             <Layout>
                 <Content style={{ overflow: 'initial', backgroundColor: '#3b488c' }}>
+                    <NotificationContainer onShowNotification={handleNotificationFunction} onNotificationClick={handleNotificationClick} />
                     {children}
                 </Content>
             </Layout>
