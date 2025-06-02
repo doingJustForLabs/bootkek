@@ -14,7 +14,24 @@ export default defineConfig({
       'services': path.resolve(__dirname, 'src/services'),
       'store': path.resolve(__dirname, 'src/store'),
       'utils': path.resolve(__dirname, 'src/utils'),
-      'configs': path.resolve(__dirname, 'src/configs')
+      'configs': path.resolve(__dirname, 'src/configs'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          antd: ['antd/es/button', 'antd/es/table', 'antd/es/form', /* другие используемые компоненты */],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1500, // Увеличиваем лимит предупреждений
+  },
+  css: {
+    preprocessorOptions: {
+      less: {
+        javascriptEnabled: true,
+      }
+    }
+  }
 });

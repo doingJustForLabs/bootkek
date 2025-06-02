@@ -9,15 +9,16 @@ load_dotenv()
 
 
 class ApiConfig(BaseModel):
-    host: str = "127.0.0.1"
+    host: str = "localhost"
     port: int = 8000
+    base_url: str = f"http://{host}"
     url: str = f"http://{host}:{port}"
 
 
 class FrontendConfig(BaseModel):
     host: str = "localhost"
     port: int = 5173
-    url: str = f"http://{host}:{port}"
+    url: str = f"http://{host}"
 
 
 class MailDevConfig(BaseModel):
@@ -73,10 +74,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_nested_delimiter="__",
         case_sensitive=False,
-        env_file=("./.env.example", "./.env")
+        env_file=("./.env.example", "./.env"),
     )
 
 
 settings = Settings()
-
-print(settings.mail.host)

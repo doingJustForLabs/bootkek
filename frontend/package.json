@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@mui/x-data-grid": "^7.28.3",
-    "@tailwindcss/vite": "^4.0.8",
     "antd": "^5.24.6",
     "axios": "^1.8.1",
     "mobx": "^6.13.7",
@@ -22,17 +21,19 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
+    "@tailwindcss/vite": "^4.1.8",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.5",
     "eslint": "^9.19.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.18",
     "globals": "^15.14.0",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^4.0.8",
-    "vite": "^6.1.0"
+    "postcss": "^8.5.4",
+    "tailwindcss": "^4.1.8",
+    "vite": "^6.3.5"
   }
 }

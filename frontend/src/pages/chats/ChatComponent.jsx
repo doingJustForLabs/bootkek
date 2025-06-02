@@ -1,10 +1,10 @@
 import {useState, useEffect, useRef, useCallback} from 'react';
 // import { useAuth } from '../pages/AuthContext';
 import { Input, Button, List, message, Modal, Spin } from 'antd';
-import API from '../../services/API.js';
+import API from 'services/api.js';
 import { useNavigate, Navigate } from 'react-router-dom';
 import AuthStore from "store/AuthStore";
-import ProfileService from "../../services/profile.service.js";
+import ProfileService from "services/profile.service.js";
 // import { observer } from 'mobx-react-lite';
 import { PlusOutlined } from '@ant-design/icons';
 

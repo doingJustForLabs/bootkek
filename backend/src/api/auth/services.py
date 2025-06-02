@@ -130,7 +130,7 @@ class EmailRepository:
             recipient=user.email,
             subject="Добро пожаловать на Granite!",
             body=f"Добро пожаловать на наш сайт!\nАктивируйте аккаунт, перейдя "
-            f"по ссылке: {settings.run.url}/api/auth/activate/{user.activation_link}",
+            f"по ссылке: {settings.run.base_url}/api/auth/activate/{user.activation_link}",
         )
         return
 

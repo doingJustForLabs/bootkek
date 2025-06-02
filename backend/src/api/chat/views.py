@@ -40,12 +40,17 @@ async def get_chats(user_id: int, db: AsyncSession = Depends(db_helper.session_g
 
 # Создание нового чата
 @router.post("/chats")
-async def create_chat(chat_data: CreateChatRequest, db: AsyncSession = Depends(db_helper.session_getter)):
+async def create_chat(
+    chat_data: CreateChatRequest, db: AsyncSession = Depends(db_helper.session_getter)
+):
     # Проверка, чтобы все пользователи были валидными
     for user_id in chat_data.user_ids:
         user = await UserRepository.get_user_by_user_id(db, user_id)
         if not user:
-            return {"success": False, "message": f"Пользователь с id {user_id} не найден"}
+            return {
+                "success": False,
+                "message": f"Пользователь с id {user_id} не найден",
+            }
 
     new_chat = await ChatRepository.create_chat(db, chat_data.name, chat_data.user_ids)
     return {"message": "Chat created successfully!"}
@@ -91,6 +96,7 @@ async def get_messages(
 #
 #     return messages_with_files
 
+
 # Добавление нового сообщения в чат
 @router.post("/chats/{chat_id}/messages")
 async def add_message(
@@ -105,6 +111,7 @@ async def add_message(
     )
     # Возвращаем новое сообщение
     return new_message
+
 
 @router.post("/chats/{chat_id}/messages_with_file")
 async def add_message_with_file(
@@ -140,7 +147,10 @@ async def add_message_with_file(
         await db.commit()
 
         return JSONResponse(
-            content={"message": "Message with file sent successfully!", "file_path": str(file_location)},
+            content={
+                "message": "Message with file sent successfully!",
+                "file_path": str(file_location),
+            },
             status_code=200,
         )
     else:
@@ -157,6 +167,7 @@ async def add_message_with_file(
             content={"message": "Message sent successfully without file"},
             status_code=200,
         )
+
 
 # @router.post("/create_chat")
 # async def create_chat(users: list, db: AsyncSession = Depends(db_helper.session_getter)):
