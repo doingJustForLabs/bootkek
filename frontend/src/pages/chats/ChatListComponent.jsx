@@ -117,7 +117,7 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
         setLoading(true);
         try {
             const nameToSend = newChatUsers.length === 1 ? "" : newChatName || `Чат с ${newChatUsers.length + 1} участниками`;
-            await API.post('/chats', {
+            const response = await API.post('/chats', {
                 name: nameToSend,
                 user_ids: [...newChatUsers, currentId]
             });
@@ -125,7 +125,7 @@ const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
             setIsModalVisible(false);
             await fetchChats();
             onChatSelect(response.data.id);
-            navigate(`/chat/${response.data.id}`);
+            navigate(`/chats/${response.data.id}`);
         } catch (error) {
             message.error('Ошибка создания чата');
             console.error('Ошибка создания чата:', error);
