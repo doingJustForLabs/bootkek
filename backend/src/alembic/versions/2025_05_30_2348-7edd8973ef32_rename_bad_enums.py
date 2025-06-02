@@ -17,7 +17,7 @@ from api.profiles.models import Profile
 
 # revision identifiers, used by Alembic.
 revision: str = "7edd8973ef32"
-down_revision: Union[str, None] = "1c64cbb8aa68"
+down_revision: Union[str, None] = "851fb71fef3a"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

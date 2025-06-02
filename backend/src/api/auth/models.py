@@ -14,7 +14,8 @@ class User(Base):
     password: Mapped[str]
 
     role: Mapped[str] = mapped_column(String(20))
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    activation_link: Mapped[str]
+    active: Mapped[bool] = mapped_column(Boolean, default=False)
 
     update_date: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now()

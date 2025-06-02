@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SendOutlined, LoadingOutlined, ExclamationCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { Input, Button, List, message, Spin } from 'antd';
+import { Input, Button, List, message, Spin, Modal, Avatar } from 'antd';
 import API from 'services/api.js';
-import AuthStore from "store/AuthStore.js";
+import AuthStore from "store/AuthStore";
+import ChatService from '../../services/chat.service';
+import { Link } from 'react-router-dom';
 
 const ChatViewComponent = ({ chatId }) => {
     const { currentId } = AuthStore;
@@ -11,16 +12,21 @@ const ChatViewComponent = ({ chatId }) => {
     const [loading, setLoading] = useState(false);
     const socketRef = useRef(null);
     const messagesEndRef = useRef(null);
+    const [showChatInfo, setShowChatInfo] = useState(false);
+    const [chatDetails, setChatDetails] = useState(null);
+    const [loadingChatDetails, setLoadingChatDetails] = useState(false);
 
     useEffect(() => {
         if (chatId) {
             fetchMessages(chatId);
             connectWebSocket(chatId);
+            fetchChatDetails(chatId, currentId);
             console.log('ChatId changed:', chatId)
         }
         else{
             setMessages([]);
             setInputValue('');
+            setChatDetails(null);
             console.log('ChatId changed:', chatId)
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.close(1000, 'ChatId changed to null');
@@ -50,18 +56,35 @@ const ChatViewComponent = ({ chatId }) => {
         }
     };
 
+    const fetchChatDetails = async (chatId, userId) => {
+        if (!chatId || !userId) return;
+        setLoadingChatDetails(true);
+        try {
+            const response = await ChatService.getChatDetails(chatId, userId);
+            setChatDetails(response.data);
+        } catch (error) {
+            console.error('Ошибка загрузки деталей чата:', error);
+            message.error('Не удалось загрузить детали чата');
+        } finally {
+            setLoadingChatDetails(false);
+        }
+    };
+
+    const toggleChatInfo = () => {
+        setShowChatInfo(!showChatInfo);
+    };
+
     const sendMessage = async () => {
         if (!inputValue.trim() || !chatId) return;
-
-        const tempMessage = {
-            tempId: Date.now(),
-            content: inputValue,
-            user_id: currentId,
-            timestamp: new Date().toISOString(),
-            status: 'sending'
-        };
-
+        
         try {
+            const tempMessage = {
+                tempId: Date.now(),
+                content: inputValue,
+                user_id: currentId,
+                timestamp: new Date().toISOString(),
+                status: 'sending'
+            };
 
             setMessages(prev => [...prev, tempMessage]);
             setInputValue('');
@@ -176,27 +199,38 @@ const ChatViewComponent = ({ chatId }) => {
     }, [messages]);
 
     return (
-        <div className="h-full w-full flex flex-col">
+        <div className="h-full flex flex-col">
+            <div className="p-2 border-b flex justify-between items-center">
+                <h2 className="font-semibold" style={{ color: 'white' }}>
+                    {chatDetails?.name || (chatDetails?.participants_profiles?.length === 2
+                        ? chatDetails.participants_profiles.find(p => p.user_id !== currentId)?.name || chatDetails.participants_profiles.find(p => p.user_id !== currentId)?.username || 'Личный чат'
+                        : 'Групповой чат') || 'Чат'}
+                </h2>
+                <Button onClick={toggleChatInfo} size="small">
+                    Информация
+                </Button>
+            </div>
+
             {loading ? (
                 <div className="flex-1 flex items-center justify-center">
                     <Spin tip="Загрузка сообщений..." />
                 </div>
             ) : (
-                <div style = {{ flexGrow: 1, overflowY: 'auto', padding: "0px 40px 0px 40px" }}>
+                <div className="flex-1 overflow-y-auto">
                     <List
                         dataSource={messages}
                         renderItem={msg => (
                             <List.Item
                                 key={msg.id || msg.tempId}
                                 className={`message ${msg.user_id === currentId ? 'sent' : 'received'}`}
-                                style={{ justifyContent: (msg.user_id === currentId ? 'flex-end' : 'flex-start'), justifyItems: 'flex-start'}}
+                                style={{ justifyContent: msg.user_id === currentId ? 'flex-end' : 'flex-start' }}
                             >
                                 <div
                                     className={`message-bubble ${msg.status || ''}`}
                                     style={{
                                         maxWidth: '70%',
                                         padding: '8px 12px',
-                                        borderRadius: (msg.user_id === currentId ? '12px 12px 0px 12px' : '12px 12px 12px 0px'),
+                                        borderRadius: '12px',
                                         background: msg.user_id === currentId ? '#1890ff' : '#f0f0f0',
                                         color: msg.user_id === currentId ? '#fff' : '#000',
                                         marginLeft: msg.user_id === currentId ? 'auto' : '0',
@@ -204,29 +238,19 @@ const ChatViewComponent = ({ chatId }) => {
                                         transition: 'opacity 0.3s ease'
                                     }}
                                 >
-                                    <div style={{
-                                        textAlign: 'left',
-                                        whiteSpace: 'pre-wrap',         // ← перенос строк + \n
-                                        wordBreak: 'break-word',        // ← переносит длинные слова
-                                        overflowWrap: 'break-word',     // ← дублируем для совместимости
-                                        maxWidth: '100%',               // ← не даём выйти за границы
-                                    }}>
-                                        {msg.content}
-                                    </div>
+                                    <p style={{ margin: 0 }}>{msg.content}</p>
                                     <small style={{
-                                        display: 'flex',
+                                        display: 'block',
                                         textAlign: 'right',
-                                        alignItems: 'center',
                                         opacity: 0.7,
-                                        fontSize: '0.9em',
-                                        marginTop: '4px',
-                                        gap: '5px'
+                                        fontSize: '0.8em',
+                                        marginTop: '4px'
                                     }}>
                                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         {/* Индикаторы статуса */}
-                                        {msg.status === 'sending' && <LoadingOutlined />}
-                                        {msg.status === 'failed' && <ExclamationCircleOutlined />}
-                                        {msg.status === 'delivered' && <CheckCircleOutlined />}
+                                        {msg.status === 'sending' && ' (отправка...)'}
+                                        {msg.status === 'failed' && ' (не отправлено)'}
+                                        {msg.status === 'delivered' && ' ✓'}
                                         {/* Для обратной совместимости с isPending */}
                                         {!msg.status && msg.isPending && ' (отправка...)'}
                                         {!msg.status && !msg.isPending && msg.tempId && ' ✓'}
@@ -240,11 +264,8 @@ const ChatViewComponent = ({ chatId }) => {
             )}
 
             <div className="message-input" style={{
-                backgroundColor: '#f4f4f4',
                 padding: '10px',
-                height: '15vh',
                 borderTop: '1px solid #f0f0f0',
-                alignContent: "center",
                 display: 'flex',
                 gap: '8px'
             }}>
@@ -262,14 +283,46 @@ const ChatViewComponent = ({ chatId }) => {
                     style={{ flex: 1 }}
                 />
                 <Button
-                    shape="circle"
                     type="primary"
-                    size="large"
-                    icon={<SendOutlined />}
                     onClick={sendMessage}
                     disabled={!inputValue.trim()}
-                />
+                    style={{ alignSelf: 'flex-end' }}
+                >
+                    Отправить
+                </Button>
             </div>
+
+            <Modal
+                title={chatDetails?.name || 'Информация о чате'}
+                visible={showChatInfo}
+                onCancel={toggleChatInfo}
+                footer={null}
+            >
+                {loadingChatDetails ? (
+                    <Spin tip="Загрузка информации..." />
+                ) : (
+                    chatDetails && (
+                        <div>
+                            <h4>Участники:</h4>
+                            <List
+                                dataSource={chatDetails.participants_profiles}
+                                renderItem={item => (
+                                    <Link to={`/profile/${item.user_id}`} key={item.user_id} style={{ display: 'block' }}>
+                                        <List.Item>
+                                            <List.Item.Meta
+                                                avatar={<Avatar>{item.name ? item.name[0].toUpperCase() : item.username ? item.username[0].toUpperCase() : '?'}</Avatar>}
+                                                title={item.name || item.username || 'Неизвестный'}
+                                                description={item.username && `@${item.username}`}
+                                            />
+                                        </List.Item>
+                                    </Link>
+                                )}
+                            />
+                            {/* Дополнительная информация о чате, если есть */}
+                        </div>
+                    )
+                )}
+            </Modal>
         </div>
     );
 };

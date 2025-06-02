@@ -15,6 +15,8 @@ const Profile = () => {
     const [followersData, setFollowersData] = useState(null);
     const [followingsData, setFollowingsData] = useState(null);
     const [notFound, setNotFound] = useState(false);
+    const [creatingChat, setCreatingChat] = useState(false);
+    const [chats, setChats] = useState([]);
 
     const fetchProfile = async () => {
         try {
@@ -42,7 +44,26 @@ const Profile = () => {
 
     useEffect(() => {
         fetchProfile();
-    }, [userId]);
+        if (currentId) {
+            ChatService.getChatsWithProfiles(currentId)
+                .then(response => setChats(response.data || []))
+                .catch(error => console.error('Ошибка загрузки чатов:', error));
+        }
+    }, [userId, currentId]);
+
+const handleCreateDirectChat = async () => {
+        if (!profileData || profileData.is_current_user || creatingChat) return;
+        setCreatingChat(true);
+        await findOrCreateDirectChat(
+            userId,
+            currentId,
+            chats,
+            ChatService.createChat,
+            navigate,
+            Message // Передаем Message для отображения уведомлений
+        );
+        setCreatingChat(false);
+    };
 
     if (notFound) {
         return (
@@ -62,12 +83,12 @@ const Profile = () => {
 
     return (
         <NavLayout>
-
             <div
                 style={{
                     width: "80%",
                     display: "flex",
                     flexDirection: "column",
+                    backgroundColor: "#3b488c",
                     margin: '0 auto',
                 }}
             >
@@ -75,6 +96,15 @@ const Profile = () => {
                     profileData={profileData}
                     context={profileData.is_current_user ? "me" : "other"}
                     actions={{fetchProfile}}
+                    handlerFunc={profileData.is_current_user ? null : handleFollow}
+                    extraActions={!profileData.is_current_user && (
+                        <Button
+                            onClick={handleCreateDirectChat}
+                            loading={creatingChat}
+                            icon={<CommentOutlined />}
+                        >
+                        </Button>
+                    )}
                 />
 
                 <ProfileContent

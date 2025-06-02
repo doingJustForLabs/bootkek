@@ -17,8 +17,61 @@ import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
 const ProfileHeader = ({ profileData, context = "other", actions}) => {
 
     const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const renderButtons = () => {
+        console.log(profileData);
+        switch (context) {
+            case "ME":
+                return (
+                    <Button
+                        style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
+                        icon={<FormOutlined />}
+                        onClick={() => goTo("/profile/edit")}
+                    >
+                        Редактировать
+                    </Button>
+                );
+            case "EDITING":
+                return (
+                    <>
+                        <Button
+                            style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
+                            onClick={() => {goTo(`/profile/${profileData.user_id}`)}}
+                        >
+                            Отменить
+                        </Button>
+                        <Button
+                            style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
+                            icon={<SaveOutlined />}
+                            onClick={handlerFunc}
+                            type="primary"
+                        >
+                            Сохранить
+                        </Button>
+                    </>
+                );
+            default:
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <Button
+                            style={{ margin: "10px", alignSelf: "center", fontSize: "16px" }}
+                            type={profileData.is_following ? "default" : "primary"}
+                            danger={profileData.is_following}
+                            onClick={handlerFunc}
+                        >
+                            {profileData.is_following ? "Отписаться" : "Подписаться"}
+                        </Button>
+                        {extraActions && (
+                            <div style={{ marginLeft: '10px' }}>
+                                {extraActions}
+                            </div>
+                        )}
+                    </div>
+                );
+        }
+    };
 
     const renderAvatar = () => {
+        const src = profileData.avatar_basename ? `http://127.0.0.1:8000/${profileData.avatar_basename}_256.jpg` : null
 
         if (context === "edit") return (
             <Upload

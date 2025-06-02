@@ -38,6 +38,15 @@ class ChatRepository:
         return result.scalars().first()
 
     @staticmethod
+    async def delete_chat_by_id(db: AsyncSession, chat_id: int) -> bool:
+        chat = await db.get(Chat, chat_id)  # Используем db.get для простоты
+        if chat:
+            await db.delete(chat)
+            await db.commit()  # Сохраняем изменения в базе данных
+            return True
+        return False
+
+    @staticmethod
     async def get_chats_for_user(session: AsyncSession, user_id: int) -> List[Chat]:
         result = await session.execute(
             select(Chat)

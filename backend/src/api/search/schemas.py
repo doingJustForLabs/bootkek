@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from api.enums import Sex, MuctrFaculties, Courses
 from api.profiles.schemas import ProfileReadSummarySchema
+from api.chat.schemas import MessageResponse, ChatSchema
 
 
 class PaginationSchema(BaseModel):
@@ -24,3 +25,24 @@ class SearchResponseSchema(BaseModel):
     pagination: PaginationSchema
     total_profiles: int
     total_pages: int
+
+    # @model_validator(mode="after")
+    # def validate_page(self):
+    #     if not 1 <= self.pagination.page <= self.total_pages:
+    #         raise BadRequestException("Такой страницы не существует")
+    #     return self
+
+
+class ChatSearchResult(BaseModel):
+    chat: ChatSchema
+    matching_messages: list[MessageResponse]
+
+
+class MessageSearchResult(BaseModel):
+    message: MessageResponse
+    chat: Optional[ChatSchema]
+
+
+class CombinedChatSearchResponse(BaseModel):
+    chats: list[ChatSearchResult]
+    messages: list[MessageSearchResult]

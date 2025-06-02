@@ -6,8 +6,15 @@ import sys
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from redis import asyncio as aioredis
+
+from limiter import limiter
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 
@@ -20,7 +27,7 @@ from database.db import db_helper
 
 from fastapi import WebSocket, WebSocketDisconnect, Depends
 import json
-from api.chat.websocket_handler import handle_websocket
+from api.chat import websocket_handler
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -29,7 +36,8 @@ from fastapi.staticfiles import StaticFiles
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # startup
-
+    redis = aioredis.from_url("redis://localhost")
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
     yield
 
     # shutdown
@@ -38,16 +46,23 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Granite",
-    version="0.10.0",
+    version="0.11.0",
     lifespan=lifespan,
     default_response_class=ORJSONResponse,
 )
 
 app.include_router(main_router)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Middleware
 
-origins = ["http://localhost", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5173", "http://127.0.0.1:5173"]
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://frontend:5173/",
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -93,7 +108,7 @@ async def websocket_chat(
             return
 
         # Переадресуем обработку в отдельную функцию
-        await handle_websocket(websocket, token, chat_id, db)
+        await websocket_handler.handle_websocket(websocket, token, chat_id, db)
 
         print("WebSocket message handled")
 
@@ -106,8 +121,20 @@ async def websocket_chat(
         await websocket.close(code=1011)
 
 
+@app.websocket("/ws/user/{user_id}")
+async def websocket_user(
+    websocket: WebSocket,
+    user_id: int,
+    db: AsyncSession = Depends(db_helper.session_getter),
+):
+    await websocket.accept()
+    logger.info(f"User {user_id} connected for notifications.")
+    await websocket_handler.handle_user_websocket(websocket, user_id, db)
+
+
 @app.get("/")
-def get_root():
+@limiter.limit("5/minute")
+def get_root(request: Request):
     return {"message": "Api is working!~!!"}
 
 
@@ -117,6 +144,7 @@ async def get_database_version(session: DbSession):
     return {"version": res.scalar()}
 
 
+settings.files.avatar_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")
 
 
