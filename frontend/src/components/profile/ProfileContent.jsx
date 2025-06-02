@@ -3,7 +3,7 @@ import SkillsList from "./SkillsList.jsx";
 import InfoCard from "components/ui/InfoCard.jsx";
 import Post from "components/Post.jsx";
 import ProfilesList from "components/profile/ProfilesList.jsx";
-import FollowersDetailsModal from "components/profile/FollowersDetailsModal.jsx";
+import FollowersDetailsModal from "components/profile/modals/FollowersDetailsModal.jsx";
 import ProfilePreview from "components/profile/ProfilePreview.jsx";
 import ProfileButtonsPanel from "components/ui/buttons/ProfileButtonsPanel.jsx";
 import ProfileAvatar from "components/profile/ProfileAvatar.jsx";
