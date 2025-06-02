@@ -38,10 +38,7 @@ const Login = observer(() => {
     };
 
     return (
-        <CardLayout title={"Granite"}>
-            <div className="m-5">
-                <h2 className="text-muctr text-2xl">АВТОРИЗАЦИЯ</h2>
-            </div>
+        <CardLayout title="Авторизация">
             <Form
                 form={form}
                 name="login"
@@ -63,11 +60,11 @@ const Login = observer(() => {
                     <InputPassword/>
                 </Form.Item>
 
-                <Form.Item>
-                    <Button block type="primary" htmlType="submit">
+                <Form.Item style={{ display: "flex", justifyContent: "center" }}>
+                    <Button block type={"primary"} htmlType="submit" style={{ fontSize: 20, padding: 20}}>
                         Войти
                     </Button>
-                    <div className="mt-2 text-right">
+                    <div style={{ margin: "10px", fontSize: 18}}>
                         или <a href="/registration">создать профиль!</a>
                     </div>
                 </Form.Item>

@@ -23,6 +23,7 @@ function SelectFaculty(props) {
             placeholder="Выберите факультет"
             options={options}
             loading={options.length === 0}
+            allowClear
             {...props}
         />
     );

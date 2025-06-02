@@ -1,0 +1,43 @@
+.card-wrapper {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    background-color: #24385c;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.card {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 25vw;
+    padding: 32px;
+    color: #3e4c87;
+    background-color: #f4f4f4;
+    border-radius: 50px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.card .title {
+    font-weight: 600;
+    font-size: 36px;
+    text-align: center;
+}
+
+.card .content {
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    justify-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.card .logo {
+    font-size: 48px;
+    font-weight: 800;
+    text-align: center;
+}

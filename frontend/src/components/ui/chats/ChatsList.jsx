@@ -137,7 +137,7 @@ const ChatsList = ({ onChatSelect, selectedChatId }) => {
         );
     }
     return (
-        <div style={{padding: 16, height: "100%" }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 16 }}>
             <div style={{
                 display: "flex",
                 alignItems: "center",
@@ -157,34 +157,34 @@ const ChatsList = ({ onChatSelect, selectedChatId }) => {
                     />
                 </Tooltip>
             </div>
-            <Spin spinning={loading}>
-                <List
 
-                    dataSource={Array.from({ length: 100 }, () => chats)}
-                    renderItem={chat => (
-                        <List.Item
-                            key={chat.id}
-                            onClick={() => {
-                                console.log('ChatsList - Chat clicked - id:', chat.id);
-                                onChatSelect(chat.id);
-                            }}
-                            style={{
-                                cursor: 'pointer',
-                                padding: '8px 12px',
-                                borderBottom: '1px solid #f0f0f0',
-                                backgroundColor: selectedChatId === chat.id ? '#bae7ff' : 'white',
-                                fontWeight: selectedChatId === chat.id ? 'bold' : 'normal',
-                                fontSize: "18px",
-                                borderRadius: '6px',
-                                marginBottom: '4px',
-                            }}
-                        >
-                            {chat.name || `Чат ${chat.id}`}
-                        </List.Item>
-
-                    )}
-                />
-            </Spin>
+            <div style={{ flexGrow: 1, overflowY: 'auto' }}>
+                <Spin spinning={loading}>
+                    <List
+                        dataSource={chats}
+                        renderItem={chat => (
+                            <List.Item
+                                key={chat.id}
+                                onClick={() => {
+                                    console.log('ChatsList - Chat clicked - id:', chat.id);
+                                    onChatSelect(chat.id);
+                                }}
+                                style={{
+                                    cursor: 'pointer',
+                                    padding: '8px 12px',
+                                    backgroundColor: selectedChatId === chat.id ? '#bae7ff' : 'white',
+                                    fontWeight: selectedChatId === chat.id ? 'bold' : 'normal',
+                                    fontSize: "18px",
+                                    borderRadius: '6px',
+                                    marginBottom: '4px',
+                                }}
+                            >
+                                {chat.name || `Чат ${chat.id}`}
+                            </List.Item>
+                        )}
+                    />
+                </Spin>
+            </div>
 
             <Modal
                 title="Создать новый чат"

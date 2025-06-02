@@ -1,47 +1,31 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Avatar } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import 'styles/profile/ProfilePreview.css';
+import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
 
-function ProfilePreview({ profileData, style }) {
-    const navigate = useNavigate();
-    const avatar = profileData?.avatar_basename;
+const ProfilePreview = ({ profileData = {}, onClick, children, avatarSize = 64, style = {} }) => {
 
-    const handleClick = () => {
-        if (profileData?.user_id) {
-            navigate(`/profile/${profileData.user_id}`);
-        }
-    };
+    const name = profileData?.name;
+    const username = profileData?.username;
 
     return (
         <div
-            onClick={handleClick}
-            style={{
-                cursor: 'pointer',
-                height: '100px',
-                padding: '10px',
-                borderRadius: '25px',
-                backgroundColor: '#f4f4f4',
-                display: 'flex',
-                alignItems: 'center',
-                ...style
-            }}
+            className="profile-preview"
+            onClick={onClick}
+            style={{...style}}
         >
-            <Avatar
-                size={64}
-                src={avatar ? `http://127.0.0.1:8000/${avatar}_128.jpg` : undefined}
-                icon={!avatar && <UserOutlined />}
-                style={{ backgroundColor: '#76777c' }}
-            />
-            <h2 style={{ alignSelf: 'center', margin: '0px 20px' }}>
-                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                    {profileData?.name}
+           <ProfileAvatar profileData={profileData} avatarSize={64}/>
+
+            <div className="info">
+                <span className="name">
+                    {name}
                 </span>
-                <br />
-                <span style={{ color: 'gray' }}>
-                    @{profileData?.username}
+                <span className="username">
+                    @{username}
                 </span>
-            </h2>
+            </div>
+
+            {children}
+
         </div>
     );
 }

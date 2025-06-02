@@ -1,14 +1,40 @@
-import React, {useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import SkillsList from "./SkillsList";
-import FollowersListPreview from "components/ui/profile/FollowersListPreview.jsx";
 import InfoCard from "components/ui/InfoCard.jsx";
 import Post from "components/Post.jsx";
-import {Modal, Tabs} from "antd";
 import ProfilesList from "components/ui/profile/ProfilesList.jsx";
+import FollowersDetailsModal from "components/ui/profile/FollowersDetailsModal.jsx";
+import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
+import ProfileButtonsPanel from "components/ui/buttons/ProfileButtonsPanel.jsx";
+import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
 
-const ProfileContent = ({ profileData, followersData, followingsData }) => {
+const ProfileContent = ({ profileData, followersData, followingsData, actions }) => {
 
-    const [showFollowersModal, setShowFollowersModal] = useState(false)
+    const [showFollowersDetailsModal, setShowFollowersDetailsModal] = useState(false)
+
+    const [isPreviewVisible, setIsPreviewVisible] = useState(true);
+    const triggerRef = useRef(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsPreviewVisible(!entry.isIntersecting);
+            },
+            {
+                root: null,
+                rootMargin: "0px",
+                threshold: 0.01
+            }
+        );
+
+        const current = triggerRef.current;
+        if (current) observer.observe(current);
+
+        return () => {
+            if (current) observer.unobserve(current);
+        };
+    }, []);
+
 
     return (
         <div
@@ -23,6 +49,7 @@ const ProfileContent = ({ profileData, followersData, followingsData }) => {
                 boxSizing: "border-box",
             }}
         >
+            <div ref={triggerRef} style={{ height: "1px" }} />
             <div
                 style={{
                     display: "flex",
@@ -68,12 +95,23 @@ const ProfileContent = ({ profileData, followersData, followingsData }) => {
                             flexDirection: "column",
                             gap: "16px",
                         }}>
+                            {isPreviewVisible &&
+                                <ProfilePreview profileData={profileData} style={{backgroundColor: '#596acc', color: "white"}} >
+                                    <div style={{ display: "flex", flexDirection: "row-reverse", width: "100%"}}>
+                                        <ProfileButtonsPanel profileData={profileData} context={profileData.is_current_user ? "me" : "other"} preview={true} actions={actions}/>
+                                    </div>
+                                </ProfilePreview>}
+
                             <InfoCard title={"Навыки"} statistics={profileData?.skills?.length}>
-                                <SkillsList skills={profileData.skills}/>
+                                <SkillsList limit={null} skills={profileData.skills}/>
                             </InfoCard>
 
-                            <InfoCard title={"Подписчики"} statistics={profileData?.subscribers_count} handleDetails={() => {setShowFollowersModal(true)}}>
-                                <FollowersListPreview followers={followersData.profiles}/>
+                            <InfoCard title={"Подписчики"} statistics={profileData?.subscribers_count} handleDetails={() => {setShowFollowersDetailsModal(true)}}>
+                                <ProfilesList style={{ flexDirection: "row", flexWrap: "wrap", gap: "18px", padding: "20px"}}
+                                              profilesData={[...followersData.profiles].sort(() => 0.5 - Math.random()).slice(0, 10)}
+                                              renderItem={(profile) => (<ProfileAvatar key={profile.user_id} showTip={true} profileData={profile} linked={true} avatarSize={80}/>)
+                                }
+                                />
                             </InfoCard>
                         </div>
 
@@ -81,32 +119,12 @@ const ProfileContent = ({ profileData, followersData, followingsData }) => {
                 </div>
             </div>
 
-            <Modal
-                open={showFollowersModal}
-                title="Информация о подписках..."
-                onCancel={() => setShowFollowersModal(false)}
-                footer={null}
-            >
-                <Tabs
-                    defaultActiveKey="1"
-                    type="card"
-                    size="large"
-                    items={[
-                        {
-                            label: "Подписчики",
-                            key: "1",
-                            children: <ProfilesList profilesData={followersData.profiles} style={{borderRadius:"0px", backgroundColor: null}}/>
-                        },
-                        {
-                            label: "Подписки",
-                            key: "2",
-                            children: <ProfilesList profilesData={followingsData.profiles} style={{borderRadius:"0px", backgroundColor: null}}/>
-                        }
-                    ]}
-
-
-                />
-            </Modal>
+            <FollowersDetailsModal
+                profileData={profileData}
+                userId={profileData.user_id}
+                showFollowersDetailsModal={showFollowersDetailsModal}
+                setShowFollowersDetailsModal={setShowFollowersDetailsModal}
+            />
 
         </div>
     );

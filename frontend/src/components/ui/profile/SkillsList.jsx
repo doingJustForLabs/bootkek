@@ -1,54 +1,42 @@
 import React from 'react';
-import {Tag} from "antd";
+import { Tag } from 'antd';
+import Placeholder from 'components/ui/Placeholder.jsx';
+import 'styles/profile/SkillsList.css';
 
-const SkillsList = ({ skills, onClose, style }) => {
+const SkillsList = ({ skills = [], limit = 3, onClose, style = {}, skillStyle = {} }) => {
     const skillsToRender = Array.isArray(skills) ? skills : [];
 
-    if (skillsToRender.length === 0){
-        return (
-            <div style={{
-                ...style,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                padding: "10px",
-                height: "100%",
-                textAlign: "center"
-            }}>
-                <span style={{ color: "#888", fontSize: "24px" }}>Нет навыков</span>
-            </div>
-        );
+    if (skillsToRender.length === 0) {
+        return <Placeholder style={style}>Нет навыков</Placeholder>;
     }
 
+    const visibleSkills = limit ? skillsToRender.slice(0, limit) : skillsToRender;
+    const hiddenCount = limit ? skillsToRender.length - limit : 0;
+
     return (
-        <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '8px',
-            padding: '4px 8px',
-            borderRadius: '8px',
-            ...style
-        }}>
-            {skillsToRender.map(skill => (
+        <div className="skills-list" style={style}>
+            {visibleSkills.map(skill => (
                 <Tag
-                    closable={onClose !== undefined && onClose !== null}
-                    onClose={() => onClose(skill)}
+                    closable={typeof onClose === 'function'}
+                    onClose={() => onClose?.(skill)}
                     key={skill}
                     color="blue"
-                    style={{
-                        borderRadius: '12px',
-                        marginBottom: 5,
-                        display: 'flex',
-                        fontSize: '18px',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        height: '20px',
-                        padding: '14px',
-                    }}
+                    className="skill"
+                    style={{borderRadius: "25px",...skillStyle}}
                 >
                     {skill}
                 </Tag>
             ))}
+
+            {hiddenCount > 0 && (
+                <Tag
+                    color="geekblue"
+                    className="skill"
+                    style={{borderRadius: "25px",...skillStyle}}
+                >
+                    +{hiddenCount}
+                </Tag>
+            )}
         </div>
     );
 };

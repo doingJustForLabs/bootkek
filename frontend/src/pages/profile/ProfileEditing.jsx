@@ -15,6 +15,7 @@ import SelectGender from "components/ui/inputs/SelectGender.jsx";
 import SelectFaculty from "components/ui/inputs/SelectFaculty.jsx";
 import SelectCourse from "components/ui/inputs/SelectCourse.jsx";
 import ProfileHeader from "components/ui/profile/ProfileHeader.jsx";
+import Placeholder from "components/ui/Placeholder.jsx";
 
 const ProfileEditing = () => {
     const [profileData, setProfileData] = useState(null);
@@ -63,10 +64,6 @@ const ProfileEditing = () => {
         setIsAvatarChanged(true);
     };
 
-    const getAvatar = () => {
-        if (isAvatarChanged) return URL.createObjectURL(avatarFile)
-        return (profileData.avatar_basename ? `http://127.0.0.1:8000/${profileData.avatar_basename}_256.jpg` : null)
-    }
 
     const handleSave = async () => {
         await wrapHandleError( async () => {
@@ -107,9 +104,7 @@ const ProfileEditing = () => {
     if (!(profileData)) {
         return (
             <NavLayout>
-                <div className="flex justify-center items-center min-h-screen">
-                    <h1 className="text-2xl text-white">Загрузка профиля...</h1>
-                </div>
+                <Placeholder loading={true}/>
             </NavLayout>
         );
     }
@@ -126,8 +121,8 @@ const ProfileEditing = () => {
             >
                 <ProfileHeader
                     profileData={profileData}
-                    editMode={true}
-                    extraActions={{handleSave, handleAvatarChange, getAvatar}}
+                    context={"edit"}
+                    actions={{handleSave, handleAvatarChange, getAvatarFile: () => {return avatarFile}}}
                 />
 
                 <div style={{ width: "100%", padding: '25px 80px', backgroundColor: '#f4f4f4', minHeight: "75vh" }}>

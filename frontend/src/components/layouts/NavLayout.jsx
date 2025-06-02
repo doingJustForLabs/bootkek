@@ -2,53 +2,46 @@ import React from 'react';
 import { HomeOutlined, TeamOutlined, LeftCircleOutlined, NotificationOutlined, CommentOutlined, CarryOutOutlined } from '@ant-design/icons';
 import { Layout, Menu } from 'antd';
 import {goTo} from "utils/navigator.js";
-import {observer} from "mobx-react-lite";
 import {getCurrentId} from "utils/currentId.js";
+import "styles/ui/NavLayout.css"
 
 const { Content, Sider } = Layout;
 
-const NavLayout = observer(({ children }) => {
+const NavLayout = ({ children }) => {
 
-    const topMenuItems = [
+    const menuItems = [
         {
             key: "profile",
-            icon: <HomeOutlined style={{ fontSize: 20 }} />,
+            icon: <HomeOutlined style={{fontSize: 24}}/>,
             label: "Профиль"
         },
-
         {
             key: "feed",
-            icon: <NotificationOutlined style={{ fontSize: 20 }}/>,
+            icon: <NotificationOutlined style={{fontSize: 24}}/>,
             label: "Новости"
         },
-
         {
             key: "chats",
-            icon: <CommentOutlined style={{ fontSize: 20 }}/>,
+            icon: <CommentOutlined style={{fontSize: 24}}/>,
             label: "Чаты"
         },
-
         {
             key: "events",
-            icon: <CarryOutOutlined style={{ fontSize: 20 }}/>,
+            icon: <CarryOutOutlined style={{fontSize: 24}}/>,
             label: "Встречи"
         },
-
         {
             key: "users",
-            icon: <TeamOutlined style={{ fontSize: 20 }}/>,
+            icon: <TeamOutlined style={{fontSize: 24}}/>,
             label: "Люди"
         },
-    ]
-
-    const bottomMenuItems = [
         {
             key: "logout",
-            icon: <LeftCircleOutlined style={{ fontSize: 20 }}/>,
+            icon: <LeftCircleOutlined style={{fontSize: 24}}/>,
             label: "Выйти",
             danger: true
         }
-    ]
+    ];
 
     const handleMenuClick = ({ key }) => {
         switch (key){
@@ -68,39 +61,26 @@ const NavLayout = observer(({ children }) => {
     };
 
     return (
-
-        <Layout>
-            <Sider style={{
-                overflow: 'auto',
-                height: '100vh',
-                position: 'sticky',
-                insetInlineStart: 0,
-                top: 0,
-                bottom: 0,
-            }}>
-                <h1 className="pl-6 pt-2 pb-3 text-white text-4xl">Granite</h1>
-                <Menu
-                    theme="dark"
-                    style={{fontSize: "18px"}}
-                    mode="inline"
-                    items={topMenuItems}
-                    onClick={handleMenuClick}
-                />
-                <Menu
-                    theme="dark"
-                    style={{fontSize: "18px", marginTop: "auto"}}
-                    mode="inline"
-                    items={bottomMenuItems}
-                    onClick={handleMenuClick}
-                />
+        <Layout className="nav">
+            <Sider className="sider">
+                <h1 className="logo">Granite</h1>
+                <div className="sider-inner">
+                    <Menu
+                        className="menu"
+                        theme="dark"
+                        mode="inline"
+                        items={menuItems}
+                        onClick={handleMenuClick}
+                    />
+                </div>
             </Sider>
             <Layout>
-                <Content style={{ overflow: 'initial', backgroundColor: '#24385c' }}>
+                <Content className="content">
                     {children}
                 </Content>
             </Layout>
         </Layout>
     );
-});
+};
 
 export default NavLayout;

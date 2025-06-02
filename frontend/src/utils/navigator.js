@@ -11,3 +11,11 @@ export const goTo = (...args) => {
     }
     navigate(...args);
 };
+
+export const goToProfile = (userId) => {
+    if (!navigate) {
+        console.error("Navigator is not set!");
+        return;
+    }
+    navigate(`/profile/${userId}`);
+}

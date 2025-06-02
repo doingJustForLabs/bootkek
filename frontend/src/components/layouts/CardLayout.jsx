@@ -1,20 +1,19 @@
-import "../../../public/assets/styles/Sandbox.css";
+import "styles/ui/CardLayout.css";
 
-const CardLayout = ({ children, title }) => {
+const CardLayout = ({ children, title, showLogo = true }) => {
     return (
-        <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-            <div className="absolute inset-0 z-0">
-                <div className="gradient-container absolute inset-0" />
-                <div className="noise-overlay absolute inset-0" />
-            </div>
-
-            <div className="justify-items-center relative z-10 w-full max-w-md p-8 bg-amber-50 rounded-3xl shadow-xl">
-                <h1 className="text-muctr text-4xl justify-center">{title}</h1>
-                {children}
+        <div className="card-wrapper">
+            <div className="card">
+                {showLogo ? <h2 className="logo">Granite</h2> : null}
+                <h1 className="title">{title}</h1>
+                <div className="content">
+                    {children}
+                </div>
             </div>
         </div>
     );
   };
+
   
   export default CardLayout;
   

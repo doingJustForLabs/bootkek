@@ -1,0 +1,40 @@
+.profile-preview {
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50px;
+    width: 100%;
+    background-color: #f4f4f4;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease-out;
+    will-change: transform, box-shadow, background-color;
+}
+
+.profile-preview:hover {
+    background-color: #e5e5ff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    transition-duration: 0.2s;
+}
+
+.profile-preview .avatar {
+    min-width: 64px;
+}
+
+.profile-preview .info {
+    display: flex;
+    min-width: 40%;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+.profile-preview .name {
+    font-size: 22px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.profile-preview .username {
+    opacity: 60%;
+    font-size: 18px;
+}

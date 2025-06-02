@@ -51,6 +51,7 @@ const ChatPage = () => {
                     borderRadius: "30px",
                     padding: "16px",
                     display: "flex",
+                    height: "80vh",
                     width: "100%"
                 }}>
                     <div style={{

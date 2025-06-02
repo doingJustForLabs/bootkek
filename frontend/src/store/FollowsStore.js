@@ -1,7 +1,7 @@
 import FollowsService from "../services/follows.service.js";
 import { withTokenRetry } from "../utils/token.js";
 
-export default class ProfileStore {
+export default class FollowsStore {
 
     static async getFollowersByUserId(userId, limit = 5, page = 1) {
         return await withTokenRetry(FollowsService.getProfilesFollowers, userId, limit, page);

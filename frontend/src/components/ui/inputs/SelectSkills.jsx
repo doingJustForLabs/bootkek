@@ -53,6 +53,7 @@ const SkillSelector = ({ value, onChange }) => {
                 value={input || undefined}
                 onSearch={handleSearch}
                 onSelect={handleSelect}
+                size="large"
                 placeholder="Выберите и добавьте навык"
                 style={{ minWidth: 200 }}
                 options={Array.isArray(filteredOptions)
@@ -62,6 +63,7 @@ const SkillSelector = ({ value, onChange }) => {
             />
             <SkillsList
                 skills={currentSkills}
+                limit={null}
                 onClose={removeSkill}
                 style={{
                     display: 'flex',

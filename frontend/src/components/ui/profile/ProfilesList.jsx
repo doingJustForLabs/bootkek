@@ -1,21 +1,22 @@
 import React from 'react';
 import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
+import Placeholder from "components/ui/Placeholder.jsx";
+import "styles/profile/ProfilesList.css";
 
-const ProfilesList = ({ profilesData, style }) => {
-
+const ProfilesList = ({
+                          profilesData = [],
+                          renderItem = (profile) => (<ProfilePreview key={profile.user_id} profileData={profile} avatarSize={64} style={style}/>),
+                          style = {}}
+) => {
     return (
-        <div className="w-full max-w-4xl space-y-4">
+        <div className="profiles-list" style={style}>
             {profilesData.length === 0 ? (
-                <div className="text-center text-gray-600 text-xl">Профили не найдены</div>
+                <Placeholder>Профили не найдены</Placeholder>
             ) : (
-                profilesData.map(profile => (
-                    <ProfilePreview key={profile.user_id} profileData={profile} style={style} />
-
-                ))
+                profilesData.map(profile => renderItem(profile))
             )}
         </div>
     );
 };
-
 
 export default ProfilesList;

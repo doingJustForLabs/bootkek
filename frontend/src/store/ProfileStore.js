@@ -1,5 +1,6 @@
 import ProfileService from "../services/profile.service.js";
 import { withTokenRetry } from "../utils/token.js";
+import SearchService from "services/search.service.js";
 
 export default class ProfileStore {
 
@@ -21,6 +22,11 @@ export default class ProfileStore {
 
     static async getAllProfiles() {
         return await withTokenRetry(ProfileService.getProfiles);
+    }
+
+    static async getProfilesBySearch(keyword, page, limit, filter){
+        console.log('Поиск вызван с:', filter);
+        return await withTokenRetry(SearchService.getSearchProfiles, keyword, page, limit, filter)
     }
 
     static async setAvatar(file) {

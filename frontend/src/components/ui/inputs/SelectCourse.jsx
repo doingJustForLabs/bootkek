@@ -23,6 +23,8 @@ function SelectCourse(props) {
             placeholder="Выберите курс"
             options={options}
             loading={options.length === 0}
+            allowClear
+            size="large"
             {...props}
         />
     );

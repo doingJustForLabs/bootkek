@@ -1,13 +1,12 @@
 import {useState, useEffect} from 'react';
-import { Form, Button, Upload, Avatar, DatePicker } from 'antd';
+import {Form, Button, Upload, Avatar, DatePicker, Steps} from 'antd';
 import { UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import ProfileStore from "store/ProfileStore.js";
 import Validator from "utils/validation.js";
 import Message from "utils/messages.js";
 import SkillsSelector from "components/ui/inputs/SelectSkills.jsx";
 import CardLayout from "components/layouts/CardLayout.jsx";
-import StepProgress from "components/ui/profile/StepProgress.jsx";
-import {goTo} from "utils/navigator.js";
+import {goTo, goToProfile} from "utils/navigator.js";
 import AuthStore from "store/AuthStore.js";
 import {wrapHandleError} from "utils/errors.js";
 import {observer} from "mobx-react-lite";
@@ -17,12 +16,13 @@ import SelectGender from "components/ui/inputs/SelectGender.jsx";
 import SelectFaculty from "components/ui/inputs/SelectFaculty.jsx";
 import SelectCourse from "components/ui/inputs/SelectCourse.jsx";
 import {getCurrentId, setCurrentId} from "utils/currentId.js";
+import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
 
 const ProfileCreation = observer(() => {
     const [formStep1] = Form.useForm();
     const [formStep2] = Form.useForm();
     const [formStep3] = Form.useForm();
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(0);
     const [isProfileCreated, setIsProfileCreated] = useState(false);
     const [avatarFile, setAvatarFile] = useState(null);
     const [showSkip, setShowSkip] = useState(true);
@@ -44,62 +44,60 @@ const ProfileCreation = observer(() => {
                 await ProfileStore.createProfile(name, username);
                 setIsProfileCreated(true);
                 const response = ProfileStore.getProfile();
-                setCurrentId(`${response.data?.profile?.user_id}`);
+                await setCurrentId(`${response.data?.profile?.user_id}`);
             } else {
                 await ProfileStore.updateProfile({ name, username });
             }
             if (avatarFile) {
                 await ProfileStore.setAvatar(avatarFile);
             }
+            setStep(1);
+        })();
+    };
+
+    const handleNextStep2 = async (values) => {
+        await wrapHandleError(async () => {
+            const { sex } = values;
+
+            await ProfileStore.updateProfile({ sex });
             setStep(2);
         })();
     };
 
-    const handleNextStep2 = async () => {
-        await wrapHandleError(async () => {
-            const values = await formStep2.validateFields();
-            const { sex } = values;
-
-            await ProfileStore.updateProfile({ sex });
-            setStep(3);
-        })();
-    };
-
-    const handleFinish = async () => {
+    const handleFinish = async (values) => {
         await wrapHandleError( async () => {
-            const values = await formStep3.validateFields();
             const { faculty, course } = values;
 
             if (faculty || course) {
                 await ProfileStore.updateProfile({ faculty, course });
             }
 
-            goTo(`/profile/${getCurrentId()}`);
+            goToProfile(getCurrentId());
         })();
     };
 
     const handleSkip = () => {
-        if (step === 2) {
-            setStep(3);
-        } else {
-            goTo(`/profile/${AuthStore.id}`);
+        setStep(step + 1);
+    };
+
+    const updateSkipLogic = (changedValues, allValues) => {
+        if (step === 1) {
+            const sexValue = allValues.sex;
+            setShowSkip(!sexValue);
+            console.log("Значение sex из onValuesChange:", sexValue);
         }
     };
 
     useEffect(() => {
-        const updateSkip = () => {
-            const { sex, birthDate } = formStep2.getFieldsValue();
-            setShowSkip(!sex && !birthDate);
-        };
-        updateSkip();
-        const unsubscribe = formStep2.subscribe?.({ values: updateSkip });
-        return () => unsubscribe?.unsubscribe?.();
-    }, [formStep2]);
+        const initialSex = formStep2.getFieldValue("sex");
+        setShowSkip(!initialSex);
+        console.log("Начальное значение sex при инициализации:", initialSex);
+    }, [formStep2])
 
-    return (
-        <CardLayout title="Создание профиля">
-            <StepProgress currentStep={step} />
-            {step === 1 && (
+    const stepsContent = [
+        {
+            title: 'Основные данные',
+            content: (
                 <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep1} onFinish={handleNextStep1}>
                     <Form.Item>
                         <Upload
@@ -108,14 +106,7 @@ const ProfileCreation = observer(() => {
                             onChange={handleAvatarChange}
                             accept="image/*"
                         >
-                            <div style={{ cursor: 'pointer', width: '100px', height: '100px' }}>
-                                <Avatar
-                                    size={100}
-                                    src={avatarFile ? URL.createObjectURL(avatarFile) : undefined}
-                                    icon={!avatarFile && <UserOutlined />}
-                                    style={{ backgroundColor: '#f0f0f0' }}
-                                />
-                            </div>
+                            <ProfileAvatar avatarSize={150} srcFile={avatarFile} style={{cursor: "pointer"}} />
                         </Upload>
                     </Form.Item>
 
@@ -133,21 +124,12 @@ const ProfileCreation = observer(() => {
                         </Button>
                     </Form.Item>
                 </Form>
-            )}
-
-            {step === 2 && (
-                <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep2} onValuesChange={() => {
-                    const { sex, birthDate } = formStep2.getFieldsValue();
-                    setShowSkip(!sex && !birthDate);
-                }}>
-                    <Form.Item name="birthDate">
-                        <DatePicker
-                            style={{ width: '100%' }}
-                            placeholder="Дата рождения"
-                            format="DD.MM.YYYY"
-                            placement="bottomLeft"
-                        />
-                    </Form.Item>
+            ),
+        },
+        {
+            title: 'Личные данные',
+            content: (
+                <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep2} onFinish={handleNextStep2} onValuesChange={updateSkipLogic}>
 
                     <Form.Item name="sex">
                         <SelectGender/>
@@ -155,18 +137,20 @@ const ProfileCreation = observer(() => {
 
                     <Form.Item>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                            <Button shape="square" icon={<ArrowLeftOutlined />} onClick={() => setStep(1)} />
+                            <Button shape="square" icon={<ArrowLeftOutlined />} onClick={() => setStep(step - 1)} />
                             {showSkip ? (
                                 <Button type="primary" onClick={handleSkip}>Пропустить</Button>
                             ) : (
-                                <Button type="primary" onClick={handleNextStep2}>Дальше</Button>
+                                <Button type="primary" htmlType="submit">Дальше</Button>
                             )}
                         </div>
                     </Form.Item>
                 </Form>
-            )}
-
-            {step === 3 && (
+            ),
+        },
+        {
+            title: 'Дополнительно',
+            content: (
                 <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep3} onFinish={handleFinish}>
                     <Form.Item>
                         <div style={{ display: 'flex', gap: 8 }}>
@@ -186,12 +170,23 @@ const ProfileCreation = observer(() => {
 
                     <Form.Item>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                            <Button shape="square" icon={<ArrowLeftOutlined />} onClick={() => setStep(2)} />
+                            <Button shape="square" icon={<ArrowLeftOutlined />} onClick={() => setStep(step - 1)} />
                             <Button type="primary" htmlType="submit">Завершить</Button>
                         </div>
                     </Form.Item>
                 </Form>
-            )}
+            ),
+        },
+    ]
+
+    const stepsItems = stepsContent.map((item) => ({ key: item.title }));
+
+    return (
+        <CardLayout title="Создание профиля">
+            <Steps current={step} items={stepsItems}/>
+            <div style={{marginTop: "50px"}}>
+                {stepsContent[step] && stepsContent[step].content}
+            </div>
         </CardLayout>
     );
 });

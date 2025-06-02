@@ -1,0 +1,14 @@
+.pagination {
+    width: fit-content;
+    background-color: #596acc;
+    gap: 10px;
+    margin: 5px;
+    padding: 10px;
+    border-radius: 50px;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-items: center;
+    align-content: center;
+    display: flex;
+}

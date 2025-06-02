@@ -1,0 +1,7 @@
+.search-input {
+    background-color: #596acc;
+    margin: 5px;
+    padding: 10px;
+    border-radius: 50px;
+    display: flex;
+}

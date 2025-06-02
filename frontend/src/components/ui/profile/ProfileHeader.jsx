@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {act, useState} from "react";
 import {Avatar, Button, Modal, Tooltip, Upload} from "antd";
 import {
     UserOutlined,
@@ -7,95 +7,43 @@ import {
     UserDeleteOutlined, InfoCircleOutlined, SaveOutlined, CloseOutlined
 } from "@ant-design/icons";
 import {goTo} from "utils/navigator.js";
+import ProfileDetailsModal from "components/ui/profile/ProfileDetailsModal.jsx";
+import ButtonEditProfile from "components/ui/buttons/ButtonEditProfile.jsx";
+import ButtonFollowUser from "components/ui/buttons/ButtonFollowUser.jsx";
+import ProfileButtonsPanel from "components/ui/buttons/ProfileButtonsPanel.jsx";
+import DetailsButton from "components/ui/buttons/DetailsButton.jsx";
+import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
 
-const ProfileHeader = ({ profileData, extraActions, editMode = false}) => {
+const ProfileHeader = ({ profileData, context = "other", actions}) => {
 
     const [showDetailsModal, setShowDetailsModal] = useState(false);
 
     const renderAvatar = () => {
 
-        const src = profileData.avatar_basename
-            ? `http://127.0.0.1:8000/${profileData.avatar_basename}_256.jpg`
-            : null;
-
-        if (editMode) return (
+        if (context === "edit") return (
             <Upload
                 showUploadList={false}
                 beforeUpload={() => false}
-                onChange={extraActions.handleAvatarChange}
+                onChange={actions.handleAvatarChange}
                 accept="image/*"
             >
-                <div style={{ cursor: 'pointer', width: '100px', height: '100px' }}>
-                    <Avatar
-                        size={150}
-                        src={extraActions.getAvatar()}
-                        icon={!src && <UserOutlined />}
-                        style={{ backgroundColor: '#76777c', marginTop: '-30px'}}
-                    />
-                </div>
+                <ProfileAvatar
+                    profileData={profileData}
+                    avatarSize={150}
+                    srcFile={actions.getAvatarFile()}
+                    style={{ cursor: 'pointer', marginTop: '-30px' }}
+                />
             </Upload>
         );
 
         return (
-            <Avatar
-                size={150}
-                src={src}
-                icon={!src && <UserOutlined />}
-                style={{ backgroundColor: "#76777c", marginTop: "-30px" }}
+            <ProfileAvatar
+                profileData={profileData}
+                avatarSize={150}
+                style={{ marginTop: '-30px' }}
             />
         );
     };
-
-    const renderButtons = () => {
-        if (editMode) {
-            return (
-                <>
-                    <Button
-                        size="large"
-                        style={{ margin: '5px', alignSelf: 'center', fontSize: "20px" }}
-                        icon={<SaveOutlined />}
-                        onClick={extraActions.handleSave}
-                        type="primary"
-                    >
-                        Сохранить
-                    </Button>
-                    <Button
-                        size="large"
-                        style={{ margin: '5px', alignSelf: 'center', fontSize: "20px" }}
-                        icon={<CloseOutlined />}
-                        onClick={() => {goTo(`/profile/${profileData.user_id}`)}}
-                    />
-                </>
-            )
-        } else {
-            return ( profileData.is_current_user ? (
-                    <Button
-                        size="large"
-                        style={{ margin: "5px", alignSelf: "center", fontSize: "20px" }}
-                        icon={<FormOutlined />}
-                        onClick={() => goTo("/profile/edit")}
-                    >
-                        Редактировать
-                    </Button>
-                    )
-                    :
-                    (
-                    <div style={{ flex: "1", display: "flex", flexDirection: "row-reverse" }}>
-                        <Button
-                            size="large"
-                            style={{ margin: "5px", alignSelf: "center", fontSize: "20px" }}
-                            icon={profileData.is_following ? <UserDeleteOutlined /> : <UserAddOutlined />}
-                            type={profileData.is_following ? "default" : "primary"}
-                            danger={profileData.is_following}
-                            onClick={extraActions.handleFollow}
-                        >
-                            {profileData.is_following ? "Отписаться" : "Подписаться"}
-                        </Button>
-                    </div>)
-            )
-        }
-    };
-
 
     return (
         <div>
@@ -104,7 +52,7 @@ const ProfileHeader = ({ profileData, extraActions, editMode = false}) => {
                 style={{
                     height: "10vh",
                     padding: "0px 50px",
-                    borderRadius: "30px 30px 0 0",
+                    borderRadius: "50px 50px 0 0",
                     backgroundColor: "#f4f4f4",
                     display: "flex",
                     alignItems: "center",
@@ -123,32 +71,22 @@ const ProfileHeader = ({ profileData, extraActions, editMode = false}) => {
                         <br />
                         <span style={{ fontSize: "18px", color: "gray" }}>
                         @{profileData?.username || "username"}
-                                    {!editMode && (
-                                        <Tooltip title="Подробнее...">
-                                            <Button
-                                                shape="circle"
-                                                style={{color: "gray"}}
-                                                icon={<InfoCircleOutlined />}
-                                                type="text" />
-                                        </Tooltip>
-                                    )}
+                        {context !== "edit" && (
+                            <DetailsButton onClick={() => setShowDetailsModal(true)} style={{color: "gray"}}/>
+                        )}
                         </span>
                     </h2>
                 </div>
-
                 <div style={{ display: "flex", flexDirection: "row-reverse"}}>
-                    {renderButtons()}
+                    <ProfileButtonsPanel profileData={profileData} context={context} actions={actions}/>
                 </div>
             </div>
 
-            <Modal
-                open={showDetailsModal}
-                title="Информация о подписках..."
-                onCancel={() => setShowDetailsModal(false)}
-                footer={null}
-            >
-
-            </Modal>
+            <ProfileDetailsModal
+                showDetailsModal={showDetailsModal}
+                setShowDetailsModal={setShowDetailsModal}
+                profileData={profileData}
+            />
 
         </div>
     );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SendOutlined, LoadingOutlined, ExclamationCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Input, Button, List, message, Spin } from 'antd';
 import API from 'services/api.js';
 import AuthStore from "store/AuthStore.js";
@@ -51,15 +52,16 @@ const ChatViewComponent = ({ chatId }) => {
 
     const sendMessage = async () => {
         if (!inputValue.trim() || !chatId) return;
-        
+
+        const tempMessage = {
+            tempId: Date.now(),
+            content: inputValue,
+            user_id: currentId,
+            timestamp: new Date().toISOString(),
+            status: 'sending'
+        };
+
         try {
-            const tempMessage = {
-                tempId: Date.now(),
-                content: inputValue,
-                user_id: currentId,
-                timestamp: new Date().toISOString(),
-                status: 'sending'
-            };
 
             setMessages(prev => [...prev, tempMessage]);
             setInputValue('');
@@ -174,27 +176,27 @@ const ChatViewComponent = ({ chatId }) => {
     }, [messages]);
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full w-full flex flex-col">
             {loading ? (
                 <div className="flex-1 flex items-center justify-center">
                     <Spin tip="Загрузка сообщений..." />
                 </div>
             ) : (
-                <div className="flex-1 overflow-y-auto">
+                <div style = {{ flexGrow: 1, overflowY: 'auto', padding: "0px 40px 0px 40px" }}>
                     <List
                         dataSource={messages}
                         renderItem={msg => (
                             <List.Item
                                 key={msg.id || msg.tempId}
                                 className={`message ${msg.user_id === currentId ? 'sent' : 'received'}`}
-                                style={{ justifyContent: msg.user_id === currentId ? 'flex-end' : 'flex-start' }}
+                                style={{ justifyContent: (msg.user_id === currentId ? 'flex-end' : 'flex-start'), justifyItems: 'flex-start'}}
                             >
                                 <div
                                     className={`message-bubble ${msg.status || ''}`}
                                     style={{
                                         maxWidth: '70%',
                                         padding: '8px 12px',
-                                        borderRadius: '12px',
+                                        borderRadius: (msg.user_id === currentId ? '12px 12px 0px 12px' : '12px 12px 12px 0px'),
                                         background: msg.user_id === currentId ? '#1890ff' : '#f0f0f0',
                                         color: msg.user_id === currentId ? '#fff' : '#000',
                                         marginLeft: msg.user_id === currentId ? 'auto' : '0',
@@ -202,19 +204,29 @@ const ChatViewComponent = ({ chatId }) => {
                                         transition: 'opacity 0.3s ease'
                                     }}
                                 >
-                                    <p style={{ margin: 0 }}>{msg.content}</p>
+                                    <div style={{
+                                        textAlign: 'left',
+                                        whiteSpace: 'pre-wrap',         // ← перенос строк + \n
+                                        wordBreak: 'break-word',        // ← переносит длинные слова
+                                        overflowWrap: 'break-word',     // ← дублируем для совместимости
+                                        maxWidth: '100%',               // ← не даём выйти за границы
+                                    }}>
+                                        {msg.content}
+                                    </div>
                                     <small style={{
-                                        display: 'block',
+                                        display: 'flex',
                                         textAlign: 'right',
+                                        alignItems: 'center',
                                         opacity: 0.7,
-                                        fontSize: '0.8em',
-                                        marginTop: '4px'
+                                        fontSize: '0.9em',
+                                        marginTop: '4px',
+                                        gap: '5px'
                                     }}>
                                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         {/* Индикаторы статуса */}
-                                        {msg.status === 'sending' && ' (отправка...)'}
-                                        {msg.status === 'failed' && ' (не отправлено)'}
-                                        {msg.status === 'delivered' && ' ✓'}
+                                        {msg.status === 'sending' && <LoadingOutlined />}
+                                        {msg.status === 'failed' && <ExclamationCircleOutlined />}
+                                        {msg.status === 'delivered' && <CheckCircleOutlined />}
                                         {/* Для обратной совместимости с isPending */}
                                         {!msg.status && msg.isPending && ' (отправка...)'}
                                         {!msg.status && !msg.isPending && msg.tempId && ' ✓'}
@@ -228,8 +240,11 @@ const ChatViewComponent = ({ chatId }) => {
             )}
 
             <div className="message-input" style={{
+                backgroundColor: '#f4f4f4',
                 padding: '10px',
+                height: '15vh',
                 borderTop: '1px solid #f0f0f0',
+                alignContent: "center",
                 display: 'flex',
                 gap: '8px'
             }}>
@@ -247,13 +262,13 @@ const ChatViewComponent = ({ chatId }) => {
                     style={{ flex: 1 }}
                 />
                 <Button
+                    shape="circle"
                     type="primary"
+                    size="large"
+                    icon={<SendOutlined />}
                     onClick={sendMessage}
                     disabled={!inputValue.trim()}
-                    style={{ alignSelf: 'flex-end' }}
-                >
-                    Отправить
-                </Button>
+                />
             </div>
         </div>
     );

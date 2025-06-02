@@ -4,7 +4,7 @@ export default class Validator {
             return Promise.reject('Введите имя');
         }
         if (!/^[a-zA-Zа-яА-ЯёЁ\s]+$/.test(value)) {
-            return Promise.reject('Имя может содержать только буквы (кириллица/латиница)');
+            return Promise.reject('Имя может содержать только буквы');
         }
         return Promise.resolve();
     }
