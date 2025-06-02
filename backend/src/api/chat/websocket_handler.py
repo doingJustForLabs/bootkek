@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.chat.models import Message
 from api.chat.connections import manager
 from datetime import datetime
+
 # from database.schemas.message_schemas import MessageResponse
 from api.chat.services import ChatRepository
 from api.chat.models import Message, ChatUser
@@ -21,12 +22,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 user_notification_connections: Dict[int, WebSocket] = {}
+
+
 async def handle_user_websocket(websocket: WebSocket, user_id: int, db: AsyncSession):
     try:
         user_notification_connections[user_id] = websocket
         while True:
             # Просто держим соединение открытым для отправки уведомлений с сервера
-            await websocket.receive_text() # Keep the connection alive
+            await websocket.receive_text()  # Keep the connection alive
     except WebSocketDisconnect:
         logger.info(f"User {user_id} disconnected from notifications.")
         if user_id in user_notification_connections:
@@ -39,7 +42,9 @@ async def handle_user_websocket(websocket: WebSocket, user_id: int, db: AsyncSes
     finally:
         await db.close()
 
+
 active_connections: dict = {}
+
 
 async def handle_websocket(
     websocket: WebSocket, token: str, chat_id: int, db: AsyncSession
@@ -90,6 +95,7 @@ async def handle_websocket(
         await websocket.close(code=1011)
     finally:
         await db.close()
+
 
 async def send_chat_history(chat_id: int, websocket: WebSocket, db: AsyncSession):
     """Отправка истории сообщений чата"""
@@ -201,19 +207,30 @@ async def process_chat_message(
             "chatId": chat_id,
             "senderId": user_id,
             "senderUsername": sender_username,
-            "preview": message_data["content"][:50] + "..." if len(message_data["content"]) > 50 else message_data[
-                "content"],
+            "preview": (
+                message_data["content"][:50] + "..."
+                if len(message_data["content"]) > 50
+                else message_data["content"]
+            ),
         }
 
         # Отправляем уведомление всем участникам, кроме отправителя
         for participant_id in chat_users:
-            if participant_id != user_id and participant_id in user_notification_connections:
+            if (
+                participant_id != user_id
+                and participant_id in user_notification_connections
+            ):
                 try:
-                    await user_notification_connections[participant_id].send_json(notification_payload)
-                    logger.debug(f"Notification sent to user {participant_id} for chat {chat_id}")
+                    await user_notification_connections[participant_id].send_json(
+                        notification_payload
+                    )
+                    logger.debug(
+                        f"Notification sent to user {participant_id} for chat {chat_id}"
+                    )
                 except Exception as e:
-                    logger.error(f"Error sending notification to user {participant_id}: {str(e)}")
-
+                    logger.error(
+                        f"Error sending notification to user {participant_id}: {str(e)}"
+                    )
 
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")

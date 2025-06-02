@@ -9,7 +9,11 @@ from api.profiles.models import Profile
 from api.profiles.services import ProfileRepository
 from api.chat.schemas import ChatSchema, MessageResponse
 from api.chat.models import Message
-from api.search.schemas import ChatSearchResult, MessageSearchResult, CombinedChatSearchResponse
+from api.search.schemas import (
+    ChatSearchResult,
+    MessageSearchResult,
+    CombinedChatSearchResponse,
+)
 from api.search.service import SearchRepository
 from database.db import DbSession
 from api.dependencies import BearerDependency, AccessDependency
@@ -29,14 +33,21 @@ async def search_profiles(
     )
     return profiles
 
-@router.get("/chats", response_model=CombinedChatSearchResponse, dependencies=[BearerDependency])
+
+@router.get(
+    "/chats", response_model=CombinedChatSearchResponse, dependencies=[BearerDependency]
+)
 async def search_chats_and_messages(
     session: DbSession,
     pagination: Annotated[PaginationSchema, Depends()],
     token: AccessDependency,
-    keyword: Optional[str] = Query(description="Ищет по названию чата и содержимому сообщений"),
+    keyword: Optional[str] = Query(
+        description="Ищет по названию чата и содержимому сообщений"
+    ),
 ):
-    current_profile =await ProfileRepository.get_profile_by_user_id(session, int(token.sub))
+    current_profile = await ProfileRepository.get_profile_by_user_id(
+        session, int(token.sub)
+    )
 
     chats, standalone_messages = await SearchRepository.search_chats_and_messages(
         session, current_profile.id, keyword, pagination
@@ -56,14 +67,21 @@ async def search_chats_and_messages(
         chat_results.append(
             ChatSearchResult(
                 chat=ChatSchema.model_validate(chat, from_attributes=True),
-                matching_messages=[MessageResponse.model_validate(msg, from_attributes=True) for msg in latest_messages]
+                matching_messages=[
+                    MessageResponse.model_validate(msg, from_attributes=True)
+                    for msg in latest_messages
+                ],
             )
         )
 
     message_results = [
         MessageSearchResult(
             message=MessageResponse.model_validate(msg, from_attributes=True),
-            chat=ChatSchema.model_validate(msg.chat, from_attributes=True) if msg.chat else None
+            chat=(
+                ChatSchema.model_validate(msg.chat, from_attributes=True)
+                if msg.chat
+                else None
+            ),
         )
         for msg in standalone_messages
     ]

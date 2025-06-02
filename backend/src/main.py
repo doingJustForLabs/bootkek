@@ -47,7 +47,13 @@ app.include_router(main_router)
 
 # Middleware
 
-origins = ["http://localhost", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5173", "http://127.0.0.1:5173"]
+origins = [
+    "http://localhost",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -105,11 +111,17 @@ async def websocket_chat(
         logger.error(f"Unexpected error: {str(e)}")
         await websocket.close(code=1011)
 
+
 @app.websocket("/ws/user/{user_id}")
-async def websocket_user(websocket: WebSocket, user_id: int, db: AsyncSession = Depends(db_helper.session_getter)):
+async def websocket_user(
+    websocket: WebSocket,
+    user_id: int,
+    db: AsyncSession = Depends(db_helper.session_getter),
+):
     await websocket.accept()
     logger.info(f"User {user_id} connected for notifications.")
     await websocket_handler.handle_user_websocket(websocket, user_id, db)
+
 
 @app.get("/")
 def get_root():

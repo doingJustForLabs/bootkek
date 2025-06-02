@@ -4,11 +4,12 @@ from api.profiles.models import Profile
 from api.search.schemas import PaginationSchema, FiltersSchema
 from api.chat.models import Chat, Message, ChatUser
 from api.auth.models import User
+
 # from database.repository import AbstractRepository
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, func, or_, exists
+from sqlalchemy.orm import selectinload, aliased
 
 
 class SearchRepository:
@@ -46,38 +47,67 @@ class SearchRepository:
 
     @staticmethod
     async def search_chats_and_messages(
-            session: AsyncSession,
-            current_profile_id: int,
-            keyword: Optional[str],
-            pagination: PaginationSchema
+        session: AsyncSession,
+        current_profile_id: int,
+        keyword: Optional[str],
+        pagination: PaginationSchema,
     ) -> tuple[List[Chat], List[Message]]:
         if not keyword:
             return [], []
 
-        personal_chats = []
-        group_chats = []
+        print(
+            f"Поиск чатов и сообщений. Ключевое слово: '{keyword}', ID текущего профиля: {current_profile_id}"
+        )
 
         current_user_subquery = (
             select(User.id)
+            .join(Profile, User.id == Profile.user_id)
             .where(Profile.id == current_profile_id)
             .scalar_subquery()
             .correlate(Profile)  # Явно указываем корреляцию с таблицей Profile
         )
 
+        other_user = aliased(User)
+        other_profile = aliased(Profile)
+
         # Поиск личных чатов
         personal_chats_statement = (
             select(Chat)
-            .join(Chat.users)
-            .join(Profile)
-            .options(selectinload(Chat.users))  # Явная загрузка пользователей
+            .join(ChatUser, ChatUser.chat_id == Chat.id)
+            .join(other_user, other_user.id == ChatUser.user_id)
+            .join(other_profile, other_profile.user_id == other_user.id)
+            .options(selectinload(Chat.users))
             .where(
-                User.id.in_(current_user_subquery),
-                Profile.username.ilike(f"%{keyword}%"),
-                Chat.users.any(Profile.user_id != current_profile_id)
+                # exists(
+                #     select(ChatUser)
+                #     .where(ChatUser.chat_id == Chat.id, ChatUser.user_id == current_user_subquery)
+                #     .correlate(Chat)  # Явно указываем корреляцию с таблицей Chat основного запроса
+                # ),
+                or_(
+                    other_profile.username.ilike(
+                        f"{keyword}%"
+                    ),  # Поиск по началу юзернейма
+                    other_profile.name.ilike(f"{keyword}%"),  # Поиск по началу имени
+                    other_profile.username.ilike(
+                        f"%{keyword}%"
+                    ),  # Поиск по содержимому юзернейма (дополнительно)
+                    other_profile.name.ilike(
+                        f"%{keyword}%"
+                    ),  # Поиск по содержимому имени (дополнительно)
+                ),
+                # exists(
+                #     select(ChatUser)
+                #     .where(ChatUser.chat_id == Chat.id, ChatUser.user_id != current_user_subquery)
+                #     .correlate(Chat)  # Явно указываем корреляцию с таблицей Chat основного запроса
+                # ),
             )
+            # .group_by(Chat.id)
+            # .having(func.count(ChatUser.user_id) == 2)
         )
-
-        personal_chats = (await session.execute(personal_chats_statement)).scalars().all()
+        print(f"Ключевое слово перед запросом: '{keyword}'")
+        personal_chats = (
+            (await session.execute(personal_chats_statement)).scalars().all()
+        )
         personal_chats = [chat for chat in personal_chats if len(chat.users) == 2]
 
         # Поиск групповых чатов (исключая уже найденные личные)
@@ -86,7 +116,7 @@ class SearchRepository:
             .options(selectinload(Chat.users))
             .where(
                 Chat.name.ilike(f"%{keyword}%"),
-                Chat.id.notin_([pc.id for pc in personal_chats])
+                Chat.id.notin_([pc.id for pc in personal_chats]),
             )
         )
         group_chats = (await session.execute(group_chats_statement)).scalars().all()
@@ -96,26 +126,40 @@ class SearchRepository:
         message_statement = (
             select(Message)
             .join(Message.chat)
-            .join(Chat.users)
-            .options(selectinload(Message.chat))  # Явная загрузка связи 'chat'
+            .options(selectinload(Message.chat))
             .where(
-                Profile.id == current_profile_id,
                 Message.content.ilike(f"%{keyword}%")
-            )
-            .order_by(Message.timestamp.desc())
+            )  # Поиск по содержимому сообщения
+            .join(
+                ChatUser, ChatUser.chat_id == Message.chat_id
+            )  # Присоединяем таблицу связей чатов и пользователей
+            .where(
+                ChatUser.user_id == current_profile_id
+            )  # Фильтруем сообщения только из чатов, где состоит текущий пользователь
+            .order_by(Message.id, Message.timestamp.desc())
+            .distinct(Message.id)  # Получаем только уникальные сообщения
             .limit(pagination.limit)
         )
         messages = list((await session.execute(message_statement)).scalars().all())
 
         # Получим последние 3 сообщения с совпадением для найденных чатов
-        unique_chats = sorted(list(set(personal_chats + group_chats)), key=lambda chat: 1 if len(chat.users) == 2 else 2)
+        unique_chats = sorted(
+            list(set(personal_chats + group_chats)),
+            key=lambda chat: 1 if len(chat.users) == 2 else 2,
+        )
         chats_with_matching_messages_list = []
         for chat in unique_chats:
-            matching_messages_statement = select(Message).where(
-                Message.chat_id == chat.id,
-                Message.content.ilike(f"%{keyword}%")
-            ).order_by(Message.timestamp.desc()).limit(3)
-            matching_messages = (await session.execute(matching_messages_statement)).scalars().all()
+            matching_messages_statement = (
+                select(Message)
+                .where(
+                    Message.chat_id == chat.id, Message.content.ilike(f"%{keyword}%")
+                )
+                .order_by(Message.timestamp.desc())
+                .limit(3)
+            )
+            matching_messages = (
+                (await session.execute(matching_messages_statement)).scalars().all()
+            )
             chats_with_matching_messages_list.append((chat, matching_messages))
 
         final_chats = [item[0] for item in chats_with_matching_messages_list]

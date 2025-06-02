@@ -33,13 +33,16 @@ class SearchResponseSchema(BaseModel):
     #         raise BadRequestException("Такой страницы не существует")
     #     return self
 
+
 class ChatSearchResult(BaseModel):
     chat: ChatSchema
     matching_messages: list[MessageResponse]
 
+
 class MessageSearchResult(BaseModel):
     message: MessageResponse
     chat: Optional[ChatSchema]
+
 
 class CombinedChatSearchResponse(BaseModel):
     chats: list[ChatSearchResult]

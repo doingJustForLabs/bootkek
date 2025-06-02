@@ -4,6 +4,8 @@ import API from '../../services/API.js';
 import AuthStore from "store/AuthStore";
 import ProfileService from "../../services/profile.service.js";
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+// import PlusOutlined from '@ant-design/icons/lib/icons';
+// import DeleteOutlined from '@ant-design/icons/lib/icons';
 import ChatService from '../../services/chat.service';
 import { useNavigate } from 'react-router-dom';
 import { findOrCreateDirectChat } from '../../utils/chatUtils.js';
