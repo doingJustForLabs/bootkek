@@ -35,6 +35,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 3
+  telebot:
+    build:
+      context: .
+      dockerfile: telebot/Dockerfile
+    container_name: granite_telebot
+    env_file:
+      - ./telebot/.env
+    environment:
+      - DB__URL=postgresql+asyncpg://user:password@db:5432/granite
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_started
 
 volumes:
   pgdata:
