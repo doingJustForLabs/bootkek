@@ -1,5 +1,5 @@
 import React from 'react';
-import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
+import ProfilePreview from "components/profile/ProfilePreview.jsx";
 import Placeholder from "components/ui/Placeholder.jsx";
 import "styles/profile/ProfilesList.css";
 

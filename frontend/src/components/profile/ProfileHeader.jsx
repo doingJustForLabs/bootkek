@@ -7,12 +7,12 @@ import {
     UserDeleteOutlined, InfoCircleOutlined, SaveOutlined, CloseOutlined
 } from "@ant-design/icons";
 import {goTo} from "utils/navigator.js";
-import ProfileDetailsModal from "components/ui/profile/ProfileDetailsModal.jsx";
+import ProfileDetailsModal from "components/profile/ProfileDetailsModal.jsx";
 import ButtonEditProfile from "components/ui/buttons/ButtonEditProfile.jsx";
 import ButtonFollowUser from "components/ui/buttons/ButtonFollowUser.jsx";
 import ProfileButtonsPanel from "components/ui/buttons/ProfileButtonsPanel.jsx";
 import DetailsButton from "components/ui/buttons/DetailsButton.jsx";
-import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
+import ProfileAvatar from "components/profile/ProfileAvatar.jsx";
 
 const ProfileHeader = ({ profileData, context = "other", actions}) => {
 

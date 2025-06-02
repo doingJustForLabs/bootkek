@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef  } from 'react';
-import './Notification.css'; // Создадим этот файл позже
+import 'styles/ui/Notification.css'; // Создадим этот файл позже
 
 const Notification = ({ id, message, onClose, duration = 5000, chatId, onClick }) => {
     useEffect(() => {

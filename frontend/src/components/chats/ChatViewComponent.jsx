@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {Input, Button, List, message, Spin, Modal} from 'antd';
 import API from 'services/api.js';
-import AuthStore from "store/AuthStore";
+import AuthStore from "store/AuthStore.js";
 import ChatService from 'services/chat.service.js';
 import {SendOutlined} from '@ant-design/icons';
 import DetailsButton from "components/ui/buttons/DetailsButton.jsx";
-import ProfilesList from "components/ui/profile/ProfilesList.jsx";
+import ProfilesList from "components/profile/ProfilesList.jsx";
 import ButtonDeleteChat from "components/ui/buttons/ButtonDeleteChat.jsx";
 
 const ChatViewComponent = ({ chatId, actions = {} }) => {

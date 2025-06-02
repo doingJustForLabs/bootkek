@@ -1,7 +1,7 @@
 import {Modal, Tabs} from "antd";
-import ProfilesList from "components/ui/profile/ProfilesList.jsx";
+import ProfilesList from "components/profile/ProfilesList.jsx";
 import React, {useEffect, useState} from "react";
-import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
+import ProfilePreview from "components/profile/ProfilePreview.jsx";
 import ButtonUnfollowUser from "components/ui/buttons/ButtonUnfollowUser.jsx";
 import {goToProfile} from "utils/navigator.js";
 import Pagination from "components/ui/Pagination.jsx";

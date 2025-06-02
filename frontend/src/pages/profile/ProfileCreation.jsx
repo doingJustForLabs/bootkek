@@ -16,7 +16,7 @@ import SelectGender from "components/ui/inputs/SelectGender.jsx";
 import SelectFaculty from "components/ui/inputs/SelectFaculty.jsx";
 import SelectCourse from "components/ui/inputs/SelectCourse.jsx";
 import {getCurrentId, setCurrentId} from "utils/currentId.js";
-import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
+import ProfileAvatar from "components/profile/ProfileAvatar.jsx";
 
 const ProfileCreation = observer(() => {
     const [formStep1] = Form.useForm();

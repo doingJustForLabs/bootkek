@@ -21,6 +21,7 @@ function SelectFaculty(props) {
     return (
         <Select
             placeholder="Выберите факультет"
+            size="large"
             options={options}
             loading={options.length === 0}
             allowClear

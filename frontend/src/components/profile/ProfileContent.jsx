@@ -1,12 +1,12 @@
 import React, {useEffect, useRef, useState} from "react";
-import SkillsList from "./SkillsList";
+import SkillsList from "./SkillsList.jsx";
 import InfoCard from "components/ui/InfoCard.jsx";
 import Post from "components/Post.jsx";
-import ProfilesList from "components/ui/profile/ProfilesList.jsx";
-import FollowersDetailsModal from "components/ui/profile/FollowersDetailsModal.jsx";
-import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
+import ProfilesList from "components/profile/ProfilesList.jsx";
+import FollowersDetailsModal from "components/profile/FollowersDetailsModal.jsx";
+import ProfilePreview from "components/profile/ProfilePreview.jsx";
 import ProfileButtonsPanel from "components/ui/buttons/ProfileButtonsPanel.jsx";
-import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
+import ProfileAvatar from "components/profile/ProfileAvatar.jsx";
 import Placeholder from "components/ui/Placeholder.jsx";
 
 const ProfileContent = ({ profileData, followersData, followingsData, actions }) => {

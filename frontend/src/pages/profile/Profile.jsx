@@ -5,8 +5,8 @@ import NavLayout from "../../components/layouts/NavLayout";
 import FollowsStore from "store/FollowsStore.js";
 import {wrapHandleError} from "utils/errors.js";
 import {goTo} from "utils/navigator.js";
-import ProfileHeader from "components/ui/profile/ProfileHeader.jsx";
-import ProfileContent from "components/ui/profile/ProfileContent.jsx"
+import ProfileHeader from "components/profile/ProfileHeader.jsx";
+import ProfileContent from "components/profile/ProfileContent.jsx"
 import Placeholder from "components/ui/Placeholder.jsx";
 
 const Profile = () => {

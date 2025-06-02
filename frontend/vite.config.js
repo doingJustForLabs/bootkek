@@ -1,15 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import svgr from "vite-plugin-svgr";
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), svgr()],
   resolve: {
     alias: {
+      'assets': path.resolve(__dirname, 'src/assets'),
       'components': path.resolve(__dirname, 'src/components'),
-      'styles': path.resolve(__dirname, 'public/assets/styles'),
+      'styles': path.resolve(__dirname, 'src/assets/styles'),
       'context': path.resolve(__dirname, 'src/context'),
       'pages': path.resolve(__dirname, 'src/pages'),
       'services': path.resolve(__dirname, 'src/services'),

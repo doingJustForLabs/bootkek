@@ -7,6 +7,7 @@ import "styles/ui/NavLayout.css"
 import {useParams} from "react-router-dom";
 import {getAccessToken} from "utils/token.js";
 import NotificationContainer from "components/NotificationContainer.jsx";
+import GraniteLogo from "components/GraniteLogo.jsx";
 
 const { Content, Sider } = Layout;
 
@@ -133,7 +134,11 @@ const NavLayout = ({ children }) => {
     return (
         <Layout className="nav">
             <Sider className="sider">
-                <h1 className="logo">Granite</h1>
+                <div style={{display: "flex", alignItems: "center"}}>
+                    <GraniteLogo style={{ width: 48, height: 48, margin: "10px"}} />
+                    <h1 className="logo">Granite</h1>
+                </div>
+
                 <div className="sider-inner">
                     <Menu
                         className="menu"

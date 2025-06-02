@@ -1,6 +1,6 @@
 import React from 'react';
 import 'styles/profile/ProfilePreview.css';
-import ProfileAvatar from "components/ui/profile/ProfileAvatar.jsx";
+import ProfileAvatar from "components/profile/ProfileAvatar.jsx";
 
 const ProfilePreview = ({ profileData = {}, onClick, onAvatarClick, children, avatarSize = 64, disabled = false, style = {} }) => {
 

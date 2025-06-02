@@ -2,7 +2,7 @@ import { Select, Button, Tag } from 'antd';
 import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import EnumsService from "services/enums.service.js";
-import SkillsList from "components/ui/profile/SkillsList.jsx"; // Assuming this path is correct
+import SkillsList from "components/profile/SkillsList.jsx"; // Assuming this path is correct
 
 const SkillSelector = ({ value, onChange }) => {
     const currentSkills = Array.isArray(value) ? value : [];

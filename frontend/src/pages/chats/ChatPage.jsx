@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import NavLayout from "../../components/layouts/NavLayout";
-import ChatsList from "components/ui/chats/ChatsList.jsx";
-import ChatViewComponent from "components/ui/chats/ChatViewComponent.jsx";
+import ChatsList from "components/chats/ChatsList.jsx";
+import ChatViewComponent from "components/chats/ChatViewComponent.jsx";
 import { goToChat } from "utils/navigator.js";
 import API from "services/api.js";
 import { message } from "antd";

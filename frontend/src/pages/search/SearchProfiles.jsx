@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import ProfileStore from "store/ProfileStore.js";
 import NavLayout from "components/layouts/NavLayout.jsx";
 import { wrapHandleError } from "utils/errors.js";
-import ProfilesList from "components/ui/profile/ProfilesList.jsx";
+import ProfilesList from "components/profile/ProfilesList.jsx";
 import SearchInput from "components/ui/inputs/SearchInput.jsx";
 import Pagination from "components/ui/Pagination.jsx";
-import SkillsList from "components/ui/profile/SkillsList.jsx";
-import ProfilePreview from "components/ui/profile/ProfilePreview.jsx";
+import SkillsList from "components/profile/SkillsList.jsx";
+import ProfilePreview from "components/profile/ProfilePreview.jsx";
 import { goToProfile } from "utils/navigator.js";
 
 const SearchProfiles = () => {

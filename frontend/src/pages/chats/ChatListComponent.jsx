@@ -6,7 +6,7 @@ import ProfileService from "../../services/profile.service.js";
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import ChatService from '../../services/chat.service';
 import { useNavigate } from 'react-router-dom';
-import ProfilesList from "components/ui/profile/ProfilesList.jsx";
+import ProfilesList from "components/profile/ProfilesList.jsx";
 
 const ChatListComponent = ({ onChatSelect, selectedChatId }) => {
     const { currentId } = AuthStore;

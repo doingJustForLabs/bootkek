@@ -14,7 +14,7 @@ import InputUsername from "components/ui/inputs/InputUsername.jsx";
 import SelectGender from "components/ui/inputs/SelectGender.jsx";
 import SelectFaculty from "components/ui/inputs/SelectFaculty.jsx";
 import SelectCourse from "components/ui/inputs/SelectCourse.jsx";
-import ProfileHeader from "components/ui/profile/ProfileHeader.jsx";
+import ProfileHeader from "components/profile/ProfileHeader.jsx";
 import Placeholder from "components/ui/Placeholder.jsx";
 
 const ProfileEditing = () => {
