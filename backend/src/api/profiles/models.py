@@ -14,6 +14,7 @@ class Profile(Base):
 
     # Columns
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True)
+    tg_id: Mapped[int] = mapped_column(Integer, nullable=True, default=None)
     username: Mapped[str] = mapped_column(String, unique=True)
     name: Mapped[str]
     course: Mapped[Courses | None]

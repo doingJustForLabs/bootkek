@@ -80,5 +80,20 @@ services:
     networks:
       - dev
 
+  telebot:
+    build:
+      context: ./telebot
+      dockerfile: Dockerfile
+    container_name: granite_telebot
+    env_file:
+      - ./telebot/.env
+    environment:
+      - DB__URL=postgresql://user:password@db:5432/granite
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dev
+
 volumes:
   pgdata:
