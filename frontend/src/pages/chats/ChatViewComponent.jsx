@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input, Button, List, message, Spin, Modal, Avatar } from 'antd';
-import API from '../../services/API.js';
+import API from 'services/api.js';
 import AuthStore from "store/AuthStore";
 import ChatService from '../../services/chat.service';
 import { Link } from 'react-router-dom';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { List, Spin, Button, Modal, Input, message, Popconfirm, Avatar } from 'antd';
-import API from '../../services/API.js';
+import API from 'services/api.js';
 import AuthStore from "store/AuthStore";
 import ProfileService from "../../services/profile.service.js";
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';

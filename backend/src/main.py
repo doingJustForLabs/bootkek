@@ -46,7 +46,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Granite",
-    version="0.10.3",
+    version="0.11.0",
     lifespan=lifespan,
     default_response_class=ORJSONResponse,
 )
@@ -61,7 +61,7 @@ origins = [
     "http://localhost",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://frontend:5173/"
+    "http://frontend:5173/",
 ]
 
 app.add_middleware(
