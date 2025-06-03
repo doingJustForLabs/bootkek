@@ -33,7 +33,7 @@ class DBConfig(BaseModel):
 
 
 class JWTAccessToken(BaseModel):
-    expires: timedelta = timedelta(minutes=30)
+    expires: timedelta = timedelta(seconds=10)
     expires_int: int = int(expires.total_seconds())
 
 

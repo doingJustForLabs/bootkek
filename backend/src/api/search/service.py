@@ -45,6 +45,7 @@ class SearchRepository:
                         skill_alias.skill_name.ilike(f"%{keyword}%"),
                     )
                 )
+                .distinct()
             )
 
         if filters:

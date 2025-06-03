@@ -50,12 +50,10 @@ async def setup_user_profile(
     response_model=ProfileResponseSchema,
     dependencies=[BearerDependency],
 )
-@limiter.limit("3/minute")
 async def update_user_profile(
     session: DbSession,
     token: AccessDependency,
     update_data: ProfileCreateSchema,
-    request: Request,
 ):
     """Обновление профиля пользователя"""
     profile = await ProfileRepository.update_profile(

@@ -46,7 +46,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Granite",
-    version="0.11.0",
+    version="0.12.0",
     lifespan=lifespan,
     default_response_class=ORJSONResponse,
 )
@@ -144,7 +144,7 @@ async def get_database_version(session: DbSession):
     return {"version": res.scalar()}
 
 
-settings.files.avatar_dir.mkdir(parents=True, exist_ok=True)
+settings.files.static_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=settings.files.static_dir), name="static")
 
 

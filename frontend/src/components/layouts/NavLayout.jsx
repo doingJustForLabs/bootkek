@@ -8,6 +8,7 @@ import {useParams} from "react-router-dom";
 import {getAccessToken} from "utils/token.js";
 import NotificationContainer from "components/NotificationContainer.jsx";
 import GraniteLogo from "components/GraniteLogo.jsx";
+import AuthStore from "../../store/AuthStore.js";
 
 const { Content, Sider } = Layout;
 
@@ -66,7 +67,7 @@ const NavLayout = ({ children }) => {
             case "users":
                 goTo(`/search/profiles`); break;
             case "logout":
-                goTo(`/`); break;
+                AuthStore.logout().then(() => goTo(`/`)); break;
         }
     };
 

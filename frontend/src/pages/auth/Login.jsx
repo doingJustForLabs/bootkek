@@ -11,12 +11,15 @@ import {observer} from "mobx-react-lite";
 import InputPassword from "components/ui/inputs/InputPassword.jsx";
 import InputEmail from "components/ui/inputs/InputEmail.jsx";
 import {getCurrentId, setCurrentId} from "utils/currentId.js";
+import {useState} from "react";
 
 
 const Login = observer(() => {
     const [form] = Form.useForm();
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async ({ email, password }) => {
+        setLoading(true);
         try {
             await wrapHandleError(async () => {
                 await AuthStore.login(email, password);
@@ -35,16 +38,17 @@ const Login = observer(() => {
             const status = error.response?.status;
             if (status === 404) goTo("/profile/create");
         }
+        setLoading(false);
     };
 
     return (
-        <CardLayout title="Авторизация">
+        <CardLayout title="Авторизация" style={{width: "25vw", height: "70vh"}}>
             <Form
                 form={form}
                 name="login"
                 initialValues={{ remember: true }}
-                style={{ maxWidth: 360 }}
                 onFinish={handleLogin}
+                style={{ width: "100%" }}
             >
                 <Form.Item
                     name="email"
@@ -61,11 +65,11 @@ const Login = observer(() => {
                 </Form.Item>
 
                 <Form.Item style={{ display: "flex", justifyContent: "center" }}>
-                    <Button block type={"primary"} htmlType="submit" style={{ fontSize: 20, padding: 20}}>
+                    <Button loading={loading} shape="round" block type={"primary"} htmlType="submit" style={{ fontSize: 20, padding: 20}}>
                         Войти
                     </Button>
-                    <div style={{ margin: "10px", fontSize: 18}}>
-                        или <a href="/registration">создать профиль!</a>
+                    <div style={{ margin: "10px", fontSize: 16, textAlign: "center" }}>
+                        <a href="/registration">Нет аккаунта?</a>
                     </div>
                 </Form.Item>
             </Form>

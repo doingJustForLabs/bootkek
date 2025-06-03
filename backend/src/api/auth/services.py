@@ -126,11 +126,13 @@ class EmailRepository:
 
     @classmethod
     async def send_email_for_registration(cls, user: User) -> None:
+        url = f"{settings.run.base_url}/api/auth/activate/{user.activation_link}"
+        docker_url = f"{settings.run.base_url}:8000/auth/activate/{user.activation_link}"
         await cls.send_email(
             recipient=user.email,
             subject="Добро пожаловать на Granite!",
-            body=f"Добро пожаловать на наш сайт!\nАктивируйте аккаунт, перейдя "
-            f"по ссылке: {settings.run.base_url}/api/auth/activate/{user.activation_link}",
+            body="<span style={{color: \"white\"}}>Добро пожаловать на наш сайт!<br/>Активируйте аккаунт,"+
+                 f"перейдя <a href=\"{url}\">по ссылке.</a></span>"
         )
         return
 
@@ -142,7 +144,7 @@ class EmailRepository:
         message["From"] = admin_email
         message["To"] = recipient
         message["Subject"] = subject
-        message.set_content(body)
+        message.set_content(body, subtype='html')
 
         await aiosmtplib.send(
             message,

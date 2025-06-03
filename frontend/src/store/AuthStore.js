@@ -1,5 +1,5 @@
 import AuthService from "../services/auth.service.js";
-import { setAccessToken } from "../utils/token.js";
+import {setAccessToken, withTokenRetry} from "../utils/token.js";
 import {action, makeAutoObservable} from "mobx";
 
 class AuthStore {
@@ -13,24 +13,6 @@ class AuthStore {
         this.loadAuthFromStorage();
     }
 
-    setCurrentId(id, authenticated) {
-        this.currentId = parseInt(id, 10);
-        this.isAuthenticated = authenticated;
-        this.saveAuthToStorage();
-    }
-
-    setLoading(loading) {
-        this.loading = loading;
-    }
-
-    saveAuthToStorage() {
-        localStorage.setItem('currentId', this.currentId);
-        localStorage.setItem('isAuthenticated', this.isAuthenticated);
-    }
-
-    setCurrentId = action((id) => {
-        this.currentId = id;
-    });
     loadAuthFromStorage() {
         const storedId = localStorage.getItem('currentId');
         const storedAuth = localStorage.getItem('isAuthenticated');
@@ -49,7 +31,7 @@ class AuthStore {
     }
 
     async logout () {
-        return await AuthService.logout();
+        return await withTokenRetry(AuthService.logout);
     }
 
     async register(email, password, passwordRepeat) {

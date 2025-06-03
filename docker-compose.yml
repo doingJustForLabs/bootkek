@@ -25,6 +25,8 @@ services:
     environment:
       - DB__URL=postgresql+asyncpg://user:password@db:5432/granite
     env_file: ./backend/src/.env
+    volumes:
+      - ./backend/static:/app/static
     develop:
       watch:
         - action: sync

@@ -14,16 +14,6 @@ const ChatPage = () => {
     const [selectedChatId, setSelectedChatId] = useState(null);
     const [currentId, setCurrentId] = useState(null);
 
-    // Получаем currentId при монтировании
-    useEffect(() => {
-        const id = getCurrentId();
-        if (id) {
-            setCurrentId(id);
-        } else {
-            console.warn("Нет currentId");
-        }
-    }, []);
-
 
     const fetchChats = async () => {
         if (!currentId) return;
@@ -37,6 +27,10 @@ const ChatPage = () => {
     };
 
     useEffect(() => {
+        const id = getCurrentId();
+        if (id) {
+            setCurrentId(id);
+        }
         fetchChats();
     }, [currentId]);
 

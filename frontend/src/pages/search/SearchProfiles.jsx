@@ -75,9 +75,9 @@ const SearchProfiles = () => {
                 <ProfilesList
                     profilesData={profiles}
                     renderItem={(profile) => (
-                        <ProfilePreview key={profile.user_id} profileData={profile} avatarSize={64} onClick={() => goToProfile(profile.user_id)}>
+                        <ProfilePreview key={profile.user_id} profileData={profile} avatarSize={64} onAvatarClick={null} onClick={() => goToProfile(profile.user_id)}>
                             {profile.skills.length > 0 ? (
-                                <SkillsList skills={profile.skills} limit={2} style={{ justifyContent: "flex-end" }} />
+                                <SkillsList skills={profile.skills} limit={2} style={{ justifyContent: "flex-end" }} skillStyle={{fontSize: "14px", height: "16px", padding: "10px"}}/>
                             ) : null}
                         </ProfilePreview>
                     )}

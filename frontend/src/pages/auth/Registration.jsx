@@ -11,11 +11,14 @@ import {wrapHandleError} from "utils/errors.js";
 import {observer} from "mobx-react-lite";
 import InputPassword from "components/ui/inputs/InputPassword.jsx";
 import InputEmail from "components/ui/inputs/InputEmail.jsx";
+import {useState} from "react";
 
 const Registration = observer(() => {
     const [form] = Form.useForm();
+    const [loading, setLoading] = useState(false);
 
     const handleRegister = async ({ email, password, passwordRepeat }) => {
+        setLoading(true);
         if (password !== passwordRepeat) {
             Message.error('Пароли не совпадают!');
             return;
@@ -24,17 +27,18 @@ const Registration = observer(() => {
             await AuthStore.register(email, password, passwordRepeat);
             goTo('/');
         })();
+        setLoading(false);
     };
 
     return (
-        <CardLayout title="РЕГИСТРАЦИЯ">
+        <CardLayout title="Регистрация" style={{width: "25vw", height: "70vh"}}>
 
                 <Form
                     form={form}
                     name="signup"
                     initialValues={{ remember: true }}
                     onFinish={handleRegister}
-                    className="w-full max-w-sm space-y-4"
+                    style={{ width: "100%" }}
                 >
                     <Form.Item
                         name="email"
@@ -61,11 +65,11 @@ const Registration = observer(() => {
                     </Form.Item>
 
                     <Form.Item style={{display: "flex", justifyContent: "center"}}>
-                        <Button block type={"primary"} htmlType="submit" style={{ fontSize: 20, padding: 20}}>
+                        <Button loading={loading} shape="round" block type={"primary"} htmlType="submit" style={{ fontSize: 20, padding: 20}}>
                             Создать профиль
                         </Button>
-                        <div style={{ margin: "10px", fontSize: 18}}>
-                            или <a href="/" className="text-blue-600 hover:underline">использовать существующий</a>
+                        <div style={{ margin: "10px", fontSize: 16, textAlign: "center" }}>
+                            <a href="/" className="text-blue-600 hover:underline">Уже есть аккаунт?</a>
                         </div>
                     </Form.Item>
                 </Form>

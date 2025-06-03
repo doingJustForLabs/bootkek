@@ -43,7 +43,8 @@ const ProfileCreation = observer(() => {
             if (!isProfileCreated) {
                 await ProfileStore.createProfile(name, username);
                 setIsProfileCreated(true);
-                const response = ProfileStore.getProfile();
+                const response = await ProfileStore.getProfile();
+                console.log(response.data?.profile?.user_id);
                 await setCurrentId(`${response.data?.profile?.user_id}`);
             } else {
                 await ProfileStore.updateProfile({ name, username });
@@ -66,12 +67,14 @@ const ProfileCreation = observer(() => {
 
     const handleFinish = async (values) => {
         await wrapHandleError( async () => {
-            const { faculty, course } = values;
 
-            if (faculty || course) {
-                await ProfileStore.updateProfile({ faculty, course });
+            console.log("FINISHED");
+
+            const { faculty, course, skills } = values;
+
+            if (faculty || course || skills) {
+                await ProfileStore.updateProfile({ faculty, course, skills });
             }
-
             goToProfile(getCurrentId());
         })();
     };
@@ -87,6 +90,27 @@ const ProfileCreation = observer(() => {
             console.log("Значение sex из onValuesChange:", sexValue);
         }
     };
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                await wrapHandleError(async () => {
+                    const responseProfile = await ProfileStore.getProfile();
+                    if (responseProfile.data.profile) {
+                        setIsProfileCreated(true);
+                        formStep1.setFieldsValue({
+                            name: responseProfile.data.profile.name,
+                            username: responseProfile.data.profile.username,
+                        });
+                    }
+                })()
+            } catch (error) {
+                const status = error.response?.status;
+                if (status === 404) setIsProfileCreated(false);
+            }
+        }
+        fetchProfile();
+    },[]);
 
     useEffect(() => {
         const initialSex = formStep2.getFieldValue("sex");
@@ -106,15 +130,15 @@ const ProfileCreation = observer(() => {
                             onChange={handleAvatarChange}
                             accept="image/*"
                         >
-                            <ProfileAvatar avatarSize={150} srcFile={avatarFile} style={{cursor: "pointer"}} />
+                            <ProfileAvatar avatarSize={150} srcFile={avatarFile} onClick={null} style={{cursor: "pointer"}} />
                         </Upload>
                     </Form.Item>
 
-                    <Form.Item name="name" rules={[{ validator: Validator.validateName }]}>
+                    <Form.Item name="name" rules={[{ validator: Validator.validateName }]} style={{ width: "70%" }}>
                         <InputName/>
                     </Form.Item>
 
-                    <Form.Item name="username" rules={[{ validator: Validator.validateUsername }]}>
+                    <Form.Item name="username" rules={[{ validator: Validator.validateUsername }]} style={{ width: "70%" }}>
                         <InputUsername/>
                     </Form.Item>
 
@@ -131,7 +155,17 @@ const ProfileCreation = observer(() => {
             content: (
                 <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep2} onFinish={handleNextStep2} onValuesChange={updateSkipLogic}>
 
-                    <Form.Item name="sex">
+                    <Form.Item name="birthDate" style={{ width: "100%" }}>
+                        <DatePicker
+                            size="large"
+                            style={{ width: '100%' }}
+                            placeholder="В РАЗРАБОТКЕ"
+                            format="DD.MM.YYYY"
+                            placement="bottomLeft"
+                        />
+                    </Form.Item>
+
+                    <Form.Item name="sex" style={{ width: "100%" }}>
                         <SelectGender/>
                     </Form.Item>
 
@@ -146,26 +180,22 @@ const ProfileCreation = observer(() => {
                         </div>
                     </Form.Item>
                 </Form>
-            ),
+            )
         },
         {
             title: 'Дополнительно',
             content: (
                 <Form layout="vertical" style={{ justifyItems: 'center' }} form={formStep3} onFinish={handleFinish}>
-                    <Form.Item>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                            <Form.Item name="faculty" style={{ flex: 1 }}>
-                                <SelectFaculty/>
-                            </Form.Item>
+                    <Form.Item name="faculty" style={{ width: "100%" }}>
+                        <SelectFaculty/>
+                    </Form.Item>
 
-                            <Form.Item name="course" style={{ flex: 1 }}>
-                                <SelectCourse/>
-                            </Form.Item>
-                        </div>
+                    <Form.Item name="course" style={{ width: "100%" }} >
+                        <SelectCourse/>
+                    </Form.Item>
 
-                        <Form.Item>
-                            <SkillsSelector />
-                        </Form.Item>
+                    <Form.Item name="skills" style={{ width: "100%" }}>
+                        <SkillsSelector />
                     </Form.Item>
 
                     <Form.Item>
