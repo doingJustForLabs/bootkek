@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input, Button, List, message, Spin, Modal, Avatar } from 'antd';
+import { DownloadOutlined, LoadingOutlined, PaperClipOutlined, CloseOutlined } from '@ant-design/icons';
 import API from '../../services/API.js';
 import AuthStore from "store/AuthStore";
 import ChatService from '../../services/chat.service';
@@ -15,6 +16,22 @@ const ChatViewComponent = ({ chatId }) => {
     const [showChatInfo, setShowChatInfo] = useState(false);
     const [chatDetails, setChatDetails] = useState(null);
     const [loadingChatDetails, setLoadingChatDetails] = useState(false);
+    const [fileToUpload, setFileToUpload] = useState(null);
+    const fileInputRef = useRef(null);
+    const [isSendingFile, setIsSendingFile] = useState(false);
+
+    // Ограничения должны соответствовать бэкенду
+    const FILE_LIMITS = {
+        MAX_SIZE: 10 * 1024 * 1024, // 10MB в байтах
+        ALLOWED_TYPES: [
+            'image/jpeg',
+            'image/png',
+            'application/pdf',
+            'text/plain',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ]
+    };
 
     useEffect(() => {
         if (chatId) {
@@ -75,37 +92,94 @@ const ChatViewComponent = ({ chatId }) => {
     };
 
     const sendMessage = async () => {
-        if (!inputValue.trim() || !chatId) return;
+        if (fileToUpload && fileToUpload.size > FILE_LIMITS.MAX_SIZE) {
+        message.error(`Файл слишком большой для отправки`);
+        return;
+    }
+
+        if ((!inputValue.trim() && !fileToUpload) || !chatId) return;
         
         try {
+            setIsSendingFile(!!fileToUpload);
+
+            // 1. Создаем временное сообщение
             const tempMessage = {
                 tempId: Date.now(),
                 content: inputValue,
                 user_id: currentId,
                 timestamp: new Date().toISOString(),
-                status: 'sending'
+                status: 'sending',
+                file: fileToUpload ? {
+                    name: fileToUpload.name,
+                    size: fileToUpload.size,
+                    type: fileToUpload.type,
+                    url: URL.createObjectURL(fileToUpload) // Временный URL для превью
+                } : null
             };
 
+            // 2. Мгновенно добавляем в чат
             setMessages(prev => [...prev, tempMessage]);
             setInputValue('');
+            
+            // 3. Отправка в зависимости от типа
+            if (fileToUpload) {
+                // Отправка файла через HTTP
+                const formData = new FormData();
+                formData.append("file", fileToUpload);
+                formData.append("sender_id", currentId);
+                if (inputValue.trim()) {
+                    formData.append("text", inputValue);
+                }
 
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(JSON.stringify({
-                    type: 'message',
-                    ...tempMessage,
-                    sender_id: currentId
-                }));
+                const response = await API.post(
+                    `/chats/${chatId}/messages_with_file`,
+                    formData,
+                    {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
+                        },
+                    }
+                );
+
+                // Обновляем статус сообщения
+                setMessages(prev => prev.map(msg => 
+                    msg.tempId === tempMessage.tempId 
+                        ? { ...msg, status: 'delivered', id: response.data.id } 
+                        : msg
+                ));
+                
+                setFileToUpload(null);
             } else {
-                throw new Error('WebSocket not connected');
+                // Отправка текста через WebSocket
+                if (socketRef.current?.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify({
+                        type: 'message',
+                        ...tempMessage,
+                        sender_id: currentId
+                    }));
+                } else {
+                    throw new Error('WebSocket not connected');
+                }
             }
         } catch (error) {
+            console.error('Send error:', error);
             setMessages(prev => prev.map(msg =>
                 msg.tempId === tempMessage.tempId
                     ? { ...msg, status: 'failed' }
                     : msg
             ));
+            message.error(error.message || 'Ошибка отправки');
+        } finally {
+            // Всегда очищаем файл после отправки (успешной или нет)
+            setFileToUpload(null);
+            // Очищаем значение файлового инпута
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            setIsSendingFile(false);
         }
-    };
+};
 
     const connectWebSocket = async (id) => {
         const chatId = Number(id);
@@ -173,8 +247,13 @@ const ChatViewComponent = ({ chatId }) => {
                         const existingIndex = filtered.findIndex(m => m.id === data.data.id);
 
                         if (existingIndex >= 0) {
+                            const existingFile = filtered[existingIndex].file;
                             const updated = [...filtered];
-                            updated[existingIndex] = data.data;
+                            updated[existingIndex] = {
+                                ...data.data,
+                                file: existingFile || data.data.file, // Сохраняем файл если был
+                                user_id: data.data.user_id
+                            };
                             return updated;
                         }
 
@@ -197,6 +276,106 @@ const ChatViewComponent = ({ chatId }) => {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    useEffect(() => {
+        console.log('Messages:', messages); // Проверьте структуру данных
+    }, [messages]);
+
+    const handleDownload = async (fileData) => {
+        try {
+            if (!fileData?.url || !fileData?.name) {
+            throw new Error('Недостаточно данных для загрузки файла');
+            }
+
+            // Извлекаем имя файла из URL (последняя часть после /)
+            const fileUuid = fileData.url.split('/').pop();
+            
+            message.loading('Начинаем загрузку...', 0);
+
+            // Вариант 1: Прямая загрузка по URL (если файлы доступны без авторизации)
+            const link = document.createElement('a');
+            link.href = fileData.url;
+            link.setAttribute('download', fileData.name);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Вариант 2: Через API с авторизацией (если нужен токен)
+            /*
+            const response = await API.get(`/download/${fileUuid}`, {
+            responseType: 'blob',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileData.name);
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            }, 100);
+            */
+
+            message.destroy();
+            message.success('Файл загружается...');
+            
+        } catch (error) {
+            console.error('Download error:', error);
+            message.destroy();
+            message.error(error.message || 'Ошибка при загрузке файла');
+        }
+    };
+
+    // Вне компонента
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Расширение файла
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'txt'];
+
+        // Проверка расширения файла (дополнительно к MIME-типу)
+        if (!allowedExtensions.includes(fileExtension)) {
+            message.error(`Неподдерживаемый формат файла: .${fileExtension}`);
+            e.target.value = '';
+            return;
+        }
+
+        // Проверка MIME-типа
+        if (!FILE_LIMITS.ALLOWED_TYPES.includes(file.type)) {
+            message.error(`Неподдерживаемый тип файла: ${file.type}`);
+            e.target.value = '';
+            return;
+        }
+
+        // Проверка размера файла
+        if (file.size > FILE_LIMITS.MAX_SIZE) {
+            message.error(`Файл слишком большой (${formatFileSize(file.size)}). Максимальный размер: ${formatFileSize(FILE_LIMITS.MAX_SIZE)}`);
+            e.target.value = '';
+            return;
+        }
+
+        setFileToUpload(file);
+        message.success(`Файл "${file.name}" готов к отправке (${formatFileSize(file.size)})`);
+    };
+
+    const triggerFileInput = () => {
+        fileInputRef.current.click();
+    };
 
     return (
         <div className="h-full flex flex-col">
@@ -239,6 +418,34 @@ const ChatViewComponent = ({ chatId }) => {
                                     }}
                                 >
                                     <p style={{ margin: 0 }}>{msg.content}</p>
+
+                                    {msg.file && (
+                                        <div style={{ marginTop: 8 }}>
+                                            <Button
+                                            type="text"
+                                            icon={<DownloadOutlined />}
+                                            onClick={() => handleDownload(msg.file)}
+                                            style={{ 
+                                                padding: 0,
+                                                color: msg.user_id === currentId ? '#fff' : '#1890ff',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4
+                                            }}
+                                            >
+                                            <span style={{
+                                                textDecoration: 'underline',
+                                                textUnderlineOffset: 3
+                                            }}>
+                                                {msg.file.name}
+                                            </span>
+                                            <span style={{ opacity: 0.7, fontSize: '0.8em' }}>
+                                                ({formatFileSize(msg.file.size)})
+                                            </span>
+                                            </Button>
+                                        </div>
+                                    )}
+
                                     <small style={{
                                         display: 'block',
                                         textAlign: 'right',
@@ -263,12 +470,62 @@ const ChatViewComponent = ({ chatId }) => {
                 </div>
             )}
 
+            {fileToUpload && !isSendingFile && (
+                <div style={{
+                    padding: '8px 12px',
+                    background: '#4a5aa1',
+                    borderRadius: 4,
+                    margin: '0 10px 8px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: '#fff'
+                }}>
+                    <PaperClipOutlined />
+                    <span style={{ marginLeft: 8, flex: 1 }}>
+                        {fileToUpload.name} ({formatFileSize(fileToUpload.size)})
+                    </span>
+                    <Button
+                        type="text"
+                        icon={<CloseOutlined />}
+                        onClick={() => {
+                            setFileToUpload(null);
+                            if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                            }
+                        }}
+                        size="small"
+                        style={{ color: '#fff' }}
+                    />
+            </div>
+            )}
+
             <div className="message-input" style={{
                 padding: '10px',
                 borderTop: '1px solid #f0f0f0',
                 display: 'flex',
-                gap: '8px'
+                gap: '8px',
             }}>
+                {/* Скрытый input для файлов */}
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
+                
+                {/* Кнопка прикрепления файла */}
+                <Button
+                    type="text"
+                    icon={<PaperClipOutlined />}
+                    onClick={triggerFileInput}
+                    style={{
+                    fontSize: '20px',
+                    color: '#1890ff',
+                    marginBottom: '4px'
+                    }}
+                />
+
                 <Input.TextArea
                     rows={2}
                     value={inputValue}
@@ -285,7 +542,7 @@ const ChatViewComponent = ({ chatId }) => {
                 <Button
                     type="primary"
                     onClick={sendMessage}
-                    disabled={!inputValue.trim()}
+                    disabled={!inputValue.trim() && !fileToUpload}
                     style={{ alignSelf: 'flex-end' }}
                 >
                     Отправить

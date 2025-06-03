@@ -52,7 +52,11 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("chat_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
-        sa.Column("content", sa.String(length=1000), nullable=False),
+        sa.Column("content", sa.String(length=1000), nullable=True),
+        sa.Column("file_path", sa.String(), nullable=True),
+        sa.Column("file_name", sa.String(), nullable=True),
+        sa.Column("file_type", sa.String(), nullable=True),
+        sa.Column("file_size", sa.Integer(), nullable=True),
         sa.Column("timestamp", sa.DateTime(), nullable=False),
         sa.Column("create_date", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(
