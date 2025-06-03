@@ -7,6 +7,7 @@ import {SendOutlined} from '@ant-design/icons';
 import DetailsButton from "components/ui/buttons/DetailsButton.jsx";
 import ProfilesList from "components/profile/ProfilesList.jsx";
 import ButtonDeleteChat from "components/ui/buttons/ButtonDeleteChat.jsx";
+import { PaperClipOutlined, CloseOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 
 const ChatViewComponent = ({ chatId, actions = {} }) => {
