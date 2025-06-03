@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import String, DateTime, Boolean, INT, ForeignKey
 
 # from sqlalchemy.ext.asyncio import AsyncAttrs
@@ -39,10 +41,13 @@ class Message(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    content: Mapped[str] = mapped_column(String(1000))
-    # file_path: Mapped[str] = mapped_column(String, nullable=True)  # путь к файлу, если он есть
-    # file_name: Mapped[str] = mapped_column(String, nullable=True)  # имя файла
-    # file_type: Mapped[str] = mapped_column(String, nullable=True)  # тип файла (например, изображение, pdf)
+    content: Mapped[str] = mapped_column(String(1000), nullable=True)
+
+    file_path: Mapped[str] = mapped_column(String, nullable=True)  # путь к файлу, если он есть
+    file_name: Mapped[str] = mapped_column(String, nullable=True)  # имя файла
+    file_type: Mapped[str] = mapped_column(String, nullable=True)  # тип файла (например, изображение, pdf)
+    file_size: Mapped[Optional[int]] = mapped_column(nullable=True)
+
     timestamp: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
 
     chat: Mapped["Chat"] = relationship("Chat", back_populates="messages")

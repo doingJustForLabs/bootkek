@@ -7,6 +7,7 @@ import {SendOutlined} from '@ant-design/icons';
 import DetailsButton from "components/ui/buttons/DetailsButton.jsx";
 import ProfilesList from "components/profile/ProfilesList.jsx";
 import ButtonDeleteChat from "components/ui/buttons/ButtonDeleteChat.jsx";
+import { Link } from 'react-router-dom';
 
 const ChatViewComponent = ({ chatId, actions = {} }) => {
     const { currentId } = AuthStore;
@@ -18,6 +19,22 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
     const [showChatInfo, setShowChatInfo] = useState(false);
     const [chatDetails, setChatDetails] = useState(null);
     const [loadingChatDetails, setLoadingChatDetails] = useState(false);
+    const [fileToUpload, setFileToUpload] = useState(null);
+    const fileInputRef = useRef(null);
+    const [isSendingFile, setIsSendingFile] = useState(false);
+
+    // Ограничения должны соответствовать бэкенду
+    const FILE_LIMITS = {
+        MAX_SIZE: 10 * 1024 * 1024, // 10MB в байтах
+        ALLOWED_TYPES: [
+            'image/jpeg',
+            'image/png',
+            'application/pdf',
+            'text/plain',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ]
+    };
 
     useEffect(() => {
         if (chatId) {
@@ -79,29 +96,73 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
     };
 
     const sendMessage = async () => {
-        if (!inputValue.trim() || !chatId) return;
+        if (fileToUpload && fileToUpload.size > FILE_LIMITS.MAX_SIZE) {
+        message.error(`Файл слишком большой для отправки`);
+        return;
+    }
+
+        if ((!inputValue.trim() && !fileToUpload) || !chatId) return;
 
         const tempMessage = {
-            tempId: Date.now(),
-            content: inputValue,
-            user_id: currentId,
-            timestamp: new Date().toISOString(),
-            status: 'sending'
-        };
+                tempId: Date.now(),
+                content: inputValue,
+                user_id: currentId,
+                timestamp: new Date().toISOString(),
+                status: 'sending',
+                file: fileToUpload ? {
+                    name: fileToUpload.name,
+                    size: fileToUpload.size,
+                    type: fileToUpload.type,
+                    url: URL.createObjectURL(fileToUpload) // Временный URL для превью
+                } : null
+            };
 
         try {
+            setIsSendingFile(!!fileToUpload);
 
             setMessages(prev => [...prev, tempMessage]);
             setInputValue('');
 
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(JSON.stringify({
-                    type: 'message',
-                    ...tempMessage,
-                    sender_id: currentId
-                }));
+            // 3. Отправка в зависимости от типа
+            if (fileToUpload) {
+                // Отправка файла через HTTP
+                const formData = new FormData();
+                formData.append("file", fileToUpload);
+                formData.append("sender_id", currentId);
+                if (inputValue.trim()) {
+                    formData.append("text", inputValue);
+                }
+
+                const response = await API.post(
+                    `/chats/${chatId}/messages_with_file`,
+                    formData,
+                    {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                            "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
+                        },
+                    }
+                );
+
+                // Обновляем статус сообщения
+                setMessages(prev => prev.map(msg =>
+                    msg.tempId === tempMessage.tempId
+                        ? { ...msg, status: 'delivered', id: response.data.id }
+                        : msg
+                ));
+
+                setFileToUpload(null);
             } else {
-                throw new Error('WebSocket not connected');
+                // Отправка текста через WebSocket
+                if (socketRef.current?.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify({
+                        type: 'message',
+                        ...tempMessage,
+                        sender_id: currentId
+                    }));
+                } else {
+                    throw new Error('WebSocket not connected');
+                }
             }
         } catch (error) {
             console.log(error);
@@ -110,8 +171,17 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
                     ? { ...msg, status: 'failed' }
                     : msg
             ));
+            message.error(error.message || 'Ошибка отправки');
+        } finally {
+            // Всегда очищаем файл после отправки (успешной или нет)
+            setFileToUpload(null);
+            // Очищаем значение файлового инпута
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            setIsSendingFile(false);
         }
-    };
+};
 
     const connectWebSocket = async (id) => {
         const chatId = Number(id);
@@ -179,8 +249,13 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
                         const existingIndex = filtered.findIndex(m => m.id === data.data.id);
 
                         if (existingIndex >= 0) {
+                            const existingFile = filtered[existingIndex].file;
                             const updated = [...filtered];
-                            updated[existingIndex] = data.data;
+                            updated[existingIndex] = {
+                                ...data.data,
+                                file: existingFile || data.data.file,
+                                user_id: data.data.user_id
+                            };
                             return updated;
                         }
 
@@ -205,17 +280,16 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
     }, [messages]);
 
     return (
-        <div className="h-full w-full flex flex-col">
-            <div className="flex items-center" style={{backgroundColor: '#596acc', padding: "5px 35px"}}>
-                <h2 className="font-semibold" style={{ fontSize: "20px", color: "white" }}>
+        <div className="h-full flex flex-col">
+            <div className="p-2 border-b flex justify-between items-center">
+                <h2 className="font-semibold" style={{ color: 'white' }}>
                     {chatDetails?.name || (chatDetails?.participants_profiles?.length === 2
                         ? chatDetails.participants_profiles.find(p => p.user_id !== currentId)?.name || chatDetails.participants_profiles.find(p => p.user_id !== currentId)?.username || 'Личный чат'
                         : 'Групповой чат') || 'Чат'}
                 </h2>
-                <div style={{marginLeft: "auto", gap: "10px"}}>
-                    <DetailsButton onClick={toggleChatInfo} style={{color: "white", fontSize: "20px"}}/>
-                    <ButtonDeleteChat targetChatId={chatId} onRefresh={actions.fetchChats} setLoading={setLoading} style={{color: "white", fontSize: "20px"}}/>
-                </div>
+                <Button onClick={toggleChatInfo} size="small">
+                    Информация
+                </Button>
             </div>
 
             {loading ? (
@@ -223,22 +297,22 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
                     <Spin tip="Загрузка сообщений..." />
                 </div>
             ) : (
-                <div className="flex-1 overflow-y-auto" style={{padding: "0 50px"}}>
+                <div className="flex-1 overflow-y-auto">
                     <List
                         dataSource={messages}
                         renderItem={msg => (
                             <List.Item
                                 key={msg.id || msg.tempId}
                                 className={`message ${msg.user_id === currentId ? 'sent' : 'received'}`}
-                                style={{ justifyContent: msg.user_id === currentId ? 'flex-end' : 'flex-start', border: 0 }}
+                                style={{ justifyContent: msg.user_id === currentId ? 'flex-end' : 'flex-start' }}
                             >
                                 <div
                                     className={`message-bubble ${msg.status || ''}`}
                                     style={{
                                         maxWidth: '70%',
                                         padding: '8px 12px',
-                                        borderRadius: msg.user_id === currentId ? '12px 24px 0 24px' : '24px 12px 24px 0',
-                                        background: msg.user_id === currentId ? '#4363fa' : '#f3f5ff',
+                                        borderRadius: '12px',
+                                        background: msg.user_id === currentId ? '#1890ff' : '#f0f0f0',
                                         color: msg.user_id === currentId ? '#fff' : '#000',
                                         marginLeft: msg.user_id === currentId ? 'auto' : '0',
                                         opacity: msg.isPending ? 0.7 : 1,
@@ -271,16 +345,13 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
             )}
 
             <div className="message-input" style={{
-                backgroundColor: '#f4f4f4',
                 padding: '10px',
-                height: '10vh',
                 borderTop: '1px solid #f0f0f0',
-                alignContent: "center",
                 display: 'flex',
                 gap: '8px'
             }}>
                 <Input.TextArea
-                    rows={1}
+                    rows={2}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onPressEnter={(e) => {
@@ -293,17 +364,17 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
                     style={{ flex: 1 }}
                 />
                 <Button
-                    shape="circle"
                     type="primary"
-                    size="large"
-                    icon={<SendOutlined/>}
                     onClick={sendMessage}
                     disabled={!inputValue.trim()}
-                />
+                    style={{ alignSelf: 'flex-end' }}
+                >
+                    Отправить
+                </Button>
             </div>
 
             <Modal
-                title={chatDetails?.name || 'Участники чата'}
+                title={chatDetails?.name || 'Информация о чате'}
                 visible={showChatInfo}
                 onCancel={toggleChatInfo}
                 footer={null}
@@ -313,7 +384,22 @@ const ChatViewComponent = ({ chatId, actions = {} }) => {
                 ) : (
                     chatDetails && (
                         <div>
-                            <ProfilesList profilesData={chatDetails.participants_profiles}/>
+                            <h4>Участники:</h4>
+                            <List
+                                dataSource={chatDetails.participants_profiles}
+                                renderItem={item => (
+                                    <Link to={`/profile/${item.user_id}`} key={item.user_id} style={{ display: 'block' }}>
+                                        <List.Item>
+                                            <List.Item.Meta
+                                                avatar={<Avatar>{item.name ? item.name[0].toUpperCase() : item.username ? item.username[0].toUpperCase() : '?'}</Avatar>}
+                                                title={item.name || item.username || 'Неизвестный'}
+                                                description={item.username && `@${item.username}`}
+                                            />
+                                        </List.Item>
+                                    </Link>
+                                )}
+                            />
+                            {/* Дополнительная информация о чате, если есть */}
                         </div>
                     )
                 )}

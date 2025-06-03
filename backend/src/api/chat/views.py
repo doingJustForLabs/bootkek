@@ -1,7 +1,10 @@
+import mimetypes
 import shutil
+from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Query
+from black.mode import Deprecated
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Query, Form
 from typing import List, Optional
 
 from fastapi.encoders import jsonable_encoder
@@ -10,8 +13,9 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, FileResponse
 
+from core.config import settings
 from database.db import db_helper
 from api.chat.services import ChatRepository
 from api.auth.services import UserRepository
@@ -21,6 +25,7 @@ from api.chat.models import Chat, Message
 # from database.schemas.message_schemas import MessageResponse
 from api.chat.schemas import CreateChatRequest
 from api.profiles.models import Profile
+import shutil
 
 import logging
 
@@ -108,7 +113,24 @@ async def get_messages(
     chat_id: int, db: AsyncSession = Depends(db_helper.session_getter)
 ):
     messages = await ChatRepository.get_messages_in_chat(db, chat_id)
-    return messages
+
+    return [
+        {
+            "id": msg.id,
+            "user_id": msg.user_id,
+            "content": msg.content,
+            "timestamp": msg.timestamp.isoformat(),
+            "file": {
+                "name": msg.file_name,
+                "url": f"/static/{msg.file_path}",
+                "type": msg.file_type,
+                "size": msg.file_size
+            } if msg.file_path else None
+        }
+        for msg in messages
+    ]
+
+    return formatted_messages
 
 
 #
@@ -220,57 +242,63 @@ async def add_message(
 @router.post("/chats/{chat_id}/messages_with_file")
 async def add_message_with_file(
     chat_id: int,
-    user_id: int,
-    content: str,
-    file: UploadFile = File(...),  # добавляем поле для файла
-    db: AsyncSession = Depends(db_helper.session_getter),
+    file: UploadFile = File(...),  # Обязательное поле
+    text: Optional[str] = Form(None),  # Опциональное
+    sender_id: int = Form(...),  # Добавьте, если нужно явно передавать
+    db: AsyncSession = Depends(db_helper.session_getter)
 ):
-    # Проверка на наличие файла
-    if file:
-        # Указываем папку для хранения файлов
-        upload_dir = Path("uploads")
-        upload_dir.mkdir(parents=True, exist_ok=True)
+    # Проверка наличия файла (хотя File(...) уже делает это)
+    if not file:
+        raise HTTPException(status_code=422, detail="File is required")
 
-        # Генерируем уникальное имя для файла (например, используя его имя)
-        file_location = upload_dir / file.filename
+    file_data = await ChatRepository.save_chat_file(db, file, chat_id, sender_id)
 
-        # Сохраняем файл на сервере
-        with file_location.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+    message = Message(
+        chat_id=chat_id,
+        user_id=sender_id,
+        content=text,
+        file_path=file_data["path"],
+        file_name=file_data["name"],
+        file_type=file_data["type"],
+        file_size=file_data["size"]
+    )
 
-        # Добавляем информацию о сообщении в базу данных, включая путь к файлу
-        new_message = Message(
-            chat_id=chat_id,
-            user_id=user_id,
-            content=content,
-            file_path=str(file_location),  # путь к файлу
-            file_name=file.filename,  # имя файла
-            file_type=file.content_type,  # тип файла (например, 'image/jpeg')
-        )
-        db.add(new_message)
-        await db.commit()
+    db.add(message)
+    await db.commit()
 
-        return JSONResponse(
-            content={
-                "message": "Message with file sent successfully!",
-                "file_path": str(file_location),
-            },
-            status_code=200,
-        )
-    else:
-        # Если файла нет, просто отправляем текстовое сообщение
-        new_message = Message(
-            chat_id=chat_id,
-            user_id=user_id,
-            content=content,
-        )
-        db.add(new_message)
-        await db.commit()
+    return {
+        "message": "Файл успешно загружен",
+        "file_url": f"/static/{file_data['path']}",
+        "file_name": file_data["name"]
+    }
 
-        return JSONResponse(
-            content={"message": "Message sent successfully without file"},
-            status_code=200,
-        )
+
+@router.get("/download/{chat_id}/{filename:path}")
+async def download_file(
+        chat_id: int,
+        filename: str,  # Теперь принимает полный путь
+        db: AsyncSession = Depends(db_helper.session_getter)
+):
+    """Скачивание файла по полному пути"""
+    # Полный путь к файлу
+    file_path = settings.files.static_dir / "uploads" / str(chat_id) / filename
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Получаем оригинальное имя из БД
+    message = await db.execute(
+        select(Message).where(
+            (Message.chat_id == chat_id) &
+            (Message.file_path == f"uploads/{chat_id}/{filename}"))
+    )
+    message = message.scalar_one_or_none()
+
+    return FileResponse(
+        file_path,
+        filename=message.file_name if message else filename,
+        media_type=message.file_type if message else "application/octet-stream"
+    )
 
 
 @router.delete("/chats", status_code=status.HTTP_204_NO_CONTENT)

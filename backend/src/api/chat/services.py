@@ -1,11 +1,23 @@
+import uuid
+
+from fastapi import UploadFile
+from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from api.chat.models import Chat, Message, ChatUser
-
+from api.exceptions import BadRequestException
+from core.config import settings
 
 class ChatRepository:
+    _UPLOAD_DIR = settings.files.upload_dir  # Path('static/uploads')
+    _ALLOWED_TYPES = {
+        'image/jpeg', 'image/png',
+        'application/pdf', 'text/plain',
+        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    }
+    _MAX_SIZE = 10 * 1024 * 1024
 
     @staticmethod
     async def create_chat(
@@ -58,7 +70,9 @@ class ChatRepository:
 
     @staticmethod
     async def get_messages_in_chat(
-        session: AsyncSession, chat_id: int, limit: int = 100
+        session: AsyncSession,
+            chat_id: int,
+            limit: int = 100,
     ) -> List[Message]:
         result = await session.execute(
             select(Message)
@@ -76,3 +90,51 @@ class ChatRepository:
         session.add(message)
         await session.commit()
         return message
+
+    @classmethod
+    async def save_chat_file(
+            cls,
+            session: AsyncSession,
+            file: UploadFile,
+            chat_id: int,
+            user_id: int
+    ) -> dict:
+        """Сохранение файла чата"""
+        cls._validate_file(file)
+        cls._ensure_upload_dir_exists()
+
+        # Создаем папку чата, если не существует
+        chat_dir = cls._UPLOAD_DIR / str(chat_id)
+        chat_dir.mkdir(exist_ok=True)
+
+        # Генерируем уникальное имя файла
+        file_ext = Path(file.filename).suffix
+        unique_name = f"{uuid.uuid4().hex}{file_ext}"
+        file_path = chat_dir / unique_name
+
+        # Сохраняем файл
+        with file_path.open('wb') as buffer:
+            buffer.write(await file.read())
+
+        return {
+            "path": f"uploads/{chat_id}/{unique_name}",  # Относительный путь
+            "name": file.filename,
+            "type": file.content_type,
+            "size": file_path.stat().st_size
+        }
+
+    @classmethod
+    def _validate_file(cls, file: UploadFile):
+        if file.content_type not in cls._ALLOWED_TYPES:
+            raise BadRequestException(
+                f"Недопустимый тип файла. Разрешены: {', '.join(cls._ALLOWED_TYPES)}"
+            )
+
+        if file.size and file.size > cls._MAX_SIZE:
+            raise BadRequestException(
+                f"Превышен максимальный размер файла ({cls._MAX_SIZE // 1024 // 1024}MB)"
+            )
+
+    @classmethod
+    def _ensure_upload_dir_exists(cls):
+        cls._UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
